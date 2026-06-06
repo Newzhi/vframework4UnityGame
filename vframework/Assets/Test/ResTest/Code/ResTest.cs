@@ -1,40 +1,85 @@
-using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 最小 AB 加载测试：先菜单 Build Test AB，再 Play 本场景点按钮。
+/// 最小 AB 加载测试（Unity 原生 API）。
+/// 流程：Mark 资源 → vFramework → Build Test AB → Play 本场景。
 /// </summary>
 public class ResTest : MonoBehaviour
 {
-    public Button button;
+    [Header("UI（load 为空时使用 legacy button）")]
+    [SerializeField] private Button loadButton;
+    [SerializeField] private Button unloadButton;
 
-    // 与 HighTail.prefab 上的 AssetBundle 名一致：test/hightail
-    const string BundleRelativePath = "AssetBundles/test/hightail";
+    [Tooltip("兼容旧场景：仅绑了一个 Button 时填这里")]
+    [SerializeField] private Button button;
+
+    [Header("实例化")]
+    [SerializeField] private Transform spawnRoot;
+
+    private readonly AbNativeBundle _bundle = new AbNativeBundle();
+    private GameObject _instance;
 
     void Start()
     {
-        button.onClick.AddListener(OnButtonClick);
+        var load = loadButton != null ? loadButton : button;
+        if (load != null)
+        {
+            load.onClick.AddListener(OnLoadClick);
+        }
+        else
+        {
+            Debug.LogWarning("[ResTest] 未绑定 Load 按钮");
+        }
+
+        if (unloadButton != null)
+        {
+            unloadButton.onClick.AddListener(OnUnloadClick);
+        }
     }
 
-    void OnButtonClick()
+    void OnDestroy()
     {
-        string path = Path.Combine(Application.streamingAssetsPath, BundleRelativePath);
-        var bundle = AssetBundle.LoadFromFile(path);
-        if (bundle == null)
+        OnUnloadClick();
+    }
+
+    /// <summary>加载 demo/ui/testui 包并实例化 Assets/AssetBundle/UI/TestUI.prefab。</summary>
+    public void OnLoadClick()
+    {
+        if (_instance != null)
         {
-            Debug.LogError($"[AB] 加载失败，请先执行 vFramework → Build Test AB。路径: {path}");
+            Debug.Log("[ResTest] 实例已存在，跳过加载");
             return;
         }
 
-        var prefab = bundle.LoadAsset<GameObject>("HighTail");
+        if (!_bundle.Load(AbTestConfig.UiTestUiRootBundle))
+        {
+            return;
+        }
+
+        var prefab = _bundle.LoadAsset<GameObject>(AbTestConfig.TestUiAssetName);
         if (prefab == null)
         {
-            Debug.LogError("[AB] 包内找不到 HighTail，请查看 test/hightail.manifest");
             return;
         }
 
-        Instantiate(prefab);
-        Debug.Log("[AB] HighTail 加载成功");
+        _instance = spawnRoot != null
+            ? Instantiate(prefab, spawnRoot)
+            : Instantiate(prefab);
+
+        Debug.Log("[ResTest] TestUI 实例化成功");
+    }
+
+    /// <summary>销毁实例并卸载 AB。</summary>
+    public void OnUnloadClick()
+    {
+        if (_instance != null)
+        {
+            Destroy(_instance);
+            _instance = null;
+        }
+
+        // false：仅卸 AB 文件句柄；实例已 Destroy 即可
+        _bundle.Unload(false);
     }
 }

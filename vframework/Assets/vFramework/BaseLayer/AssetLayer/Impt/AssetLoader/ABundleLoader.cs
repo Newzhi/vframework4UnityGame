@@ -9,7 +9,7 @@ public class ABundleManager : IABundleManager
         throw new System.NotImplementedException();
     }
 
-    public void Load()
+    public void Load<T>()
     {
         throw new System.NotImplementedException();
     }

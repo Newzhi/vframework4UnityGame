@@ -8,7 +8,7 @@ public interface IABundleManager
     public void Initialize();
     
     //同步加载资源
-    public void Load();
+    public void Load<T>();
     
     //异步加载资源
     public void LoadAscyn();

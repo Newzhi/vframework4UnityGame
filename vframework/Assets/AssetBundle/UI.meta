@@ -1,5 +1,10 @@
 fileFormatVersion: 2
 guid: 889a08ce972232f449c530d034b5d1cc
+labels:
+- Effect
+- Ground
+- Sky
+- Vegetation
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
