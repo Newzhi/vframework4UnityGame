@@ -1,3 +1,6 @@
+// ABundleEditorUtility.cs — Editor 公共工具
+// 用途：平台与 BuildTarget 映射、StreamingAssets 清理等 Editor 侧辅助方法。
+
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;

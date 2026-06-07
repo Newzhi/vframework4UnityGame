@@ -1,3 +1,6 @@
+// ABundleDemoRunner.cs — 运行时演示（Demo）
+// 用途：TestAB 场景中单资源 Load/Unload 演示，默认 location「icon/3」。
+
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,11 +29,16 @@ namespace vFramework.BaseLayer.AssetLayer.ABundleLayer.Demo
         [Header("Play 模式快捷按钮（无 Canvas 时可用）")]
         [SerializeField] bool showOnGuiButtons = true;
 
+        [Header("释放方式")]
+        [Tooltip("启用后通过 ABundleScopeLoader + Handle 加载，OnDestroy 自动释放")]
+        [SerializeField] bool useScopeLoader = true;
+
         #endregion
 
         #region 运行时状态
 
-        readonly ABundleLoader _loader = new();
+        ABundleScopeLoader _scope;
+        vFramework.BaseLayer.AssetLayer.IAssetHandle _handle;
         ABundleBuildRules _rules;
         Texture _loadedTexture;
         bool _isLoaded;
@@ -85,26 +93,46 @@ namespace vFramework.BaseLayer.AssetLayer.ABundleLayer.Demo
                 return;
             }
 
-            _loader.InitializeFromRules(_rules);
-            if (!_loader.IsInitialized)
+            if (useScopeLoader)
             {
-                Debug.LogError("[ABundleDemo] Loader 初始化失败");
-                return;
+                _scope ??= gameObject.GetComponent<ABundleScopeLoader>() ??
+                           gameObject.AddComponent<ABundleScopeLoader>();
+                if (!_scope.EnsureInitialized())
+                {
+                    Debug.LogError("[ABundleDemo] ScopeLoader 初始化失败");
+                    return;
+                }
+
+                if (!_scope.Loader.ContainsLocation(location))
+                {
+                    Debug.LogError(
+                        $"[ABundleDemo] Catalog 无 location「{location}」。\n" +
+                        "请先 ABundleBuilder 打包，或将 LoadMode 设为 EditorSimulation。");
+                    return;
+                }
+
+                _handle = _scope.LoadHandle<Texture>(location);
+                _loadedTexture = _handle.GetAsset<Texture>();
+            }
+            else
+            {
+                var loader = new ABundleLoader();
+                loader.InitializeFromRules(_rules);
+                if (!loader.IsInitialized || !loader.ContainsLocation(location))
+                {
+                    Debug.LogError($"[ABundleDemo] 加载失败: {location}");
+                    loader.Shutdown();
+                    return;
+                }
+
+                _loadedTexture = loader.LoadAsset<Texture>(location);
+                loader.ReleaseAsset(location);
+                loader.Shutdown();
             }
 
-            if (!_loader.ContainsLocation(location))
-            {
-                Debug.LogError(
-                    $"[ABundleDemo] Catalog 无 location「{location}」。\n" +
-                    "请先 ABundleBuilder 打包，或将 LoadMode 设为 EditorSimulation。");
-                return;
-            }
-
-            _loadedTexture = _loader.LoadAsset<Texture>(location);
             if (_loadedTexture == null)
             {
                 Debug.LogError($"[ABundleDemo] 加载失败: {location}");
-                _loader.Shutdown();
                 return;
             }
 
@@ -114,7 +142,8 @@ namespace vFramework.BaseLayer.AssetLayer.ABundleLayer.Demo
             }
 
             _isLoaded = true;
-            Debug.Log($"[ABundleDemo] 加载成功 location={location} mode={_loader.LoadMode}");
+            var mode = useScopeLoader ? _scope.Loader.LoadMode.ToString() : _rules.LoadMode.ToString();
+            Debug.Log($"[ABundleDemo] 加载成功 location={location} mode={mode} scope={useScopeLoader}");
         }
 
         /// <summary>绑定到「卸载」Button.onClick</summary>
@@ -127,11 +156,19 @@ namespace vFramework.BaseLayer.AssetLayer.ABundleLayer.Demo
 
             _loadedTexture = null;
 
-            _loader.ReleaseAsset(location);
-            _loader.UnloadAll(false);
-            _loader.Shutdown();
+            if (useScopeLoader && _scope != null)
+            {
+                if (_handle != null)
+                {
+                    _scope.Release(_handle);
+                    _handle = null;
+                }
+
+                _scope.RecycleAll();
+            }
+
             _isLoaded = false;
-            Debug.Log("[ABundleDemo] 已卸载全部 AB");
+            Debug.Log("[ABundleDemo] 已卸载");
         }
 
         #endregion

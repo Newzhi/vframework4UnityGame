@@ -43,9 +43,9 @@ Unity Editor 工具：用户配置分包策略、平台、输出路径、LoadMod
 
 | 文件 | 说明 |
 |------|------|
-| `Editor/RuleEditor/ABundleRuleEditorWindow.cs` | 规则制定器 UI |
-| `Core/ABundleRules.cs` | `ABundleBuildRules`、`ABundleBuildRule`、`ABundleRulesXmlIO`、`ABundlePathUtility` |
-| `Core/ABundleTypes.cs` | 平台、PackMode、LoadMode 枚举 |
+| `Editor/Layer1_RuleEditor/ABundleRuleEditorWindow.cs` | 规则制定器 UI |
+| `Shared/ABundleRules.cs` | `ABundleBuildRules`、`ABundleBuildRule`、`ABundleRulesXmlIO`、`ABundlePathUtility` |
+| `Shared/ABundleTypes.cs` | 平台、PackMode、LoadMode 枚举 |
 | `Editor/Config/ABundleBuildRules.xml` | 默认规则 |
 
 ### 规则字段摘要
@@ -89,8 +89,8 @@ Unity Editor 工具：用户配置分包策略、平台、输出路径、LoadMod
 
 | 文件 | 说明 |
 |------|------|
-| `Editor/Builder/ABundlePacker.cs` | 打包器（`#region`：过滤、打标签、Catalog、报告、入口） |
-| `Core/ABundleData.cs` | Catalog / 报告数据结构 |
+| `Editor/Layer2_Packer/ABundlePacker.cs` | 打包器（`#region`：过滤、打标签、Catalog、报告、入口） |
+| `Shared/ABundleData.cs` | Catalog / 报告数据结构 |
 
 ### 主要类型
 
@@ -112,14 +112,14 @@ Unity Editor 工具：用户配置分包策略、平台、输出路径、LoadMod
 对 AB 包的**独立 public 模块**：Catalog 寻址、依赖顺序、包缓存、引用计数。  
 加载器不直接 `LoadFromFile`，统一通过本层。
 
-### 代码（`Core/Resource/`）
+### 代码（`Layer3_Resource/`）
 
 | 文件 | 类 | 职责 |
 |------|-----|------|
 | `IABundleResourceSystem.cs` | `IABundleResourceSystem` | 资源层接口 |
 | `ABundleResourceSystem.cs` | `ABundleResourceSystem` | 门面：`AcquireBundle` / `ReleaseTicket` |
 | `ABundleLoadTicket.cs` | `ABundleLoadTicket` | 一次加载持有的依赖链票据 |
-| `BundleCache.cs` | `BundleCache`、`BundleRefCounter` | 包实例缓存与引用计数 |
+| `BundleCache.cs` | `BundleCache`、`BundleRefCounter` | 包实例缓存与包级引用计数 |
 | `CatalogProvider.cs` | `CatalogProvider`、`DependencyResolver` | Catalog 与 Manifest 依赖 |
 
 ### 加载 / 释放流程
@@ -143,23 +143,35 @@ ReleaseTicket(ticket)
 
 对外 **薄 API**：Initialize、同步/异步 Load、按 location 或包名卸载。
 
-### 代码（`Core/Loader/`）
+### 代码（`Layer4_Loader/`）
 
 | 文件 | 说明 |
 |------|------|
 | `IABundleLoader.cs` | 加载器接口 |
 | `ABundleLoader.cs` | 实现，委托 `ABundleResourceSystem` |
+| `ABundleAssetHandle.cs` | `IAssetHandle` 实现，一次 Load 一个句柄 |
+| `ABundleScopeLoader.cs` | 单元级 MonoBehaviour，`RecycleAll` / `OnDestroy` 自动释放 |
 
 ### API
 
 | 方法 | 说明 |
 |------|------|
 | `InitializeFromRules(rules)` | **推荐**：按规则读平台目录 + Catalog |
-| `LoadAsset<T>(location)` | 同步加载 |
-| `LoadAssetAsync<T>(location, callback)` | 异步（当前同步+回调，可换 Unity 原生异步） |
+| `LoadHandle<T>(location)` | **推荐**：返回 `IAssetHandle`，须 `Release()` |
+| `LoadAsset<T>(location)` | 同步加载（兼容 API，按 location 追踪 Ticket） |
+| `LoadAssetAsync` / `LoadHandleAsync` | 异步占位（当前同步+回调） |
 | `ReleaseAsset(location)` | 释放该 location 的 LoadTicket（含依赖链） |
 | `LoadBundle` / `ReleaseBundle` | 按包名加载/释放 |
 | `UnloadAll` / `Shutdown` | 卸载全部 |
+
+### ScopeLoader（单元释放）
+
+| 方法 | 说明 |
+|------|------|
+| `LoadHandle<T>` / `Load<T>` | 加载并登记句柄 |
+| `Release(handle)` | 释放单个句柄 |
+| `RecycleAll` | 释放本单元全部句柄 |
+| `OnDestroy` | 自动 `RecycleAll` + `Shutdown` |
 
 ### LoadMode
 
@@ -174,11 +186,18 @@ ReleaseTicket(ticket)
 var loader = new ABundleLoader();
 loader.InitializeFromRules(ABundleRulesXmlIO.Load(ABundleRulesXmlIO.DefaultRulesRelativePath));
 
-var tex = loader.LoadAsset<Texture2D>("icon/3");
+// 推荐：Handle
+var handle = loader.LoadHandle<Texture2D>("icon/3");
+var tex = handle.GetAsset<Texture2D>();
+handle.Release();
+
+// 或单元 Scope（OnDestroy 自动释放）
+var scope = gameObject.AddComponent<ABundleScopeLoader>();
+scope.Load<Texture2D>("icon/3");
 
 loader.LoadAssetAsync<GameObject>("ui/test/testui", prefab => { /* ... */ });
 
-loader.ReleaseAsset("icon/3");   // 推荐：与 LoadAsset 成对
+loader.ReleaseAsset("icon/3");   // 兼容旧 API
 loader.UnloadAll(false);
 loader.Shutdown();
 ```
@@ -189,36 +208,49 @@ loader.Shutdown();
 
 ```
 ABundleLayer/
-├── Core/
+├── Shared/                          # 公共：规则/Catalog 数据模型
 │   ├── ABundleTypes.cs
 │   ├── ABundleData.cs
-│   ├── ABundleRules.cs
-│   ├── Resource/                    # ③ 抽象资源层
-│   │   ├── IABundleResourceSystem.cs
-│   │   ├── ABundleResourceSystem.cs
-│   │   ├── ABundleLoadTicket.cs
-│   │   ├── BundleCache.cs
-│   │   └── CatalogProvider.cs
-│   └── Loader/                      # ④ 加载器
-│       ├── IABundleLoader.cs
-│       └── ABundleLoader.cs
+│   └── ABundleRules.cs
+├── Layer3_Resource/                 # ③ 抽象资源层
+│   ├── IABundleResourceSystem.cs
+│   ├── ABundleResourceSystem.cs
+│   ├── ABundleLoadTicket.cs
+│   ├── BundleCache.cs
+│   └── CatalogProvider.cs
+├── Layer4_Loader/                   # ④ 加载器
+│   ├── IABundleLoader.cs
+│   ├── ABundleLoader.cs
+│   ├── ABundleAssetHandle.cs
+│   └── ABundleScopeLoader.cs
 ├── Editor/
-│   ├── RuleEditor/                  # ① 规则制定器
+│   ├── Layer1_RuleEditor/           # ① 规则制定器
 │   │   └── ABundleRuleEditorWindow.cs
-│   ├── Builder/                     # ② 打包器
+│   ├── Layer2_Packer/               # ② 打包器
 │   │   └── ABundlePacker.cs
-│   ├── Analyzer/                    # 辅助：依赖分析
+│   ├── Analyzer/                    # 辅助：依赖分析（暂未实现）
 │   │   ├── ABundleAnalyzerCore.cs
 │   │   └── ABundleAnalyzerWindow.cs
 │   ├── ABundleEditorUtility.cs
+│   ├── Demo/
 │   └── Config/
 │       └── ABundleBuildRules.xml
 ├── Demo/
 │   ├── ABundleDemoRunner.cs
 │   └── TestAB.unity
 └── Docs/
-    └── ABundleLayer架构说明.md
+    ├── ABundleLayer架构说明.md
+    └── ABundleLayer演进指导.md
 ```
+
+---
+
+## 运行时测试
+
+| 路径 | 说明 |
+|------|------|
+| `Assets/Test/ABundleTest/` | 全场景加载测试 + 内存 log |
+| `Demo/TestAB.unity` | 单资源 Load/Unload 演示 |
 
 ---
 
@@ -253,8 +285,11 @@ sequenceDiagram
 
 1. `vFramework/AssetKit/ABundleBuilder` → 配置 → 保存 XML → 打包  
 2. 确认 `StreamingAssets/AssetBundles/Windows/AssetCatalog.json` 存在  
-3. 打开 `Demo/TestAB.unity`，Play，点「加载资源 / 卸载资源」  
-4. 业务：`InitializeFromRules` → `LoadAsset` → `ReleaseAsset` → `Shutdown`
+3. 打开 `Demo/TestAB.unity`，Play：  
+   - **BtnLoad / BtnUnload** — 单资源加载演示（`icon/3` → IconPreview）  
+   - **开始全场景测试** — 左上角压测按钮（`ABundleLoadTestRunner`）  
+4. 场景结构变更后可用菜单 **vFramework → AssetKit → Deploy TestAB Scene** 重新部署  
+5. 业务代码：`InitializeFromRules` → `LoadHandle` → `Release` → `Shutdown`
 
 ---
 
@@ -262,7 +297,7 @@ sequenceDiagram
 
 | 菜单 | 作用 |
 |------|------|
-| `vFramework/AssetKit/ABundleAnalyzer` | Manifest 依赖、反向依赖、Location 查询 |
+| `vFramework/AssetKit/ABundleAnalyzer` | 依赖分析器（UI 占位，逻辑暂未实现） |
 
 ---
 
