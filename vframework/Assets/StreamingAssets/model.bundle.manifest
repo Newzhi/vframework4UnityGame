@@ -1,0 +1,72 @@
+ManifestFileVersion: 0
+CRC: 1878850918
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: c7f04a5a16a23a65028b043927a09213
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 19dc94dde57f7ce190e7b48d47315f07
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: c7f04a5a16a23a65028b043927a09213
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 74
+  Script: {instanceID: 0}
+- Class: 90
+  Script: {instanceID: 0}
+- Class: 91
+  Script: {instanceID: 0}
+- Class: 95
+  Script: {instanceID: 0}
+- Class: 137
+  Script: {instanceID: 0}
+- Class: 319
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/AssetBundle/Model/Animations/Orc/Victory_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Ji.prefab
+- Assets/AssetBundle/Model/Animations/Orc/WalkBWD_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Animations/Orc/WalkRight_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Meshes/OrcMesh.fbx
+- Assets/AssetBundle/Model/Animations/Movement/BasicMotions@Jump01.fbx
+- Assets/AssetBundle/Model/Animations/Movement/BasicMotions@Fall01.fbx
+- Assets/AssetBundle/Model/Animations/Orc/GetHit_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Animations/Social/BasicMotions@Cheer01.fbx
+- Assets/AssetBundle/Model/Animations/Orc/Dizzy_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Animations/Orc/RunFWD_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Animations/Movement/BasicMotions@Walk01.fbx
+- Assets/AssetBundle/Model/Animations/Orc/IdleNormal_Orc_Anim.fbx
+- Assets/AssetBundle/Model/AvatarMasks/BasicMotionsBothHandFingersMask.mask
+- Assets/AssetBundle/Model/Animations/Orc/SenseSomethingST_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Animations/Orc/Taunting_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Animations/Orc/Die_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Animations/Orc/WalkLeft_Orc_Anim.fbx
+- Assets/AssetBundle/Model/ji/ji_02.fbx
+- Assets/AssetBundle/Model/Animations/Orc/Attack01_Orc_Anim.fbx
+- Assets/AssetBundle/Model/AvatarMasks/BasicMotions@ClosedHands [Hands].fbx
+- Assets/AssetBundle/Model/Animations/Orc/IdleBattle_Orc_Anim.fbx
+- Assets/AssetBundle/Model/Animations/Orc/SenseSomethingRPT_Orc_Anim.fbx
+- Assets/AssetBundle/Model/ji/cai/lambert2.mat
+- Assets/AssetBundle/Model/Animations/Idles/BasicMotions@Idle02.fbx
+- Assets/AssetBundle/Model/Animations/Orc/Attack02_Orc_Anim.fbx
+- Assets/AssetBundle/Model/ji/cai/CAIXUK.png
+- Assets/AssetBundle/Model/Animators/Orc.controller
+- Assets/AssetBundle/Model/Animations/Idles/BasicMotions@Idle01.fbx
+- Assets/AssetBundle/Model/ji_02.controller
+- Assets/AssetBundle/Model/Animations/Orc/WalkFWD_Orc_Anim.fbx
+Dependencies: []
