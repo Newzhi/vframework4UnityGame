@@ -19,5 +19,5 @@ MonoBehaviour:
   cdnOutputPath: Bundles/CDN
   buildMode: 1
   packingRule: 0
-  targetDirectory: Assets/Test/AB_Test_Target
+  targetDirectory: Assets/AssetBundle
   customItems: []

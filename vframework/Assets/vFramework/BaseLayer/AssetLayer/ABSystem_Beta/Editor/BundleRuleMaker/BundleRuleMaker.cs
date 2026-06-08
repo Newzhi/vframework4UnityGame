@@ -36,7 +36,7 @@ public class BundleRuleMaker : EditorWindow
 
     #region Unity编辑器顶部的工具调用呼出菜单
 
-    [MenuItem("Test/AssetBundle Packer")]
+    [MenuItem("vFramework/AssetBundle Packer")]
     static void OpenWindow()
     {
         BundleRuleMaker window = GetWindow<BundleRuleMaker>();
@@ -307,7 +307,7 @@ public class BundleRuleMaker : EditorWindow
         if (string.IsNullOrEmpty(setting.cdnOutputPath))
             setting.cdnOutputPath = "Bundles/CDN";
         if (string.IsNullOrEmpty(setting.targetDirectory))
-            setting.targetDirectory = "Assets/Test/AB_Test_Target";
+            setting.targetDirectory = "Assets/AssetBundle";
     }
 
     static void EnsureAssetFolder(string assetsFolder)

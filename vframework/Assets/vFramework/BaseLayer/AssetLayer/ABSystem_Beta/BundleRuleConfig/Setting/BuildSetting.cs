@@ -79,7 +79,7 @@ public class BundleConfigItem
 
 #region 打包规则 ScriptableObject
 
-[CreateAssetMenu(fileName = "BuildSetting", menuName = "Test/Build Setting")]
+[CreateAssetMenu(fileName = "BuildSetting", menuName = "vFramework/Build Setting")]
 public class BuildSetting : ScriptableObject
 {
     public BuildPlatform platform = BuildPlatform.Windows;
@@ -90,7 +90,7 @@ public class BuildSetting : ScriptableObject
 
     public BuildMode buildMode = BuildMode.DeviceDebug;
     public PackingRule packingRule = PackingRule.Default;
-    public string targetDirectory = "Assets/Test/AB_Test_Target";
+    public string targetDirectory = "Assets/AssetBundle";
 
     public List<BundleConfigItem> customItems = new List<BundleConfigItem>();
 }

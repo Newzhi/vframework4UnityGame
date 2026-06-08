@@ -7,7 +7,8 @@ public class BundleBuilder
 {
     #region 变量定义
 
-    public const string DefaultSettingPath = "Assets/Test/AB_Test/BundleRuleConfig/Setting/DefaultBuildSetting.asset";
+    public const string SystemRoot = "Assets/vFramework/BaseLayer/AssetLayer/ABSystem_Beta";
+    public const string DefaultSettingPath = SystemRoot + "/BundleRuleConfig/Setting/DefaultBuildSetting.asset";
 
     #endregion
 

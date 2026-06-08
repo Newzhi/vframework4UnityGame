@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class CatalogueWriter
 {
-    public const string CatalogueAssetPath = "Assets/Test/AB_Test/BundleRuleConfig/Catalogue/AssetCatalog.json";
+    public const string CatalogueAssetPath = BundleBuilder.SystemRoot + "/BundleRuleConfig/Catalogue/AssetCatalog.json";
     public const string RuntimeCatalogueFileName = "AssetCatalog.json";
 
     // TODO: 清单输出后续改二进制格式，见 Docs/TODO.md（若未建则见 Catalogue清单说明.md 第六节）。
