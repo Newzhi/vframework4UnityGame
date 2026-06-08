@@ -465,27 +465,25 @@
                             <option>WebGL</option>
                         </select>
                     </div>
-                    <div class="setting-item">
+                </div>
+                <div class="settings-row">
+                    <div class="setting-item" style="flex: 1;">
                         <label>版本号:</label>
-                        <input type="text" value="1.0.0" placeholder="输入版本号">
+                        <input type="text" id="versionNumber" value="1.0.0" placeholder="输入版本号" style="flex: 1;">
+                        <button style="padding: 5px 15px; background: #007acc; border: 1px solid #007acc; color: white; border-radius: 3px; cursor: pointer; font-size: 12px;" onclick="updateVersion()">📌 更新版本号</button>
                     </div>
                     <div class="setting-item">
                         <label>构建号:</label>
-                        <input type="text" value="1001" placeholder="构建号">
+                        <input type="text" id="buildNumber" value="1001" placeholder="构建号">
                     </div>
                 </div>
                 <div class="settings-row">
-                    <div class="setting-item">
+                    <div class="setting-item" style="flex: 1;">
                         <label>输出路径:</label>
-                        <input type="text" value="Assets/StreamingAssets" placeholder="选择输出目录">
-                    </div>
-                    <div class="setting-item">
-                        <label>压缩方式:</label>
-                        <select>
-                            <option>不压缩</option>
-                            <option>LZMA</option>
-                            <option>LZ4</option>
-                        </select>
+                        <div style="display: flex; flex: 1; gap: 5px;">
+                            <input type="text" value="Assets/StreamingAssets" placeholder="选择输出目录" style="flex: 1;">
+                            <button style="padding: 5px 15px; background: #515151; border: 1px solid #666; color: #cccccc; border-radius: 3px; cursor: pointer; font-size: 12px;" onclick="alert('打开文件夹选择对话框')">📁 浏览</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -516,32 +514,33 @@
             <!-- 规则配置面板 -->
             <div class="rule-config-section">
                 <h2>📋 打包规则配置</h2>
-                <div class="rule-options">
-                    <div class="rule-option">
-                        <h3>按文件夹打包</h3>
-                        <p>每个选中的文件夹单独打包成一个AssetBundle</p>
+                <div class="settings-row">
+                    <div class="setting-item" style="flex: 1;">
+                        <label>打包规则:</label>
+                        <select id="packingRule" onchange="changePackingRule()">
+                            <option value="default">默认打包 - 按第一级子文件夹打包</option>
+                            <option value="detailed">细化打包 - 按所有子文件夹打包</option>
+                            <option value="custom">自定义打包 - 手动配置每个资源</option>
+                        </select>
                     </div>
-                    <div class="rule-option">
-                        <h3>按资源类型打包</h3>
-                        <p>相同类型的资源打包到同一个AssetBundle</p>
+                </div>
+                <div class="settings-row" style="margin-top: 10px;">
+                    <div class="setting-item" style="flex: 1;">
+                        <label>目标资源目录:</label>
+                        <div style="display: flex; flex: 1; gap: 5px;">
+                            <input type="text" id="targetDirectory" placeholder="选择资源根目录" value="Assets/Resources" style="flex: 1;">
+                            <button style="padding: 5px 15px; background: #515151; border: 1px solid #666; color: #cccccc; border-radius: 3px; cursor: pointer; font-size: 12px;" onclick="alert('打开文件夹选择对话框')">📁 浏览</button>
+                        </div>
                     </div>
-                    <div class="rule-option">
-                        <h3>按依赖关系打包</h3>
-                        <p>根据资源依赖关系自动分组打包</p>
-                    </div>
-                    <div class="rule-option">
-                        <h3>自定义规则</h3>
-                        <p>使用自定义脚本或配置文件定义打包规则</p>
-                    </div>
+                </div>
+                <div id="ruleDescription" style="margin-top: 10px; padding: 10px; background: #1e1e1e; border-radius: 3px; font-size: 11px; color: #808080;">
+                    默认打包：按照指定目录下每一个第一级子文件夹作为一个AB包
                 </div>
             </div>
 
             <!-- 操作按钮 -->
             <div class="action-section">
-                <button class="action-btn">预览规则</button>
-                <button class="action-btn">验证配置</button>
                 <button class="action-btn danger">清理打包</button>
-                <button class="action-btn">增量打包</button>
                 <button class="action-btn primary">开始打包</button>
             </div>
         </div>
@@ -641,10 +640,60 @@
             }
         }
 
-        // 页面加载时添加两个示例配置
+        // 更新版本号
+        function updateVersion() {
+            const versionInput = document.getElementById('versionNumber');
+            const buildInput = document.getElementById('buildNumber');
+            const version = versionInput.value;
+            
+            // 解析版本号 (例如: 1.0.0)
+            const parts = version.split('.');
+            if (parts.length >= 3) {
+                let major = parseInt(parts[0]) || 0;
+                let minor = parseInt(parts[1]) || 0;
+                let patch = parseInt(parts[2]) || 0;
+                
+                // 最后一位进一
+                patch++;
+                
+                // 更新版本号
+                versionInput.value = `${major}.${minor}.${patch}`;
+                
+                // 构建号也进一
+                const buildNum = parseInt(buildInput.value) || 0;
+                buildInput.value = buildNum + 1;
+            } else {
+                alert('版本号格式不正确，应为 x.y.z 格式');
+            }
+        }
+
+        // 切换打包规则
+        function changePackingRule() {
+            const rule = document.getElementById('packingRule').value;
+            const configSection = document.querySelector('.folder-controller-section');
+            const description = document.getElementById('ruleDescription');
+            
+            switch(rule) {
+                case 'default':
+                    configSection.style.display = 'none';
+                    description.textContent = '默认打包：按照指定目录下每一个第一级子文件夹作为一个AB包';
+                    break;
+                case 'detailed':
+                    configSection.style.display = 'none';
+                    description.textContent = '细化打包：按照指定目录下每一个子文件夹（包括嵌套文件夹）作为一个AB包';
+                    break;
+                case 'custom':
+                    configSection.style.display = 'block';
+                    description.textContent = '自定义打包：手动配置每个资源的打包方式，可自由添加配置项';
+                    break;
+            }
+        }
+
+        // 页面加载时添加两个示例配置，并隐藏自定义配置区域
         window.addEventListener('DOMContentLoaded', function() {
             addConfigItem();
             addConfigItem();
+            changePackingRule(); // 初始化时隐藏自定义配置
         });
     </script>
 </body>
