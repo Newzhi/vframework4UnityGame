@@ -20,6 +20,27 @@ public static class RuleResolver
         }
     }
 
+    public static Dictionary<BuildMode, List<AssetBundleBuild>> ResolveCustomGrouped(List<BundleConfigItem> items)
+    {
+        Dictionary<BuildMode, List<AssetBundleBuild>> grouped = new Dictionary<BuildMode, List<AssetBundleBuild>>
+        {
+            { BuildMode.EditorTest, new List<AssetBundleBuild>() },
+            { BuildMode.DeviceDebug, new List<AssetBundleBuild>() },
+            { BuildMode.CdnHotUpdate, new List<AssetBundleBuild>() },
+        };
+
+        if (items == null)
+            return grouped;
+
+        foreach (BundleConfigItem item in items)
+        {
+            List<AssetBundleBuild> targetList = grouped[item.buildMode];
+            AddCustomItemBuilds(item, targetList);
+        }
+
+        return grouped;
+    }
+
     public static List<AssetBundleBuild> ResolveDefault(string targetFolder)
     {
         List<AssetBundleBuild> builds = new List<AssetBundleBuild>();
@@ -65,29 +86,32 @@ public static class RuleResolver
             return builds;
 
         foreach (BundleConfigItem item in items)
-        {
-            if (string.IsNullOrEmpty(item.assetPath) || string.IsNullOrEmpty(item.bundleName))
-                continue;
-
-            string bundleName = item.bundleName.EndsWith(BundleSuffix)
-                ? item.bundleName
-                : item.bundleName + BundleSuffix;
-
-            if (item.packMethod == BundlePackMethod.ByFolder && AssetDatabase.IsValidFolder(item.assetPath))
-            {
-                TryAddFolderBuild(item.assetPath, bundleName, builds);
-            }
-            else if (AssetDatabase.LoadMainAssetAtPath(item.assetPath) != null)
-            {
-                builds.Add(new AssetBundleBuild
-                {
-                    assetBundleName = bundleName,
-                    assetNames = new[] { item.assetPath }
-                });
-            }
-        }
+            AddCustomItemBuilds(item, builds);
 
         return builds;
+    }
+
+    static void AddCustomItemBuilds(BundleConfigItem item, List<AssetBundleBuild> builds)
+    {
+        if (string.IsNullOrEmpty(item.assetPath) || string.IsNullOrEmpty(item.bundleName))
+            return;
+
+        string bundleName = item.bundleName.EndsWith(BundleSuffix)
+            ? item.bundleName
+            : item.bundleName + BundleSuffix;
+
+        if (AssetDatabase.IsValidFolder(item.assetPath))
+        {
+            TryAddFolderBuild(item.assetPath, bundleName, builds);
+        }
+        else if (AssetDatabase.LoadMainAssetAtPath(item.assetPath) != null)
+        {
+            builds.Add(new AssetBundleBuild
+            {
+                assetBundleName = bundleName,
+                assetNames = new[] { item.assetPath }
+            });
+        }
     }
 
     static void CollectAllSubFolders(string folder, List<string> result)

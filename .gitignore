@@ -31,6 +31,8 @@
 [Ss]erver[Dd]ata/
 **/StreamingAssets/aa/
 [Aa]sset[Bb]undles/
+vframework/Assets/StreamingAssets/**
+vframework/Assets/StreamingAssets/**/*.meta
 
 ### IDE / OS
 .vs/

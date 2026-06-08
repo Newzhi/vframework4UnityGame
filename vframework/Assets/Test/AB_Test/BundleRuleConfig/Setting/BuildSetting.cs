@@ -17,6 +17,7 @@ public enum BuildPlatform
 
 #region 枚举 - 打包模式
 
+// UI 文案：EditorTest=编辑器测试，DeviceDebug=真机环境，CdnHotUpdate=CDN联网
 public enum BuildMode
 {
     EditorTest,
@@ -38,14 +39,6 @@ public enum PackingRule
 #endregion
 
 #region 枚举 - 自定义配置项
-
-public enum BundlePackMethod
-{
-    ByFolder,
-    ByAssetType,
-    ByDependency,
-    CustomRule,
-}
 
 public enum DownloadPriority
 {
@@ -76,7 +69,7 @@ public class BundleConfigItem
 {
     public string assetPath = "Assets/";
     public string bundleName = "bundle";
-    public BundlePackMethod packMethod = BundlePackMethod.ByFolder;
+    public BuildMode buildMode = BuildMode.EditorTest;
     public DownloadPriority downloadPriority = DownloadPriority.Normal;
     public ResourceCategory resourceCategory = ResourceCategory.Prefab;
     public string note;
@@ -92,9 +85,10 @@ public class BuildSetting : ScriptableObject
     public BuildPlatform platform = BuildPlatform.Windows;
     public string version = "1.0.0";
     public int buildNumber = 1001;
-    public string outputPath = "Assets/StreamingAssets";
+    public string deviceOutputPath = "Assets/StreamingAssets";
+    public string cdnOutputPath = "Bundles/CDN";
 
-    public BuildMode buildMode = BuildMode.EditorTest;
+    public BuildMode buildMode = BuildMode.DeviceDebug;
     public PackingRule packingRule = PackingRule.Default;
     public string targetDirectory = "Assets/Test/AB_Test_Target";
 

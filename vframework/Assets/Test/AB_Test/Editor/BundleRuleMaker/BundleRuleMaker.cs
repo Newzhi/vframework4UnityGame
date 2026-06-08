@@ -15,7 +15,7 @@ public class BundleRuleMaker : EditorWindow
 
     static readonly string[] BuildModeLabels =
     {
-        "编辑器测试", "真机调试", "CDN热更新"
+        "编辑器测试", "真机环境", "CDN联网"
     };
 
     static readonly BuildMode[] BuildModes =
@@ -63,8 +63,6 @@ public class BundleRuleMaker : EditorWindow
 
         DrawBasicSettings();
         EditorGUILayout.Space(8);
-        DrawBuildMode();
-        EditorGUILayout.Space(8);
         DrawRuleConfig();
 
         if (setting.packingRule == PackingRule.Custom)
@@ -92,21 +90,8 @@ public class BundleRuleMaker : EditorWindow
         setting.version = EditorGUILayout.TextField("版本号", setting.version);
         setting.buildNumber = EditorGUILayout.IntField("构建号", setting.buildNumber);
 
-        EditorGUILayout.BeginHorizontal();
-        setting.outputPath = EditorGUILayout.TextField("输出路径", setting.outputPath);
-        if (GUILayout.Button("浏览", GUILayout.Width(60)))
-        {
-            string abs = EditorUtility.OpenFolderPanel("选择输出目录", setting.outputPath, "");
-            if (!string.IsNullOrEmpty(abs))
-            {
-                string relative = BundleBuilder.ToAssetsRelativePath(abs);
-                if (!string.IsNullOrEmpty(relative))
-                    setting.outputPath = relative;
-                else
-                    setting.outputPath = abs;
-            }
-        }
-        EditorGUILayout.EndHorizontal();
+        DrawOutputPathField("真机环境输出路径", ref setting.deviceOutputPath);
+        DrawOutputPathField("联网 CDN 输出路径", ref setting.cdnOutputPath);
 
         if (GUILayout.Button("更新版本号（patch+1 / build+1）"))
             BumpVersion();
@@ -114,20 +99,25 @@ public class BundleRuleMaker : EditorWindow
         EditorGUI.indentLevel--;
     }
 
-    void DrawBuildMode()
+    void DrawOutputPathField(string label, ref string pathField)
     {
-        EditorGUILayout.LabelField("打包模式", EditorStyles.boldLabel);
         EditorGUILayout.BeginHorizontal();
-
-        for (int i = 0; i < BuildModes.Length; i++)
+        pathField = EditorGUILayout.TextField(label, pathField);
+        if (GUILayout.Button("浏览", GUILayout.Width(60)))
         {
-            bool active = setting.buildMode == BuildModes[i];
-            GUI.backgroundColor = active ? new Color(0.2f, 0.5f, 0.9f) : Color.white;
-            if (GUILayout.Button(BuildModeLabels[i], GUILayout.Height(28)))
-                setting.buildMode = BuildModes[i];
+            string abs = EditorUtility.OpenFolderPanel(
+                "选择输出目录",
+                BundleBuilder.ToAbsoluteAssetsPath(pathField),
+                "");
+            if (!string.IsNullOrEmpty(abs))
+            {
+                string relative = BundleBuilder.ToAssetsRelativePath(abs);
+                if (!string.IsNullOrEmpty(relative))
+                    pathField = relative;
+                else
+                    pathField = abs;
+            }
         }
-
-        GUI.backgroundColor = Color.white;
         EditorGUILayout.EndHorizontal();
     }
 
@@ -138,13 +128,33 @@ public class BundleRuleMaker : EditorWindow
 
         int ruleIndex = (int)setting.packingRule;
         int newRuleIndex = EditorGUILayout.Popup("打包规则", ruleIndex, RuleLabels);
-        setting.packingRule = (PackingRule)newRuleIndex;
+        PackingRule newRule = (PackingRule)newRuleIndex;
+        if (newRuleIndex != ruleIndex && newRule != PackingRule.Custom)
+            setting.buildMode = BuildMode.DeviceDebug;
+        setting.packingRule = newRule;
+
+        if (setting.packingRule != PackingRule.Custom)
+        {
+            EditorGUILayout.HelpBox(
+                "默认打包 / 细化打包的全局打包模式默认为「真机环境」，可按需改为编辑器测试或 CDN联网。",
+                MessageType.None);
+
+            int modeIndex = Array.IndexOf(BuildModes, setting.buildMode);
+            if (modeIndex < 0)
+                modeIndex = 0;
+            int newModeIndex = EditorGUILayout.Popup("打包模式", modeIndex, BuildModeLabels);
+            setting.buildMode = BuildModes[newModeIndex];
+            EditorGUILayout.HelpBox(GetBuildModeDescription(setting.buildMode), MessageType.Info);
+        }
 
         EditorGUILayout.BeginHorizontal();
         setting.targetDirectory = EditorGUILayout.TextField("目标资源目录", setting.targetDirectory);
         if (GUILayout.Button("浏览", GUILayout.Width(60)))
         {
-            string abs = EditorUtility.OpenFolderPanel("选择资源根目录", setting.targetDirectory, "");
+            string abs = EditorUtility.OpenFolderPanel(
+                "选择资源根目录",
+                BundleBuilder.ToAbsoluteAssetsPath(setting.targetDirectory),
+                "");
             string relative = BundleBuilder.ToAssetsRelativePath(abs);
             if (!string.IsNullOrEmpty(relative))
                 setting.targetDirectory = relative;
@@ -164,7 +174,8 @@ public class BundleRuleMaker : EditorWindow
             setting.customItems.Add(new BundleConfigItem
             {
                 assetPath = setting.targetDirectory,
-                bundleName = "bundle_" + (setting.customItems.Count + 1)
+                bundleName = "bundle_" + (setting.customItems.Count + 1),
+                buildMode = setting.buildMode
             });
         }
         EditorGUILayout.EndHorizontal();
@@ -186,7 +197,10 @@ public class BundleRuleMaker : EditorWindow
             item.assetPath = EditorGUILayout.TextField("资源路径", item.assetPath);
             if (GUILayout.Button("浏览", GUILayout.Width(60)))
             {
-                string abs = EditorUtility.OpenFolderPanel("选择资源路径", item.assetPath, "");
+                string abs = EditorUtility.OpenFolderPanel(
+                    "选择资源路径",
+                    BundleBuilder.ToAbsoluteAssetsPath(item.assetPath),
+                    "");
                 string relative = BundleBuilder.ToAssetsRelativePath(abs);
                 if (!string.IsNullOrEmpty(relative))
                     item.assetPath = relative;
@@ -194,7 +208,13 @@ public class BundleRuleMaker : EditorWindow
             EditorGUILayout.EndHorizontal();
 
             item.bundleName = EditorGUILayout.TextField("包名 (Bundle Name)", item.bundleName);
-            item.packMethod = (BundlePackMethod)EditorGUILayout.EnumPopup("打包方式", item.packMethod);
+
+            int itemModeIndex = Array.IndexOf(BuildModes, item.buildMode);
+            if (itemModeIndex < 0)
+                itemModeIndex = 0;
+            int newItemModeIndex = EditorGUILayout.Popup("打包模式", itemModeIndex, BuildModeLabels);
+            item.buildMode = BuildModes[newItemModeIndex];
+
             item.downloadPriority = (DownloadPriority)EditorGUILayout.EnumPopup("下载优先级", item.downloadPriority);
             item.resourceCategory = (ResourceCategory)EditorGUILayout.EnumPopup("资源类型", item.resourceCategory);
             item.note = EditorGUILayout.TextField("备注说明", item.note);
@@ -245,6 +265,18 @@ public class BundleRuleMaker : EditorWindow
             AssetDatabase.CreateAsset(setting, DefaultSettingPath);
             AssetDatabase.SaveAssets();
         }
+
+        EnsureDefaultPaths();
+    }
+
+    void EnsureDefaultPaths()
+    {
+        if (string.IsNullOrEmpty(setting.deviceOutputPath))
+            setting.deviceOutputPath = "Assets/StreamingAssets";
+        if (string.IsNullOrEmpty(setting.cdnOutputPath))
+            setting.cdnOutputPath = "Bundles/CDN";
+        if (string.IsNullOrEmpty(setting.targetDirectory))
+            setting.targetDirectory = "Assets/Test/AB_Test_Target";
     }
 
     static void EnsureAssetFolder(string assetsFolder)
@@ -288,11 +320,24 @@ public class BundleRuleMaker : EditorWindow
         switch (rule)
         {
             case PackingRule.Detailed:
-                return "细化打包：按照指定目录下每一个子文件夹（包括嵌套文件夹）作为一个 AB 包。";
+                return "细化打包：按照指定目录下每一个子文件夹（包括嵌套文件夹）作为一个 AB 包。全局打包模式默认为「真机环境」。";
             case PackingRule.Custom:
-                return "自定义打包：手动配置每个资源的打包方式，可自由添加配置项。";
+                return "自定义打包：每项配置的打包模式决定 AB 输出位置，可自由添加配置项。";
             default:
-                return "默认打包：按照指定目录下每一个第一级子文件夹作为一个 AB 包。";
+                return "默认打包：按照指定目录下每一个第一级子文件夹作为一个 AB 包。全局打包模式默认为「真机环境」。";
+        }
+    }
+
+    static string GetBuildModeDescription(BuildMode mode)
+    {
+        switch (mode)
+        {
+            case BuildMode.DeviceDebug:
+                return "真机环境：AB 输出到真机环境输出路径（默认 StreamingAssets）。";
+            case BuildMode.CdnHotUpdate:
+                return "CDN联网：AB 输出到联网 CDN 输出路径（默认 Bundles/CDN）。";
+            default:
+                return "编辑器测试：不生成 .bundle，仅更新清单（模拟阶段）。";
         }
     }
 
