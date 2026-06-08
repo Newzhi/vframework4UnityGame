@@ -15,7 +15,7 @@ public class BundleRuleMaker : EditorWindow
 
     static readonly string[] BuildModeLabels =
     {
-        "编辑器测试", "真机环境", "CDN联网"
+        "编辑器测试", "真机模式/首包", "CDN联网"
     };
 
     static readonly BuildMode[] BuildModes =
@@ -86,24 +86,36 @@ public class BundleRuleMaker : EditorWindow
         EditorGUILayout.LabelField("基本设置", EditorStyles.boldLabel);
         EditorGUI.indentLevel++;
 
-        setting.platform = (BuildPlatform)EditorGUILayout.EnumPopup("目标平台", setting.platform);
-        setting.version = EditorGUILayout.TextField("版本号", setting.version);
-        setting.buildNumber = EditorGUILayout.IntField("构建号", setting.buildNumber);
+        setting.platform = (BuildPlatform)EditorGUILayout.EnumPopup(
+            Tip("目标平台", "构建目标平台，决定 BuildPipeline 使用的 BuildTarget。"),
+            setting.platform);
+        setting.version = EditorGUILayout.TextField(
+            Tip("版本号", "应用版本号（x.y.z），写入 AssetCatalog.json 的 version 字段。"),
+            setting.version);
+        setting.buildNumber = EditorGUILayout.IntField(
+            Tip("构建号", "递增构建编号，写入 AssetCatalog.json 的 buildNumber 字段。"),
+            setting.buildNumber);
 
-        DrawOutputPathField("真机环境输出路径", ref setting.deviceOutputPath);
-        DrawOutputPathField("联网 CDN 输出路径", ref setting.cdnOutputPath);
+        DrawOutputPathField(
+            "首包输出路径",
+            "真机模式/首包下 AB 包的输出目录，默认 Assets/StreamingAssets。",
+            ref setting.deviceOutputPath);
+        DrawOutputPathField(
+            "联网 CDN 输出路径",
+            "CDN联网模式下 AB 包的输出目录，默认 Bundles/CDN（项目根相对路径）。",
+            ref setting.cdnOutputPath);
 
-        if (GUILayout.Button("更新版本号（patch+1 / build+1）"))
+        if (GUILayout.Button(Tip("更新版本号（patch+1 / build+1）", "版本号 patch 位 +1，同时 buildNumber +1。")))
             BumpVersion();
 
         EditorGUI.indentLevel--;
     }
 
-    void DrawOutputPathField(string label, ref string pathField)
+    void DrawOutputPathField(string label, string tooltip, ref string pathField)
     {
         EditorGUILayout.BeginHorizontal();
-        pathField = EditorGUILayout.TextField(label, pathField);
-        if (GUILayout.Button("浏览", GUILayout.Width(60)))
+        pathField = EditorGUILayout.TextField(Tip(label, tooltip), pathField);
+        if (GUILayout.Button(Tip("浏览", "打开文件夹选择对话框，选择输出目录。"), GUILayout.Width(60)))
         {
             string abs = EditorUtility.OpenFolderPanel(
                 "选择输出目录",
@@ -127,7 +139,10 @@ public class BundleRuleMaker : EditorWindow
         EditorGUI.indentLevel++;
 
         int ruleIndex = (int)setting.packingRule;
-        int newRuleIndex = EditorGUILayout.Popup("打包规则", ruleIndex, RuleLabels);
+        int newRuleIndex = EditorGUILayout.Popup(
+            Tip("打包规则", GetRuleDescription((PackingRule)ruleIndex)),
+            ruleIndex,
+            RuleLabels);
         PackingRule newRule = (PackingRule)newRuleIndex;
         if (newRuleIndex != ruleIndex && newRule != PackingRule.Custom)
             setting.buildMode = BuildMode.DeviceDebug;
@@ -135,21 +150,21 @@ public class BundleRuleMaker : EditorWindow
 
         if (setting.packingRule != PackingRule.Custom)
         {
-            EditorGUILayout.HelpBox(
-                "默认打包 / 细化打包的全局打包模式默认为「真机环境」，可按需改为编辑器测试或 CDN联网。",
-                MessageType.None);
-
             int modeIndex = Array.IndexOf(BuildModes, setting.buildMode);
             if (modeIndex < 0)
                 modeIndex = 0;
-            int newModeIndex = EditorGUILayout.Popup("打包模式", modeIndex, BuildModeLabels);
+            int newModeIndex = EditorGUILayout.Popup(
+                Tip("打包模式", GetBuildModeFieldTooltip(setting.buildMode)),
+                modeIndex,
+                BuildModeLabels);
             setting.buildMode = BuildModes[newModeIndex];
-            EditorGUILayout.HelpBox(GetBuildModeDescription(setting.buildMode), MessageType.Info);
         }
 
         EditorGUILayout.BeginHorizontal();
-        setting.targetDirectory = EditorGUILayout.TextField("目标资源目录", setting.targetDirectory);
-        if (GUILayout.Button("浏览", GUILayout.Width(60)))
+        setting.targetDirectory = EditorGUILayout.TextField(
+            Tip("目标资源目录", "Default / Detailed 规则下扫描并打包资源的根目录。"),
+            setting.targetDirectory);
+        if (GUILayout.Button(Tip("浏览", "打开文件夹选择对话框，选择资源根目录。"), GUILayout.Width(60)))
         {
             string abs = EditorUtility.OpenFolderPanel(
                 "选择资源根目录",
@@ -161,15 +176,16 @@ public class BundleRuleMaker : EditorWindow
         }
         EditorGUILayout.EndHorizontal();
 
-        EditorGUILayout.HelpBox(GetRuleDescription(setting.packingRule), MessageType.Info);
         EditorGUI.indentLevel--;
     }
 
     void DrawCustomConfigList()
     {
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("资源打包配置", EditorStyles.boldLabel);
-        if (GUILayout.Button("+ 添加配置", GUILayout.Width(100)))
+        EditorGUILayout.LabelField(
+            Tip("资源打包配置", "自定义打包：每项配置的打包模式决定 AB 输出位置，可自由添加配置项。"),
+            EditorStyles.boldLabel);
+        if (GUILayout.Button(Tip("+ 添加配置", "新增一条自定义打包配置项。"), GUILayout.Width(100)))
         {
             setting.customItems.Add(new BundleConfigItem
             {
@@ -186,7 +202,7 @@ public class BundleRuleMaker : EditorWindow
             EditorGUILayout.BeginVertical("box");
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("配置项 #" + (i + 1), EditorStyles.boldLabel);
-            if (GUILayout.Button("删除", GUILayout.Width(60)))
+            if (GUILayout.Button(Tip("删除", "移除此配置项。"), GUILayout.Width(60)))
             {
                 setting.customItems.RemoveAt(i);
                 break;
@@ -194,8 +210,10 @@ public class BundleRuleMaker : EditorWindow
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            item.assetPath = EditorGUILayout.TextField("资源路径", item.assetPath);
-            if (GUILayout.Button("浏览", GUILayout.Width(60)))
+            item.assetPath = EditorGUILayout.TextField(
+                Tip("资源路径", "文件夹路径：打包该目录下全部资源；单文件路径：仅打包该资源。"),
+                item.assetPath);
+            if (GUILayout.Button(Tip("浏览", "选择资源文件夹或单个资源。"), GUILayout.Width(60)))
             {
                 string abs = EditorUtility.OpenFolderPanel(
                     "选择资源路径",
@@ -207,17 +225,28 @@ public class BundleRuleMaker : EditorWindow
             }
             EditorGUILayout.EndHorizontal();
 
-            item.bundleName = EditorGUILayout.TextField("包名 (Bundle Name)", item.bundleName);
+            item.bundleName = EditorGUILayout.TextField(
+                Tip("包名 (Bundle Name)", "AssetBundle 名称，无需手动加 .bundle 后缀。"),
+                item.bundleName);
 
             int itemModeIndex = Array.IndexOf(BuildModes, item.buildMode);
             if (itemModeIndex < 0)
                 itemModeIndex = 0;
-            int newItemModeIndex = EditorGUILayout.Popup("打包模式", itemModeIndex, BuildModeLabels);
+            int newItemModeIndex = EditorGUILayout.Popup(
+                Tip("打包模式", GetBuildModeDescription(item.buildMode)),
+                itemModeIndex,
+                BuildModeLabels);
             item.buildMode = BuildModes[newItemModeIndex];
 
-            item.downloadPriority = (DownloadPriority)EditorGUILayout.EnumPopup("下载优先级", item.downloadPriority);
-            item.resourceCategory = (ResourceCategory)EditorGUILayout.EnumPopup("资源类型", item.resourceCategory);
-            item.note = EditorGUILayout.TextField("备注说明", item.note);
+            item.downloadPriority = (DownloadPriority)EditorGUILayout.EnumPopup(
+                Tip("下载优先级", "资源下载优先级标记，供后续热更策略使用。"),
+                item.downloadPriority);
+            item.resourceCategory = (ResourceCategory)EditorGUILayout.EnumPopup(
+                Tip("资源类型", "资源分类标记，便于管理与筛选。"),
+                item.resourceCategory);
+            item.note = EditorGUILayout.TextField(
+                Tip("备注说明", "可选的配置说明，仅用于编辑器内标注。"),
+                item.note);
 
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(4);
@@ -230,14 +259,14 @@ public class BundleRuleMaker : EditorWindow
         GUILayout.FlexibleSpace();
 
         GUI.backgroundColor = new Color(0.8f, 0.2f, 0.2f);
-        if (GUILayout.Button("清理打包", GUILayout.Width(100), GUILayout.Height(30)))
+        if (GUILayout.Button(Tip("清理打包", "清理首包/CDN 输出目录中的 bundle、manifest 与 Catalogue。"), GUILayout.Width(100), GUILayout.Height(30)))
         {
             if (EditorUtility.DisplayDialog("清理打包", "确定清理输出目录中的 bundle 与清单？", "确定", "取消"))
                 BundleBuilder.Clean(setting);
         }
 
         GUI.backgroundColor = new Color(0.2f, 0.5f, 0.9f);
-        if (GUILayout.Button("开始打包", GUILayout.Width(100), GUILayout.Height(30)))
+        if (GUILayout.Button(Tip("开始打包", "按当前规则与打包模式执行 BuildPipeline 并生成清单。"), GUILayout.Width(100), GUILayout.Height(30)))
         {
             SaveSetting();
             BundleBuilder.Build(setting);
@@ -245,7 +274,7 @@ public class BundleRuleMaker : EditorWindow
 
         GUI.backgroundColor = Color.white;
 
-        if (GUILayout.Button("保存规则", GUILayout.Width(100), GUILayout.Height(30)))
+        if (GUILayout.Button(Tip("保存规则", "将当前配置写入 DefaultBuildSetting.asset。"), GUILayout.Width(100), GUILayout.Height(30)))
             SaveSetting();
 
         EditorGUILayout.EndHorizontal();
@@ -254,6 +283,8 @@ public class BundleRuleMaker : EditorWindow
     #endregion
 
     #region 辅助函数
+
+    static GUIContent Tip(string label, string tooltip) => new GUIContent(label, tooltip);
 
     void LoadOrCreateSetting()
     {
@@ -320,12 +351,17 @@ public class BundleRuleMaker : EditorWindow
         switch (rule)
         {
             case PackingRule.Detailed:
-                return "细化打包：按照指定目录下每一个子文件夹（包括嵌套文件夹）作为一个 AB 包。全局打包模式默认为「真机环境」。";
+                return "细化打包：指定目录下每一个子文件夹（含嵌套）各打一个 AB 包。全局打包模式默认为「真机模式/首包」。";
             case PackingRule.Custom:
                 return "自定义打包：每项配置的打包模式决定 AB 输出位置，可自由添加配置项。";
             default:
-                return "默认打包：按照指定目录下每一个第一级子文件夹作为一个 AB 包。全局打包模式默认为「真机环境」。";
+                return "默认打包：指定目录下每个第一级子文件夹各打一个 AB 包。全局打包模式默认为「真机模式/首包」。";
         }
+    }
+
+    static string GetBuildModeFieldTooltip(BuildMode mode)
+    {
+        return "默认打包 / 细化打包时默认为「真机模式/首包」，可按需切换。\n" + GetBuildModeDescription(mode);
     }
 
     static string GetBuildModeDescription(BuildMode mode)
@@ -333,7 +369,7 @@ public class BundleRuleMaker : EditorWindow
         switch (mode)
         {
             case BuildMode.DeviceDebug:
-                return "真机环境：AB 输出到真机环境输出路径（默认 StreamingAssets）。";
+                return "真机模式/首包：AB 输出到首包输出路径（默认 StreamingAssets）。";
             case BuildMode.CdnHotUpdate:
                 return "CDN联网：AB 输出到联网 CDN 输出路径（默认 Bundles/CDN）。";
             default:

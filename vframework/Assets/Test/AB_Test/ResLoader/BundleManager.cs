@@ -30,6 +30,7 @@ public class BundleManager
     #region 加载/卸载
 
     //获取bundle，Bundle层引用计数+1；未加载则LoadFromFile
+    // TODO: 加载资源前按 AssetCatalog.bundles 先 Acquire 依赖包，见 Docs/Catalogue清单说明.md 第四节。
     public static AssetBundle AcquireBundle(string bundleName)
     {
         if (loadedBundles.TryGetValue(bundleName, out BundleEntry entry))

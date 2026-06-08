@@ -84,8 +84,10 @@ public class BundleBuilder
 
         if (mode != BuildMode.EditorTest)
             BuildPipeline.BuildAssetBundles(bundleRoot, builds.ToArray(), options, target);
+            // TODO: 接收 BuildAssetBundles 返回值，将 AssetBundleManifest 传入 CatalogueWriter，
+            //       以写入 bundles 依赖表。见 Docs/Catalogue清单说明.md。
 
-        // TODO: 按打包模式区分清单生成策略（编辑器模拟 / 首包 / CDN）
+        // TODO: 按打包模式区分清单生成策略（编辑器模拟 / 首包 / CDN）；依赖表见 CatalogueWriter.BuildBundleDependencies
         CatalogueWriter.Write(setting, builds.ToArray(), bundleRoot);
     }
 
