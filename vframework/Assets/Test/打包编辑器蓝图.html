@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity打包编辑器 - 界面设计模板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            background: #2b2b2b;
+            color: #cccccc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .editor-window {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #3c3c3c;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .editor-titlebar {
+            background: linear-gradient(180deg, #6e6e6e 0%, #4a4a4a 100%);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2b2b2b;
+        }
+
+        .editor-titlebar h1 {
+            font-size: 14px;
+            color: #cccccc;
+            font-weight: normal;
+        }
+
+        .editor-titlebar .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-controls span {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .btn-close { background: #ff5f57; }
+        .btn-minimize { background: #ffbd2e; }
+        .btn-maximize { background: #28ca42; }
+
+        .editor-content {
+            padding: 20px;
+        }
+
+        /* 上层 - 平台和版本设置 */
+        .settings-section {
+            background: #2b2b2b;
+            border: 1px solid #515151;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .settings-section h2 {
+            font-size: 13px;
+            color: #cccccc;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #515151;
+        }
+
+        .settings-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .setting-item label {
+            font-size: 12px;
+            color: #cccccc;
+            min-width: 80px;
+        }
+
+        .setting-item select,
+        .setting-item input {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #515151;
+            color: #cccccc;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .setting-item select:focus,
+        .setting-item input:focus {
+            border-color: #007acc;
+        }
+
+        /* 打包模式选择 */
+        .build-mode-section {
+            background: #2b2b2b;
+            border: 1px solid #515151;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .build-mode-section h2 {
+            font-size: 13px;
+            color: #cccccc;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #515151;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            background: #1e1e1e;
+            border: 1px solid #515151;
+            color: #cccccc;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            background: #3e3e3e;
+            border-color: #007acc;
+        }
+
+        .mode-btn.active {
+            background: #007acc;
+            border-color: #007acc;
+            color: white;
+        }
+
+        /* 下层 - 文件夹控制器 */
+        .folder-controller-section {
+            background: #2b2b2b;
+            border: 1px solid #515151;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .folder-controller-section h2 {
+            font-size: 13px;
+            color: #cccccc;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #515151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .folder-tree {
+            background: #1e1e1e;
+            border: 1px solid #515151;
+            border-radius: 3px;
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .tree-node {
+            margin-left: 20px;
+        }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin: 2px 0;
+            font-size: 12px;
+        }
+
+        .tree-item:hover {
+            background: #3e3e3e;
+        }
+
+        .tree-item.selected {
+            background: #094771;
+        }
+
+        .tree-icon {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .tree-toggle {
+            margin-right: 5px;
+            cursor: pointer;
+            color: #808080;
+            width: 16px;
+            text-align: center;
+        }
+
+        .bundle-tag {
+            margin-left: auto;
+            padding: 2px 8px;
+            background: #007acc;
+            color: white;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .bundle-tag.none {
+            background: #808080;
+        }
+
+        /* 规则配置面板 */
+        .rule-config-section {
+            background: #2b2b2b;
+            border: 1px solid #515151;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .rule-config-section h2 {
+            font-size: 13px;
+            color: #cccccc;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #515151;
+        }
+
+        .rule-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .rule-option {
+            background: #1e1e1e;
+            border: 1px solid #515151;
+            border-radius: 3px;
+            padding: 12px;
+        }
+
+        .rule-option h3 {
+            font-size: 12px;
+            color: #cccccc;
+            margin-bottom: 8px;
+        }
+
+        .rule-option p {
+            font-size: 11px;
+            color: #808080;
+            line-height: 1.4;
+        }
+
+        /* 操作按钮区域 */
+        .action-section {
+            background: #2b2b2b;
+            border: 1px solid #515151;
+            border-radius: 5px;
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            background: #1e1e1e;
+            border: 1px solid #515151;
+            color: #cccccc;
+            padding: 8px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #3e3e3e;
+        }
+
+        .action-btn.primary {
+            background: #007acc;
+            border-color: #007acc;
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: #1a8ad4;
+        }
+
+        .action-btn.danger {
+            background: #d32f2f;
+            border-color: #d32f2f;
+            color: white;
+        }
+
+        .action-btn.danger:hover {
+            background: #e53935;
+        }
+
+        /* 配置列表样式 */
+        .config-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .config-item {
+            background: #1e1e1e;
+            border: 1px solid #515151;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .config-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #515151;
+        }
+
+        .config-item-title {
+            font-size: 12px;
+            color: #cccccc;
+            font-weight: bold;
+        }
+
+        .config-item-delete {
+            background: #d32f2f;
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .config-item-delete:hover {
+            background: #e53935;
+        }
+
+        .config-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .config-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .config-field label {
+            font-size: 11px;
+            color: #808080;
+        }
+
+        .config-field input,
+        .config-field select {
+            background: #2b2b2b;
+            border: 1px solid #515151;
+            color: #cccccc;
+            padding: 6px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .config-field input:focus,
+        .config-field select:focus {
+            border-color: #007acc;
+        }
+
+        .add-btn {
+            background: #007acc;
+            border: none;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: background 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #1a8ad4;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #515151;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #666666;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-window">
+        <!-- 标题栏 -->
+        <div class="editor-titlebar">
+            <h1>📦 AssetBundle Packer - 打包编辑器</h1>
+            <div class="window-controls">
+                <span class="btn-minimize"></span>
+                <span class="btn-maximize"></span>
+                <span class="btn-close"></span>
+            </div>
+        </div>
+
+        <div class="editor-content">
+            <!-- 上层：目标平台和版本号设置 -->
+            <div class="settings-section">
+                <h2>⚙️ 基本设置</h2>
+                <div class="settings-row">
+                    <div class="setting-item">
+                        <label>目标平台:</label>
+                        <select>
+                            <option>Windows</option>
+                            <option>iOS</option>
+                            <option>Android</option>
+                            <option>macOS</option>
+                            <option>WebGL</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>版本号:</label>
+                        <input type="text" value="1.0.0" placeholder="输入版本号">
+                    </div>
+                    <div class="setting-item">
+                        <label>构建号:</label>
+                        <input type="text" value="1001" placeholder="构建号">
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="setting-item">
+                        <label>输出路径:</label>
+                        <input type="text" value="Assets/StreamingAssets" placeholder="选择输出目录">
+                    </div>
+                    <div class="setting-item">
+                        <label>压缩方式:</label>
+                        <select>
+                            <option>不压缩</option>
+                            <option>LZMA</option>
+                            <option>LZ4</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 打包模式选择 -->
+            <div class="build-mode-section">
+                <h2>🎯 打包模式</h2>
+                <div class="mode-buttons">
+                    <button class="mode-btn active">编辑器测试</button>
+                    <button class="mode-btn">真机调试</button>
+                    <button class="mode-btn">CDN热更新</button>
+                    <button class="mode-btn">本地打包</button>
+                    <button class="mode-btn">分工程构建</button>
+                </div>
+            </div>
+
+            <!-- 资源打包配置控制器 -->
+            <div class="folder-controller-section">
+                <h2>
+                    📦 资源打包配置
+                    <button class="add-btn" onclick="addConfigItem()" style="margin-left: 10px; padding: 4px 12px; background: #007acc; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 11px;">+ 添加配置</button>
+                </h2>
+                <div class="config-list" id="configList">
+                    <!-- 配置项会动态添加到这里 -->
+                </div>
+            </div>
+
+            <!-- 规则配置面板 -->
+            <div class="rule-config-section">
+                <h2>📋 打包规则配置</h2>
+                <div class="rule-options">
+                    <div class="rule-option">
+                        <h3>按文件夹打包</h3>
+                        <p>每个选中的文件夹单独打包成一个AssetBundle</p>
+                    </div>
+                    <div class="rule-option">
+                        <h3>按资源类型打包</h3>
+                        <p>相同类型的资源打包到同一个AssetBundle</p>
+                    </div>
+                    <div class="rule-option">
+                        <h3>按依赖关系打包</h3>
+                        <p>根据资源依赖关系自动分组打包</p>
+                    </div>
+                    <div class="rule-option">
+                        <h3>自定义规则</h3>
+                        <p>使用自定义脚本或配置文件定义打包规则</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-section">
+                <button class="action-btn">预览规则</button>
+                <button class="action-btn">验证配置</button>
+                <button class="action-btn danger">清理打包</button>
+                <button class="action-btn">增量打包</button>
+                <button class="action-btn primary">开始打包</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let configCount = 0;
+
+        // 打包模式切换
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 添加配置项
+        function addConfigItem() {
+            configCount++;
+            const configList = document.getElementById('configList');
+            
+            const configItem = document.createElement('div');
+            configItem.className = 'config-item';
+            configItem.id = 'config-' + configCount;
+            
+            configItem.innerHTML = `
+                <div class="config-item-header">
+                    <span class="config-item-title">配置项 #${configCount}</span>
+                    <button class="config-item-delete" onclick="removeConfigItem('config-${configCount}')">删除</button>
+                </div>
+                <div class="config-fields">
+                    <div class="config-field">
+                        <label>资源路径</label>
+                        <input type="text" placeholder="选择或输入资源路径" value="Assets/">
+                    </div>
+                    <div class="config-field">
+                        <label>包名 (Bundle Name)</label>
+                        <input type="text" placeholder="输入AssetBundle名称" value="bundle_${configCount}">
+                    </div>
+                    <div class="config-field">
+                        <label>打包方式</label>
+                        <select>
+                            <option>按文件夹打包</option>
+                            <option>按资源类型打包</option>
+                            <option>按依赖关系打包</option>
+                            <option>自定义规则</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label>下载优先级</label>
+                        <select>
+                            <option value="high">高优先级</option>
+                            <option value="normal" selected>普通优先级</option>
+                            <option value="low">低优先级</option>
+                            <option value="optional">可选下载</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label>资源类型</label>
+                        <select>
+                            <option>场景资源</option>
+                            <option>预制体</option>
+                            <option>材质贴图</option>
+                            <option>音频文件</option>
+                            <option>脚本代码</option>
+                            <option>配置数据</option>
+                            <option>MOD内容</option>
+                            <option>其他类型</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label>包体大小限制 (MB)</label>
+                        <input type="number" placeholder="0表示不限制" value="0">
+                    </div>
+                    <div class="config-field">
+                        <label>是否加密</label>
+                        <select>
+                            <option>否</option>
+                            <option>是</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label>备注说明</label>
+                        <input type="text" placeholder="可选的配置说明">
+                    </div>
+                </div>
+            `;
+            
+            configList.appendChild(configItem);
+        }
+
+        // 删除配置项
+        function removeConfigItem(id) {
+            const item = document.getElementById(id);
+            if (item) {
+                item.remove();
+            }
+        }
+
+        // 页面加载时添加两个示例配置
+        window.addEventListener('DOMContentLoaded', function() {
+            addConfigItem();
+            addConfigItem();
+        });
+    </script>
+</body>
+</html>
