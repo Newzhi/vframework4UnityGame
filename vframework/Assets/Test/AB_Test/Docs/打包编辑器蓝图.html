@@ -495,8 +495,6 @@
                     <button class="mode-btn active">编辑器测试</button>
                     <button class="mode-btn">真机调试</button>
                     <button class="mode-btn">CDN热更新</button>
-                    <button class="mode-btn">本地打包</button>
-                    <button class="mode-btn">分工程构建</button>
                 </div>
             </div>
 
@@ -572,9 +570,12 @@
                     <button class="config-item-delete" onclick="removeConfigItem('config-${configCount}')">删除</button>
                 </div>
                 <div class="config-fields">
-                    <div class="config-field">
+                    <div class="config-field" style="grid-column: 1 / -1;">
                         <label>资源路径</label>
-                        <input type="text" placeholder="选择或输入资源路径" value="Assets/">
+                        <div style="display: flex; gap: 5px;">
+                            <input type="text" class="config-asset-path" placeholder="选择或输入资源路径" value="Assets/" style="flex: 1;">
+                            <button type="button" style="padding: 5px 15px; background: #515151; border: 1px solid #666; color: #cccccc; border-radius: 3px; cursor: pointer; font-size: 12px; white-space: nowrap;" onclick="alert('打开文件夹选择对话框')">📁 浏览</button>
+                        </div>
                     </div>
                     <div class="config-field">
                         <label>包名 (Bundle Name)</label>
@@ -609,17 +610,6 @@
                             <option>配置数据</option>
                             <option>MOD内容</option>
                             <option>其他类型</option>
-                        </select>
-                    </div>
-                    <div class="config-field">
-                        <label>包体大小限制 (MB)</label>
-                        <input type="number" placeholder="0表示不限制" value="0">
-                    </div>
-                    <div class="config-field">
-                        <label>是否加密</label>
-                        <select>
-                            <option>否</option>
-                            <option>是</option>
                         </select>
                     </div>
                     <div class="config-field">

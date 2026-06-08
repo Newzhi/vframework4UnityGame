@@ -44,3 +44,8 @@ Thumbs.db
 .env.*
 *.keystore
 *.jks
+
+### 参考工程（不参与版本管理）
+vframework/Assets/AssetBundleFramework/
+vframework/Assets/AssetBundleFramework/**
+vframework/Assets/AssetBundleFramework/**/*.meta
