@@ -7,6 +7,7 @@ public class BundleManager
     #region 变量定义
 
     private static string bundleRootPath;
+    private static CatalogueReader catalogue;
     private static Dictionary<string, BundleEntry> loadedBundles = new Dictionary<string, BundleEntry>();
 
     private class BundleEntry
@@ -19,18 +20,41 @@ public class BundleManager
 
     #region 初始化
 
-    public static void Init(string rootPath)
+    public static void Init(string rootPath, CatalogueReader reader = null)
     {
         bundleRootPath = rootPath;
+        catalogue = reader;
         loadedBundles.Clear();
+    }
+
+    public static void SetCatalogue(CatalogueReader reader)
+    {
+        catalogue = reader;
     }
 
     #endregion
 
     #region 加载/卸载
 
+    public static AssetBundle AcquireBundleWithDependencies(string bundleName)
+    {
+        if (catalogue != null && catalogue.IsLoaded)
+        {
+            foreach (string dep in catalogue.GetBundleDependencies(bundleName))
+            {
+                if (string.IsNullOrEmpty(dep))
+                    continue;
+
+                AcquireBundle(dep);
+            }
+        }
+
+        return AcquireBundle(bundleName);
+    }
+
     //获取bundle，Bundle层引用计数+1；未加载则LoadFromFile
-    // TODO: 加载资源前按 AssetCatalog.bundles 先 Acquire 依赖包，见 Docs/Catalogue清单说明.md 第四节。
+    // TODO(CDN): 接入 IBundlePathResolver — 按 persistentDataPath → StreamingAssets → 远程下载 解析物理路径。
+    // 见 Docs/业务API与CDN规划.md §2.3
     public static AssetBundle AcquireBundle(string bundleName)
     {
         if (loadedBundles.TryGetValue(bundleName, out BundleEntry entry))

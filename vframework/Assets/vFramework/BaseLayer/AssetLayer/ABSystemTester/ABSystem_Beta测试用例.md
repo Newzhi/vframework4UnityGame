@@ -2,7 +2,7 @@
 
 > 针对 `Assets/vFramework/BaseLayer/AssetLayer/ABSystem_Beta` 资源打包与加载系统的测试设计。  
 > 被测系统入口：**Unity → vFramework → AssetBundle Packer**  
-> 参考文档：`ABSystem_Beta/Docs/设计目标与实现细节.md`、`Catalogue清单说明.md`
+> 参考文档：[Docs/文档索引.md](../ABSystem_Beta/Docs/文档索引.md)、[业务API与CDN规划.md](../ABSystem_Beta/Docs/业务API与CDN规划.md)
 
 ---
 
@@ -14,9 +14,9 @@
 |------|----------|--------------|
 | 规则制定器 | `BundleRuleMaker`、`BuildSetting` | 约 75% |
 | 打包器 | `BundleBuilder`、`RuleResolver` | 约 65% |
-| 清单桥梁 | `CatalogueWriter`、`AssetCatalog` | `entries` 已实现；`bundles` 依赖表未写入 |
-| 抽象资源 | `AbstractResource` | 引用计数可用 |
-| 加载器 | `BundleManager`、`BundleResLoader` | 雏形；无 Catalogue 驱动、无依赖预加载 |
+| 清单桥梁 | `CatalogueWriter`、`CatalogueReader`、`AssetCatalog` | `entries` + `bundles[]` 已写入/读取 |
+| 抽象资源 | `AbstractResource` | 引用计数 + Release |
+| 加载器 | `BundleManager`、`BundleResLoader` | 同步 Load / LoadByPath、依赖预加载 ✅；异步/CDN ❌ |
 
 ### 1.2 测试分类
 

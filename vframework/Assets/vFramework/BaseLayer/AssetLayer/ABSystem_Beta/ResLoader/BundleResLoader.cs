@@ -7,23 +7,42 @@ public class BundleResLoader
 {
     #region 变量定义
 
+    private readonly CatalogueReader catalogue = new CatalogueReader();
     private Dictionary<string, AbstractResource> resourceDic = new Dictionary<string, AbstractResource>();
 
     #endregion
 
     #region 初始化
 
-    public void Init(string bundleRootPath)
+    public bool Init(string bundleRootPath)
     {
-        BundleManager.Init(bundleRootPath);
+        if (string.IsNullOrEmpty(bundleRootPath))
+            bundleRootPath = Application.streamingAssetsPath;
+
+        BundleManager.Init(bundleRootPath, catalogue);
         resourceDic.Clear();
+
+        if (!catalogue.LoadFromBundleRoot(bundleRootPath))
+        {
+            Debug.LogError("BundleResLoader Init failed: catalogue not loaded from " + bundleRootPath);
+            return false;
+        }
+
+        return true;
     }
+
+    public CatalogueReader GetCatalogue()
+    {
+        return catalogue;
+    }
+
+    public bool IsCatalogueLoaded => catalogue.IsLoaded;
 
     #endregion
 
     #region 加载/卸载
 
-    //用于业务侧预先加载对应模块
+    //TODO 用于业务侧预先加载对应模块；见 Docs/业务API与CDN规划.md §1 需求4
     T PreLoad<T>()
     {
         return default(T);
@@ -55,14 +74,25 @@ public class BundleResLoader
         return res;
     }
 
-    //异步加载
+    public AbstractResource LoadByPath<T>(string assetPath) where T : Object
+    {
+        if (!catalogue.TryGetEntry(assetPath, out AssetCatalogEntry entry))
+        {
+            Debug.LogError("Asset path not found in catalogue: " + assetPath);
+            return null;
+        }
+
+        return Load<T>(entry.bundleName, entry.assetName);
+    }
+
+    //TODO 异步加载，期望 UniTask；设计基线默认 API，见 Docs/业务API与CDN规划.md §1 需求2
     T LoadAsync<T>()
     {
         T t = default;
         return t;
     }
 
-    //带有回调函数的加载，默认异步
+    //带有回调函数的加载，默认异步；见 Docs/业务API与CDN规划.md §1 需求3
     void LoadWithCallback<T>()
     {
 

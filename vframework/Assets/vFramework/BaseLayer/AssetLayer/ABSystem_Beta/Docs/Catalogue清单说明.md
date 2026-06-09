@@ -1,14 +1,16 @@
 # Catalogue 清单说明
 
-> 打包器与加载器之间的桥梁。当前实现：**JSON + 仅 `entries`**；本文说明现有字段、规划中的 **bundle 依赖表**，以及 **如何接入**。
+> 打包器与加载器之间的桥梁。当前实现：**JSON + `entries` + `bundles[]`**；运行时由 `CatalogueReader` 只读。  
+> 文档索引：[Docs/文档索引.md](./文档索引.md)
 
 相关文件：
 
 | 文件 | 作用 |
 |------|------|
 | `BundleRuleConfig/Catalogue/AssetCatalog.cs` | 清单数据结构（`AssetCatalogEntry` / `BundleCatalogInfo` / `AssetCatalog`，#region 分区） |
-| `Editor/BundleBuilder/CatalogueWriter.cs` | 打包后写清单 |
-| `ResLoader/BundleManager.cs` | 运行时 LoadFromFile（尚未按依赖预加载） |
+| `Editor/BundleBuilder/CatalogueWriter.cs` | 打包后写清单（含 Manifest 依赖） |
+| `ResLoader/CatalogueReader.cs` | 运行时读 JSON |
+| `ResLoader/BundleManager.cs` | 按 `bundles[]` 依赖预加载后 LoadFromFile |
 
 ---
 
@@ -144,30 +146,14 @@ manifestBundle.Unload(true);
 
 ---
 
-## 四、接入步骤 checklist（实施时用）
+## 四、接入步骤 checklist
 
-1. **数据结构**  
-   - 取消 `AssetCatalog.cs` 里 `bundles` 字段的注释。  
-   - 类型均在 `AssetCatalog.cs`（`BundleCatalogInfo` 等）。
-
-2. **CatalogueWriter**  
-   - `BuildCatalog` 增加 `BundleCatalogInfo[] bundles` 参数或内部 `BuildBundleDependencies(manifest, builds)`。  
-   - `Write` 在 `BundleBuilder` 侧传入 Manifest（或 `bundleRoot` + 平台 manifest 路径）。  
-   - `EditorTest`：无 AB 时 `bundles` 写空数组或根据 Editor 依赖分析补全（可选，P2）。
-
-3. **BundleBuilder**  
-   - 保存 `BuildAssetBundles` 返回值，传给 `CatalogueWriter`（仅非 EditorTest）。
-
-4. **CatalogueReader**（未建）  
-   - 读 JSON/未来二进制；提供 `GetBundleDependencies(bundleName)`。
-
-5. **BundleManager**  
-   - `AcquireBundleWithDependencies(bundleName)`：查清单 → 先加载 dependencies → 再加载本体。  
-   - 引用计数：每个被 Acquire 的包 Ref+1；Release 时勿过早卸载仍被其它资源引用的依赖包。
-
-6. **验收**  
-   - 打 ui.bundle 后，清单中 `bundles` 与 `ui.bundle.manifest` 的 Dependencies 一致（仅文件名形式）。  
-   - 运行时只 Load ui 包内 prefab，不手动 Load atlas，仍能正常显示。
+1. **数据结构** — ✅ 已启用 `AssetCatalog.bundles`  
+2. **CatalogueWriter** — ✅ `BuildBundleDependencies` + `Write(..., manifest)`  
+3. **BundleBuilder** — ✅ 捕获 `BuildAssetBundles` 返回值  
+4. **CatalogueReader** — ✅ `ResLoader/CatalogueReader.cs`  
+5. **BundleManager** — ✅ `AcquireBundleWithDependencies`  
+6. **验收** — 手动：DeviceDebug 打包 + `ABLoadSmokeTest`（L-024 / L-033 / P-055）
 
 ---
 

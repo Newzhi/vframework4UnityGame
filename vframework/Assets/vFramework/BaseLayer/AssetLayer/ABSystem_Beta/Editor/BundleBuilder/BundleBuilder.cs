@@ -83,19 +83,19 @@ public class BundleBuilder
         string bundleRoot = ResolveBundleRoot(mode, setting);
         EnsureOutputDirectory(bundleRoot);
 
+        AssetBundleManifest manifest = null;
+
         if (mode != BuildMode.EditorTest)
         {
             // TODO: DlcPackage 独立输出路径、分包 manifest、与首包/CDN 的目录隔离策略
             if (mode == BuildMode.DlcPackage)
                 Debug.LogWarning("DLC分包模式尚未实现专用逻辑，当前临时按 CDN 输出路径处理。见 BundleBuilder.BuildByMode / ResolveBundleRoot。");
 
-            BuildPipeline.BuildAssetBundles(bundleRoot, builds.ToArray(), options, target);
+            manifest = BuildPipeline.BuildAssetBundles(bundleRoot, builds.ToArray(), options, target);
         }
-            // TODO: 接收 BuildAssetBundles 返回值，将 AssetBundleManifest 传入 CatalogueWriter，
-            //       以写入 bundles 依赖表。见 Docs/Catalogue清单说明.md。
 
-        // TODO: 按打包模式区分清单生成策略（编辑器模拟 / 首包 / CDN / DLC分包）；依赖表见 CatalogueWriter.BuildBundleDependencies
-        CatalogueWriter.Write(setting, builds.ToArray(), bundleRoot);
+        // TODO: 按打包模式区分清单生成策略（编辑器模拟 / 首包 / CDN / DLC分包）
+        CatalogueWriter.Write(setting, builds.ToArray(), bundleRoot, manifest);
     }
 
     public static void Clean(BuildSetting setting)

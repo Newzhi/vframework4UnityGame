@@ -51,7 +51,7 @@ public class AbstractResource
     //首次加载：AcquireBundle + LoadAsset
     internal void LoadAsset()
     {
-        AssetBundle bundle = BundleManager.AcquireBundle(bundleName);
+        AssetBundle bundle = BundleManager.AcquireBundleWithDependencies(bundleName);
         if (bundle == null)
             return;
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -9,9 +10,13 @@ public static class CatalogueWriter
 
     // TODO: 清单输出后续改二进制格式，见 Docs/TODO.md（若未建则见 Catalogue清单说明.md 第六节）。
 
-    public static void Write(BuildSetting setting, AssetBundleBuild[] builds, string bundleRoot)
+    public static void Write(
+        BuildSetting setting,
+        AssetBundleBuild[] builds,
+        string bundleRoot,
+        AssetBundleManifest manifest = null)
     {
-        AssetCatalog catalog = BuildCatalog(setting, builds, bundleRoot);
+        AssetCatalog catalog = BuildCatalog(setting, builds, bundleRoot, manifest);
         string json = JsonUtility.ToJson(catalog, true);
 
         string projectRoot = Directory.GetParent(Application.dataPath).FullName;
@@ -30,9 +35,13 @@ public static class CatalogueWriter
         AssetDatabase.Refresh();
     }
 
-    static AssetCatalog BuildCatalog(BuildSetting setting, AssetBundleBuild[] builds, string bundleRoot)
+    static AssetCatalog BuildCatalog(
+        BuildSetting setting,
+        AssetBundleBuild[] builds,
+        string bundleRoot,
+        AssetBundleManifest manifest)
     {
-        System.Collections.Generic.List<AssetCatalogEntry> entries = new System.Collections.Generic.List<AssetCatalogEntry>();
+        List<AssetCatalogEntry> entries = new List<AssetCatalogEntry>();
 
         foreach (AssetBundleBuild build in builds)
         {
@@ -55,17 +64,41 @@ public static class CatalogueWriter
             buildMode = setting.buildMode.ToString(),
             packingRule = setting.packingRule.ToString(),
             bundleRoot = bundleRoot,
-            entries = entries.ToArray()
-            // TODO: bundles = BuildBundleDependencies(manifest, builds)
+            entries = entries.ToArray(),
+            bundles = BuildBundleDependencies(manifest, builds)
         };
     }
 
-    // TODO: 从 BuildPipeline 返回的 AssetBundleManifest 生成 BundleCatalogInfo[]。
-    // 1) BundleBuilder.BuildByMode 保存 BuildAssetBundles 返回值；
-    // 2) manifest.LoadAsset<AssetBundleManifest>("AssetBundleManifest")；
-    // 3) 对每个 build.assetBundleName 调用 GetAllDependencies，Path.GetFileName 规范化；
-    // 4) 写入 AssetCatalog.bundles。详见 Docs/Catalogue清单说明.md 第三节。
-    //
-    // static BundleCatalogInfo[] BuildBundleDependencies(
-    //     AssetBundleManifest manifest, AssetBundleBuild[] builds) { ... }
+    static BundleCatalogInfo[] BuildBundleDependencies(AssetBundleManifest manifest, AssetBundleBuild[] builds)
+    {
+        if (manifest == null || builds == null || builds.Length == 0)
+            return new BundleCatalogInfo[0];
+
+        List<BundleCatalogInfo> bundles = new List<BundleCatalogInfo>();
+
+        foreach (AssetBundleBuild build in builds)
+        {
+            string bundleName = build.assetBundleName;
+            string[] deps = manifest.GetAllDependencies(bundleName);
+            List<string> depNames = new List<string>();
+
+            foreach (string dep in deps)
+            {
+                if (dep == bundleName)
+                    continue;
+
+                string depFileName = Path.GetFileName(dep);
+                if (!string.IsNullOrEmpty(depFileName) && !depNames.Contains(depFileName))
+                    depNames.Add(depFileName);
+            }
+
+            bundles.Add(new BundleCatalogInfo
+            {
+                bundleName = bundleName,
+                dependencies = depNames.ToArray()
+            });
+        }
+
+        return bundles.ToArray();
+    }
 }
