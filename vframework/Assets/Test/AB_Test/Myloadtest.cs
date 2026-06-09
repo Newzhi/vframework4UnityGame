@@ -7,11 +7,11 @@ using UnityEditor;
 #endif
 
 /// <summary>
-/// AB 简单集成测试：tester → Icon/3 换贴图 → ReplaceMat 换材质 → 释放 → 结束。
+/// AB 集成测试：tester → 换贴图/材质 → 跨包 atlas/ui → 释放 → 结束。
 /// </summary>
 public class Myloadtest : MonoBehaviour
 {
-    const int CaseCount = 7;
+    const int CaseCount = 9;
 
     public float intervalSeconds = 5f;
     public bool runOnStart = true;
@@ -23,7 +23,10 @@ public class Myloadtest : MonoBehaviour
     AbstractResource prefabRes;
     AbstractResource spriteRes;
     AbstractResource materialRes;
+    AbstractResource atlasRes;
+    AbstractResource uiRes;
     GameObject instance;
+    GameObject uiInstance;
     Coroutine routine;
     int caseIndex;
     int currentCaseId;
@@ -69,9 +72,11 @@ public class Myloadtest : MonoBehaviour
                 case 1: CaseLoadPrefab(); break;
                 case 2: CaseApplySprite(); break;
                 case 3: CaseReplaceMaterial(); break;
-                case 4: CaseReleaseAux(); break;
-                case 5: CaseDestroyPrefab(); break;
-                case 6: CaseUnloadAll(); break;
+                case 4: CaseCrossAtlas(); break;
+                case 5: CaseCrossUI(); break;
+                case 6: CaseReleaseAux(); break;
+                case 7: CaseDestroyPrefab(); break;
+                case 8: CaseUnloadAll(); break;
             }
 
             caseIndex++;
@@ -199,13 +204,55 @@ public class Myloadtest : MonoBehaviour
         LogOk("Replace Material", "ReplaceMat");
     }
 
+    void CaseCrossAtlas()
+    {
+        atlasRes = BundleResLoader.Instance.Load<Sprite>("Atlas/Role/Hog_Attack_000");
+        if (atlasRes?.GetAsset<Sprite>() == null)
+            LogFail("Cross Atlas", "Atlas/Role/Hog_Attack_000");
+        else
+            LogOk("Cross Atlas", "atlas.bundle + model.bundle");
+    }
+
+    void CaseCrossUI()
+    {
+        uiRes = BundleResLoader.Instance.Load<GameObject>("UI/UIRoot");
+        if (uiRes == null)
+        {
+            LogFail("Cross UI", "UI/UIRoot load");
+            return;
+        }
+
+        uiInstance = uiRes.Instantiate();
+        if (uiInstance == null)
+        {
+            LogFail("Cross UI", "UI/UIRoot instantiate");
+            return;
+        }
+
+        if (spawnRoot != null)
+            uiInstance.transform.position = spawnRoot.position + Vector3.right * 3f;
+
+        LogOk("Cross UI", "ui.bundle + model.bundle");
+    }
+
     void CaseReleaseAux()
     {
         spriteRes?.Release();
         spriteRes = null;
         materialRes?.Release();
         materialRes = null;
-        LogOk("Release", "sprite + material released");
+        atlasRes?.Release();
+        atlasRes = null;
+
+        if (uiInstance != null)
+        {
+            Destroy(uiInstance);
+            uiInstance = null;
+        }
+
+        uiRes?.Release();
+        uiRes = null;
+        LogOk("Release", "sprite/material/atlas/ui released");
     }
 
     void CaseDestroyPrefab()
@@ -246,6 +293,8 @@ public class Myloadtest : MonoBehaviour
 
         spriteRes?.Release();
         materialRes?.Release();
+        atlasRes?.Release();
+        uiRes?.Release();
         prefabRes?.Release();
         logCollector?.EndSession();
     }
