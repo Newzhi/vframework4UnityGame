@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -58,9 +59,7 @@ public class AbstractResource
         if (bundle == null)
             return;
 
-        asset = bundle.LoadAsset(assetName, assetType);
-        if (asset == null && !string.IsNullOrEmpty(fallbackAssetPath) && fallbackAssetPath != assetName)
-            asset = bundle.LoadAsset(fallbackAssetPath, assetType);
+        asset = TryLoadFromBundle(bundle, assetName, assetType, fallbackAssetPath);
 
         if (asset == null)
         {
@@ -105,11 +104,61 @@ public class AbstractResource
     //Prefab需业务侧自行Instantiate，实例Destroy与Release无关
     public GameObject Instantiate()
     {
-        if (asset is GameObject prefab)
-            return Object.Instantiate(prefab);
+        return InstantiateAt(Vector3.zero, Quaternion.identity, null);
+    }
 
-        Debug.LogError("Asset is not GameObject, key:" + assetKey);
-        return null;
+    public GameObject InstantiateAt(Vector3 worldPosition, Quaternion worldRotation, Transform parent)
+    {
+        if (!(asset is GameObject prefab))
+        {
+            Debug.LogError("Asset is not GameObject, key:" + assetKey);
+            return null;
+        }
+
+        GameObject instance = Object.Instantiate(prefab);
+        instance.transform.SetPositionAndRotation(worldPosition, worldRotation);
+        if (parent != null)
+            instance.transform.SetParent(parent, true);
+
+        return instance;
+    }
+
+    static Object TryLoadFromBundle(AssetBundle bundle, string assetName, Type assetType, string fallbackAssetPath)
+    {
+        if (bundle == null)
+            return null;
+
+        if (!string.IsNullOrEmpty(assetName))
+        {
+            Object loaded = bundle.LoadAsset(assetName, assetType);
+            if (loaded != null)
+                return loaded;
+        }
+
+        if (string.IsNullOrEmpty(fallbackAssetPath))
+            return null;
+
+        Object byPath = bundle.LoadAsset(fallbackAssetPath, assetType);
+        if (byPath != null)
+            return byPath;
+
+        string fileName = Path.GetFileName(fallbackAssetPath);
+        if (!string.IsNullOrEmpty(fileName) && fileName != assetName && fileName != fallbackAssetPath)
+        {
+            byPath = bundle.LoadAsset(fileName, assetType);
+            if (byPath != null)
+                return byPath;
+        }
+
+        string nameNoExt = Path.GetFileNameWithoutExtension(fallbackAssetPath);
+        if (!string.IsNullOrEmpty(nameNoExt) && nameNoExt != assetName)
+        {
+            byPath = bundle.LoadAsset(nameNoExt, assetType);
+            if (byPath != null)
+                return byPath;
+        }
+
+        return bundle.LoadAsset(fallbackAssetPath);
     }
 
     #endregion
