@@ -26,11 +26,13 @@
 }
 ```
 
-加载流程（目标态）：
+加载流程：
 
-1. `LoadByPath(assetPath)` 在 `entries` 里查找；
-2. 得到 `bundleName`、`assetName`；
-3. `BundleResLoader.Load<T>(bundleName, assetName)`。
+1. 业务调用同步 `Load("Atlas/Role/Hog_Attack_000")`（相对 `resourceRoot` 简路径）；
+2. `CatalogueReader.TryGetEntryByLoadPath` 查表（由 `entries` + `resourceRoot` 构建）；
+3. 得到 `bundleName`、`assetName` → `LoadByBundle` → 依赖预加载 → `LoadAsset`。
+
+辅助：`LoadByAssetPath` 用 Unity 完整 `assetPath` 查 `entries`；`LoadByBundle` 直接按包名桥接。
 
 ---
 

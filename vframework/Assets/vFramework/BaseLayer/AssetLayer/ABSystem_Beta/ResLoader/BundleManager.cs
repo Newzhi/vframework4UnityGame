@@ -38,6 +38,8 @@ public class BundleManager
 
     public static AssetBundle AcquireBundleWithDependencies(string bundleName)
     {
+        bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
+
         if (catalogue != null && catalogue.IsLoaded)
         {
             foreach (string dep in catalogue.GetBundleDependencies(bundleName))
@@ -57,6 +59,8 @@ public class BundleManager
     // 见 Docs/业务API与CDN规划.md §2.3
     public static AssetBundle AcquireBundle(string bundleName)
     {
+        bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
+
         if (loadedBundles.TryGetValue(bundleName, out BundleEntry entry))
         {
             entry.Ref++;
@@ -66,7 +70,7 @@ public class BundleManager
         string root = string.IsNullOrEmpty(bundleRootPath)
             ? Application.streamingAssetsPath
             : bundleRootPath;
-        string path = Path.Combine(root, bundleName);
+        string path = ResolveBundleFilePath(root, bundleName);
 
         AssetBundle bundle = AssetBundle.LoadFromFile(path);
         if (bundle == null)
@@ -82,6 +86,8 @@ public class BundleManager
     //释放bundle引用，Bundle层引用计数-1；为0时Unload
     public static void ReleaseBundle(string bundleName)
     {
+        bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
+
         if (!loadedBundles.TryGetValue(bundleName, out BundleEntry entry))
         {
             Debug.LogError("ReleaseBundle failed, bundle not loaded: " + bundleName);
@@ -108,6 +114,29 @@ public class BundleManager
             entry.Bundle.Unload(true);
 
         loadedBundles.Clear();
+    }
+
+    #endregion
+
+    #region 辅助函数
+
+    static string ResolveBundleFilePath(string root, string bundleName)
+    {
+        string path = Path.Combine(root, bundleName);
+        if (File.Exists(path))
+            return path;
+
+        if (!Directory.Exists(root))
+            return path;
+
+        string fileName = Path.GetFileName(bundleName);
+        foreach (string file in Directory.GetFiles(root, "*.bundle"))
+        {
+            if (string.Equals(Path.GetFileName(file), fileName, System.StringComparison.OrdinalIgnoreCase))
+                return file;
+        }
+
+        return path;
     }
 
     #endregion

@@ -49,13 +49,19 @@ public class AbstractResource
     #region 加载/卸载
 
     //首次加载：AcquireBundle + LoadAsset
-    internal void LoadAsset()
+    internal void LoadAsset(Type assetType, string fallbackAssetPath = null)
     {
+        if (assetType == null)
+            assetType = typeof(Object);
+
         AssetBundle bundle = BundleManager.AcquireBundleWithDependencies(bundleName);
         if (bundle == null)
             return;
 
-        asset = bundle.LoadAsset(assetName, typeof(Object));
+        asset = bundle.LoadAsset(assetName, assetType);
+        if (asset == null && !string.IsNullOrEmpty(fallbackAssetPath) && fallbackAssetPath != assetName)
+            asset = bundle.LoadAsset(fallbackAssetPath, assetType);
+
         if (asset == null)
         {
             BundleManager.ReleaseBundle(bundleName);

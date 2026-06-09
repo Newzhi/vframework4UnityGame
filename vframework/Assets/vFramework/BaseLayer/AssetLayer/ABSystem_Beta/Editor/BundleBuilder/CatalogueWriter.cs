@@ -50,7 +50,7 @@ public static class CatalogueWriter
                 entries.Add(new AssetCatalogEntry
                 {
                     assetPath = assetPath,
-                    bundleName = build.assetBundleName,
+                    bundleName = BundlePlatformPaths.NormalizeBundleName(build.assetBundleName),
                     assetName = Path.GetFileNameWithoutExtension(assetPath)
                 });
             }
@@ -79,16 +79,16 @@ public static class CatalogueWriter
 
         foreach (AssetBundleBuild build in builds)
         {
-            string bundleName = build.assetBundleName;
-            string[] deps = manifest.GetAllDependencies(bundleName);
+            string bundleName = BundlePlatformPaths.NormalizeBundleName(build.assetBundleName);
+            string[] deps = manifest.GetAllDependencies(build.assetBundleName);
             List<string> depNames = new List<string>();
 
             foreach (string dep in deps)
             {
-                if (dep == bundleName)
+                if (dep == build.assetBundleName || dep == bundleName)
                     continue;
 
-                string depFileName = Path.GetFileName(dep);
+                string depFileName = BundlePlatformPaths.NormalizeBundleName(Path.GetFileName(dep));
                 if (!string.IsNullOrEmpty(depFileName) && !depNames.Contains(depFileName))
                     depNames.Add(depFileName);
             }

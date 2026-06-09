@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 手动 Smoke 测试：挂到场景物体，Play 后按 Inspector 配置加载资源。
-/// 对应用例 L-024 / L-033；需先 DeviceDebug 打包并 Init 对应 bundleRoot。
+/// 对应用例 L-024 / L-033；需先 DeviceDebug 打包。默认用 BundleResLoader.Instance（懒 Init）。
 /// </summary>
 public class ABLoadSmokeTest : MonoBehaviour
 {
@@ -12,7 +12,7 @@ public class ABLoadSmokeTest : MonoBehaviour
     [Tooltip("与 BuildSetting.usePlatformSubfolders 一致，自动追加 StandaloneWindows64 等")]
     public bool usePlatformSubfolder = true;
 
-    [Header("简路径 Load（默认 API），如 Atlas/Role/Hog_Attack_000")]
+    [Header("简路径同步 Load，如 Atlas/Role/Hog_Attack_000")]
     public string loadPath;
 
     [Header("Unity 完整路径（可选），如 Assets/AssetBundle/...")]
@@ -39,17 +39,27 @@ public class ABLoadSmokeTest : MonoBehaviour
     [ContextMenu("Run Smoke Test")]
     public void RunSmokeTest()
     {
-        loader = new BundleResLoader();
-        string rootArg = string.IsNullOrEmpty(bundleRootPath) ? null : bundleRootPath;
+        loader = BundleResLoader.Instance;
 
-        if (!loader.Init(rootArg, usePlatformSubfolder))
+        if (!string.IsNullOrEmpty(bundleRootPath))
+        {
+            if (!loader.Init(bundleRootPath, usePlatformSubfolder))
+            {
+                Debug.LogError("[ABLoadSmokeTest] Init failed");
+                return;
+            }
+        }
+        else if (!loader.IsCatalogueLoaded && !loader.Init(null, usePlatformSubfolder))
         {
             Debug.LogError("[ABLoadSmokeTest] Init failed");
             return;
         }
 
-        Debug.Log("[ABLoadSmokeTest] Catalogue loaded, entries=" +
-            (loader.GetCatalogue().Catalog.entries?.Length ?? 0));
+        if (loader.IsCatalogueLoaded)
+        {
+            Debug.Log("[ABLoadSmokeTest] Catalogue loaded, entries=" +
+                (loader.GetCatalogue().Catalog.entries?.Length ?? 0));
+        }
 
         if (!string.IsNullOrEmpty(loadPath))
         {
@@ -74,7 +84,6 @@ public class ABLoadSmokeTest : MonoBehaviour
     public void ReleaseAll()
     {
         loader?.UnloadAll();
-        loader = null;
         Debug.Log("[ABLoadSmokeTest] UnloadAll done");
     }
 

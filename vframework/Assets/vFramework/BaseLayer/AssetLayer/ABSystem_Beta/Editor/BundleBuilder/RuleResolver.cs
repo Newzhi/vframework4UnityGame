@@ -51,7 +51,7 @@ public static class RuleResolver
 
         string[] subFolders = AssetDatabase.GetSubFolders(targetFolder);
         foreach (string subFolder in subFolders)
-            TryAddFolderBuild(subFolder, Path.GetFileName(subFolder) + BundleSuffix, builds);
+            TryAddFolderBuild(subFolder, BundlePlatformPaths.NormalizeBundleName(Path.GetFileName(subFolder) + BundleSuffix), builds);
 
         return builds;
     }
@@ -69,9 +69,10 @@ public static class RuleResolver
         foreach (string folder in folders)
         {
             string relative = folder.Substring(targetFolder.Length).TrimStart('/');
-            string bundleName = string.IsNullOrEmpty(relative)
-                ? Path.GetFileName(folder) + BundleSuffix
-                : relative.Replace("/", "_") + BundleSuffix;
+            string bundleName = BundlePlatformPaths.NormalizeBundleName(
+                string.IsNullOrEmpty(relative)
+                    ? Path.GetFileName(folder) + BundleSuffix
+                    : relative.Replace("/", "_") + BundleSuffix);
 
             TryAddFolderBuild(folder, bundleName, builds);
         }
@@ -97,9 +98,10 @@ public static class RuleResolver
         if (string.IsNullOrEmpty(item.assetPath) || string.IsNullOrEmpty(item.bundleName))
             return;
 
-        string bundleName = item.bundleName.EndsWith(BundleSuffix)
-            ? item.bundleName
-            : item.bundleName + BundleSuffix;
+        string bundleName = BundlePlatformPaths.NormalizeBundleName(
+            item.bundleName.EndsWith(BundleSuffix)
+                ? item.bundleName
+                : item.bundleName + BundleSuffix);
 
         if (AssetDatabase.IsValidFolder(item.assetPath))
         {
@@ -130,7 +132,7 @@ public static class RuleResolver
 
         builds.Add(new AssetBundleBuild
         {
-            assetBundleName = bundleName,
+            assetBundleName = BundlePlatformPaths.NormalizeBundleName(bundleName),
             assetNames = assetPaths
         });
     }

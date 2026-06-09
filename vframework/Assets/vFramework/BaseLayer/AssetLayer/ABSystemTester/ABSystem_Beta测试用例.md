@@ -16,7 +16,7 @@
 | 打包器 | `BundleBuilder`、`RuleResolver` | 约 65% |
 | 清单桥梁 | `CatalogueWriter`、`CatalogueReader`、`AssetCatalog` | `entries` + `bundles[]` 已写入/读取 |
 | 抽象资源 | `AbstractResource` | 引用计数 + Release |
-| 加载器 | `BundleManager`、`BundleResLoader` | 同步 Load / LoadByPath、依赖预加载 ✅；异步/CDN ❌ |
+| 加载器 | `BundleManager`、`BundleResLoader` | 同步 `Load(简路径)`、依赖预加载 ✅；`LoadAsync`（默认 API）/ CDN ❌ |
 
 ### 1.2 测试分类
 
@@ -206,7 +206,7 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 
 | ID | 优先级 | 场景 | 操作步骤 | 预期结果 |
 |----|--------|------|----------|----------|
-| L-001 | P0 | 同步加载 Prefab | `Load<GameObject>("UI.bundle", "Panel")` | 返回非 null `AbstractResource`；`GetAsset<GameObject>()` 有效 |
+| L-001 | P0 | 同步加载 | `LoadByBundle<GameObject>("ui.bundle", "Panel")` 或 `Load("UI/Panel/Panel")` | 返回非 null `AbstractResource` |
 | L-002 | P0 | Instantiate | 对上例调用 `Instantiate()` | 场景中出现实例；与直接拖 Prefab 表现一致 |
 | L-003 | P0 | 重复 Load 同一资源 | 连续两次 Load 相同 bundleName+assetName | 第二次走缓存；Resource 层 Ref 增加 |
 | L-004 | P1 | Load 不存在 bundle | 错误 bundleName | Console 报错「Bundle load failed」；返回 null |
@@ -243,7 +243,7 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 | L-030 | P0 | 默认 StreamingAssets | Init 传 null 或 StreamingAssets 路径 | LoadFromFile 路径正确 |
 | L-031 | P1 | 自定义 bundleRoot | CDN 输出目录绝对路径 Init | 从 `Bundles/CDN` 加载成功 |
 | L-032 | P1 | bundleName 大小写 | 清单与磁盘文件名大小写不一致 | 记录 Windows/Android/iOS 差异 |
-| L-033 | P2 | 清单驱动 LoadByPath（未来） | `LoadByPath("Assets/.../Panel.prefab")` | 查 entries 后等价于 L-001 |
+| L-033 | P0 | 清单驱动同步 Load | `Load("Atlas/Role/Hog_Attack_000")` | 查 loadPath 后等价于 L-001 |
 
 ### 4.5 大规模加载
 
@@ -259,7 +259,7 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 
 | ID | 优先级 | 场景 | 预期（实现后） |
 |----|--------|------|----------------|
-| L-050 | P3 | LoadAsync | 回调/await 返回与同步一致 |
+| L-050 | P3 | LoadAsync（设计基线默认 API） | 回调/await 与同步 Load 结果一致 |
 | L-051 | P3 | LoadWithCallback | 默认异步，完成回调 |
 | L-052 | P3 | PreLoad 模块 | 按模块批量预热 bundle |
 
@@ -300,7 +300,7 @@ Console 摘要：
 | EditorTest 不产出 AB | 加载测试需 DeviceDebug/CDN 产物 | 加载用例统一先跑真机模式打包 |
 | Custom 混合模式多次 Write 清单 | P-034 可能只保留最后一次 | 单独记录实际覆盖行为，必要时提缺陷 |
 | 无增量打包 | P-084 仅记录全量耗时 | 功能上线后补充对比用例 |
-| 无 CatalogueReader / LoadByPath | L-033 Blocked | 路由器实现后启用 |
+| 无 LoadAsync | L-050 Blocked | 实现后启用 |
 | `CollectAssetPaths` 跳过 .cs | 脚本不能单独进包 | 若业务需要 ScriptableObject 配置，用 .asset 测 |
 
 ---

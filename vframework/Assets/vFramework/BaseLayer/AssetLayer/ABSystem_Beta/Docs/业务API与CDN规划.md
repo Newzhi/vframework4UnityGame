@@ -10,7 +10,7 @@
 | # | 需求（设计基线） | 目标 API（形态） | 现状 | 计划模块 |
 |---|------------------|------------------|------|----------|
 | 1 | 同步加载资源 | `Load<T>(loadPath)` 简路径；`LoadByBundle` / `LoadByAssetPath` 辅助 | ✅ 已实现 | `BundleResLoader` |
-| 2 | 异步加载（**默认**） | `LoadAsync<T>` / `await LoadByPathAsync` | ❌ 占位 | `BundleResLoader` + UniTask（待定） |
+| 2 | 异步加载（设计基线 **默认 API**） | `LoadAsync<T>(loadPath)` / `await` 形态 | ❌ 占位 | `BundleResLoader` + UniTask（待定） |
 | 3 | 加载 + 完成回调 | `LoadWithCallback<T>(path, onComplete)` | ❌ 占位 | 基于异步封装 |
 | 4 | 预加载资源包 | `PreLoadBundle(moduleName)` / 按 bundle 列表预热 | ❌ 占位 | `BundleManager` 或 `BundleResLoader` |
 | 5 | 卸载单个资源 | `AbstractResource.Release()` | ✅ | `AbstractResource` |
@@ -66,7 +66,7 @@ IRemoteBundleProvider    清单版本检查、HTTP 下载、写缓存       ← 
 2. **启动**：拉远程 `AssetCatalog.json`，与本地（StreamingAssets / 缓存）比 `buildNumber`。  
 3. **下载**：按差异列表下载 `.bundle`（及未来 hash 校验）到 `persistentDataPath/...`。  
 4. **Init**：`BundleResLoader.Init(cacheRoot)` 或 `IBundlePathResolver` 多 root。  
-5. **Load**：现有 `LoadByPath` / 依赖预加载 **无需改业务调用方式**。
+5. **Load**：同步 `Load(loadPath)` 与依赖预加载不变；未来 **LoadAsync** 成为默认 API 后业务侧逐步迁移。
 
 ### 2.5 本阶段明确不做
 

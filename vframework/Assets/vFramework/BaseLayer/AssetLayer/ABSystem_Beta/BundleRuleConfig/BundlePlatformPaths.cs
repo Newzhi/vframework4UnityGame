@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -6,6 +7,8 @@ using UnityEngine;
 /// </summary>
 public static class BundlePlatformPaths
 {
+    public const string BundleSuffix = ".bundle";
+
     public const string WindowsFolder = "StandaloneWindows64";
     public const string AndroidFolder = "Android";
     public const string IOSFolder = "iOS";
@@ -100,5 +103,18 @@ public static class BundlePlatformPaths
             return baseAbs;
 
         return Path.GetFullPath(AppendPlatformFolder(baseAbs, GetRuntimeFolderName()));
+    }
+
+    /// <summary>统一 bundle 文件名为小写 + .bundle 后缀，构建与运行时共用。</summary>
+    public static string NormalizeBundleName(string bundleName)
+    {
+        if (string.IsNullOrEmpty(bundleName))
+            return bundleName;
+
+        string name = bundleName.Replace("\\", "/").Trim();
+        if (!name.EndsWith(BundleSuffix, StringComparison.OrdinalIgnoreCase))
+            name += BundleSuffix;
+
+        return name.ToLowerInvariant();
     }
 }
