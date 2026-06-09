@@ -5,11 +5,13 @@ using UnityEngine;
 public class CatalogueReader
 {
     public const string RuntimeCatalogueFileName = "AssetCatalog.json";
+    const string DefaultResourceRoot = "Assets/AssetBundle";
 
     #region 变量定义
 
     AssetCatalog catalog;
     Dictionary<string, AssetCatalogEntry> entryMap = new Dictionary<string, AssetCatalogEntry>();
+    Dictionary<string, AssetCatalogEntry> loadPathMap = new Dictionary<string, AssetCatalogEntry>();
     Dictionary<string, string[]> dependencyMap = new Dictionary<string, string[]>();
 
     #endregion
@@ -65,6 +67,7 @@ public class CatalogueReader
 
     #region 查询
 
+    /// <summary>Unity 工程完整路径，如 Assets/AssetBundle/Atlas/Role/Hog.png</summary>
     public bool TryGetEntry(string assetPath, out AssetCatalogEntry entry)
     {
         entry = null;
@@ -72,6 +75,16 @@ public class CatalogueReader
             return false;
 
         return entryMap.TryGetValue(NormalizePath(assetPath), out entry);
+    }
+
+    /// <summary>业务简路径，相对 resourceRoot、无扩展名，如 Atlas/Role/Hog_Attack_000</summary>
+    public bool TryGetEntryByLoadPath(string loadPath, out AssetCatalogEntry entry)
+    {
+        entry = null;
+        if (string.IsNullOrEmpty(loadPath))
+            return false;
+
+        return loadPathMap.TryGetValue(NormalizeLoadPath(loadPath), out entry);
     }
 
     public string[] GetBundleDependencies(string bundleName)
@@ -93,13 +106,19 @@ public class CatalogueReader
     {
         catalog = null;
         entryMap.Clear();
+        loadPathMap.Clear();
         dependencyMap.Clear();
     }
 
     void BuildLookupTables()
     {
         entryMap.Clear();
+        loadPathMap.Clear();
         dependencyMap.Clear();
+
+        string resourceRoot = string.IsNullOrEmpty(catalog.resourceRoot)
+            ? DefaultResourceRoot
+            : catalog.resourceRoot;
 
         if (catalog.entries != null)
         {
@@ -108,8 +127,12 @@ public class CatalogueReader
                 if (entry == null || string.IsNullOrEmpty(entry.assetPath))
                     continue;
 
-                string key = NormalizePath(entry.assetPath);
-                entryMap[key] = entry;
+                string assetKey = NormalizePath(entry.assetPath);
+                entryMap[assetKey] = entry;
+
+                string loadKey = ToLoadPath(entry.assetPath, resourceRoot);
+                if (!string.IsNullOrEmpty(loadKey))
+                    loadPathMap[loadKey] = entry;
             }
         }
 
@@ -128,6 +151,39 @@ public class CatalogueReader
     public static string NormalizePath(string path)
     {
         return string.IsNullOrEmpty(path) ? path : path.Replace("\\", "/");
+    }
+
+    public static string NormalizeLoadPath(string loadPath)
+    {
+        if (string.IsNullOrEmpty(loadPath))
+            return loadPath;
+
+        string normalized = NormalizePath(loadPath).Trim('/');
+        int lastSlash = normalized.LastIndexOf('/');
+        int lastDot = normalized.LastIndexOf('.');
+        if (lastDot > lastSlash)
+            normalized = normalized.Substring(0, lastDot);
+
+        return normalized;
+    }
+
+    public static string ToLoadPath(string assetPath, string resourceRoot)
+    {
+        if (string.IsNullOrEmpty(assetPath))
+            return null;
+
+        string normalized = NormalizePath(assetPath);
+        string root = NormalizePath(resourceRoot).TrimEnd('/');
+
+        if (!string.IsNullOrEmpty(root))
+        {
+            if (normalized.StartsWith(root + "/"))
+                normalized = normalized.Substring(root.Length + 1);
+            else if (normalized == root)
+                normalized = Path.GetFileNameWithoutExtension(normalized);
+        }
+
+        return NormalizeLoadPath(normalized);
     }
 
     #endregion

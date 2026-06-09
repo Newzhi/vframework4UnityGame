@@ -40,7 +40,8 @@ public class BundleBuilder
 
         BuildByMode(setting.buildMode, builds, setting, target, options);
         AssetDatabase.Refresh();
-        Debug.Log("打包完成，bundle 数量: " + builds.Count);
+        Debug.Log("打包完成，bundle 数量: " + builds.Count
+            + "，输出: " + ResolveBundleRoot(setting.buildMode, setting));
         return true;
     }
 
@@ -102,8 +103,8 @@ public class BundleBuilder
     {
         if (setting != null)
         {
-            CleanOutputPath(setting.deviceOutputPath);
-            CleanOutputPath(setting.cdnOutputPath);
+            CleanOutputPath(setting.deviceOutputPath, setting);
+            CleanOutputPath(setting.cdnOutputPath, setting);
         }
 
         string cataloguePath = Path.Combine(
@@ -220,32 +221,39 @@ public class BundleBuilder
 
     public static string ResolveBundleRoot(BuildMode mode, BuildSetting setting)
     {
+        string basePath;
         switch (mode)
         {
             case BuildMode.CdnHotUpdate:
-                return ResolveOutputPath(setting.cdnOutputPath);
+                basePath = setting.cdnOutputPath;
+                break;
             case BuildMode.DlcPackage:
                 // TODO: setting.dlcOutputPath（如 Bundles/DLC/{PackageName}），与 CDN 热更主线分离
-                return ResolveOutputPath(setting.cdnOutputPath);
+                basePath = setting.cdnOutputPath;
+                break;
             case BuildMode.DeviceDebug:
-                return ResolveOutputPath(setting.deviceOutputPath);
+                basePath = setting.deviceOutputPath;
+                break;
             default:
                 // TODO: EditorTest 占位 root，后续改为纯模拟清单目录
-                return ResolveOutputPath(setting.deviceOutputPath);
+                basePath = setting.deviceOutputPath;
+                break;
         }
+
+        return ResolvePlatformOutputPath(basePath, setting.platform, setting.usePlatformSubfolders);
+    }
+
+    public static string ResolvePlatformOutputPath(
+        string outputPath,
+        BuildPlatform platform,
+        bool usePlatformSubfolders)
+    {
+        return BundlePlatformPaths.ResolvePlatformOutputPath(outputPath, platform, usePlatformSubfolders);
     }
 
     public static string ResolveOutputPath(string outputPath)
     {
-        if (string.IsNullOrEmpty(outputPath))
-            return Application.streamingAssetsPath;
-
-        string normalized = outputPath.Replace("\\", "/");
-        if (normalized == "Assets/StreamingAssets")
-            return Application.streamingAssetsPath;
-
-        string projectRoot = Directory.GetParent(Application.dataPath).FullName;
-        return Path.GetFullPath(Path.Combine(projectRoot, normalized));
+        return BundlePlatformPaths.ResolveBaseOutputPath(outputPath);
     }
 
     static void EnsureOutputDirectory(string outputPath)
@@ -254,23 +262,26 @@ public class BundleBuilder
             Directory.CreateDirectory(outputPath);
     }
 
-    static void CleanOutputPath(string configPath)
+    static void CleanOutputPath(string configPath, BuildSetting setting)
     {
-        string outputPath = ResolveOutputPath(configPath);
+        string outputPath = ResolvePlatformOutputPath(
+            configPath,
+            setting.platform,
+            setting.usePlatformSubfolders);
+
         if (!Directory.Exists(outputPath))
             return;
 
         foreach (string file in Directory.GetFiles(outputPath, "*", SearchOption.AllDirectories))
         {
-            string name = Path.GetFileName(file);
-            if (!name.EndsWith(RuleResolver.BundleSuffix)
-                && !name.EndsWith(".manifest")
-                && name != RuntimeCatalogueFileName)
-            {
-                continue;
-            }
+            if (ShouldDeleteBuildArtifact(file))
+                DeleteOutputFile(file);
+        }
 
-            DeleteOutputFile(file);
+        foreach (string file in Directory.GetFiles(outputPath, "*", SearchOption.TopDirectoryOnly))
+        {
+            if (ShouldDeleteExtensionlessManifest(file))
+                DeleteOutputFile(file);
         }
 
         string runtimeCatalogueDir = Path.Combine(outputPath, "Catalogue");
@@ -285,6 +296,23 @@ public class BundleBuilder
             else if (Directory.Exists(runtimeCatalogueDir) && Directory.GetFiles(runtimeCatalogueDir).Length == 0)
                 Directory.Delete(runtimeCatalogueDir, true);
         }
+    }
+
+    static bool ShouldDeleteBuildArtifact(string filePath)
+    {
+        string name = Path.GetFileName(filePath);
+        return name.EndsWith(RuleResolver.BundleSuffix)
+            || name.EndsWith(".manifest")
+            || name == RuntimeCatalogueFileName;
+    }
+
+    static bool ShouldDeleteExtensionlessManifest(string filePath)
+    {
+        if (Directory.Exists(filePath))
+            return false;
+
+        string name = Path.GetFileName(filePath);
+        return !string.IsNullOrEmpty(name) && name.IndexOf('.') < 0;
     }
 
     static void DeleteOutputFile(string filePath)

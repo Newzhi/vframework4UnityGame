@@ -90,6 +90,18 @@ public class BundleRuleMaker : EditorWindow
         setting.platform = (BuildPlatform)EditorGUILayout.EnumPopup(
             Tip("目标平台", "构建目标平台，决定 BuildPipeline 使用的 BuildTarget。"),
             setting.platform);
+        setting.usePlatformSubfolders = EditorGUILayout.Toggle(
+            Tip("按平台分子目录", "开启后输出到 {首包或CDN路径}/{平台名}/，如 StandaloneWindows64、Android，多端产物可并存。"),
+            setting.usePlatformSubfolders);
+        if (setting.usePlatformSubfolders)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField(
+                Tip("当前平台输出预览", "真机首包与 CDN 在开启平台子目录时的实际路径。"),
+                new GUIContent(GetPlatformOutputPreview()),
+                EditorStyles.miniLabel);
+            EditorGUI.indentLevel--;
+        }
         setting.version = EditorGUILayout.TextField(
             Tip("版本号", "应用版本号（x.y.z），写入 AssetCatalog.json 的 version 字段。"),
             setting.version);
@@ -206,7 +218,8 @@ public class BundleRuleMaker : EditorWindow
             if (GUILayout.Button(Tip("删除", "移除此配置项。"), GUILayout.Width(60)))
             {
                 setting.customItems.RemoveAt(i);
-                break;
+                EditorGUILayout.EndVertical();
+                GUIUtility.ExitGUI();
             }
             EditorGUILayout.EndHorizontal();
 
@@ -309,6 +322,14 @@ public class BundleRuleMaker : EditorWindow
             setting.cdnOutputPath = "Bundles/CDN";
         if (string.IsNullOrEmpty(setting.targetDirectory))
             setting.targetDirectory = "Assets/AssetBundle";
+    }
+
+    string GetPlatformOutputPreview()
+    {
+        string folder = BundlePlatformPaths.GetFolderName(setting.platform);
+        string device = (setting.deviceOutputPath ?? "").Replace("\\", "/").TrimEnd('/');
+        string cdn = (setting.cdnOutputPath ?? "").Replace("\\", "/").TrimEnd('/');
+        return "首包: " + device + "/" + folder + "  |  CDN: " + cdn + "/" + folder;
     }
 
     static void EnsureAssetFolder(string assetsFolder)

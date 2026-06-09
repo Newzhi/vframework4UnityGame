@@ -52,7 +52,7 @@ public class BundleCatalogInfo
 /// 两张逻辑表：
 /// 1. entries（已实现）— 每个资源 assetPath 落在哪个 bundle、assetName 是什么。
 /// 2. bundles — 每个 bundle 依赖哪些其它 bundle，见 BundleCatalogInfo。
-/// 加载器：LoadByPath → 查 entries → 查 bundles 拓扑加载依赖 → LoadAsset。
+/// 加载器：Load(简路径) → 查 loadPathMap → LoadByBundle → bundles 依赖 → LoadAsset。
 /// 详细说明：Docs/Catalogue清单说明.md
 /// </remarks>
 [Serializable]
@@ -64,6 +64,8 @@ public class AssetCatalog
     public string buildMode;
     public string packingRule;
     public string bundleRoot;
+    /// <summary>打包资源根目录（BuildSetting.targetDirectory），用于解析业务 Load 简路径。</summary>
+    public string resourceRoot;
 
     /// <summary>资源 → 包 映射表</summary>
     public AssetCatalogEntry[] entries;

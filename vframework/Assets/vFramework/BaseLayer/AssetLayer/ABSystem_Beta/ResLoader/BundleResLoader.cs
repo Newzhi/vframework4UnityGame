@@ -14,10 +14,9 @@ public class BundleResLoader
 
     #region 初始化
 
-    public bool Init(string bundleRootPath)
+    public bool Init(string bundleRootPath, bool usePlatformSubfolder = true)
     {
-        if (string.IsNullOrEmpty(bundleRootPath))
-            bundleRootPath = Application.streamingAssetsPath;
+        bundleRootPath = BundlePlatformPaths.ResolveRuntimeBundleRoot(bundleRootPath, usePlatformSubfolder);
 
         BundleManager.Init(bundleRootPath, catalogue);
         resourceDic.Clear();
@@ -29,6 +28,12 @@ public class BundleResLoader
         }
 
         return true;
+    }
+
+    /// <summary>运行时默认首包根目录（StreamingAssets + 当前平台子目录）。</summary>
+    public static string GetDefaultRuntimeBundleRoot(bool usePlatformSubfolder = true)
+    {
+        return BundlePlatformPaths.ResolveRuntimeBundleRoot(null, usePlatformSubfolder);
     }
 
     public CatalogueReader GetCatalogue()
@@ -48,41 +53,19 @@ public class BundleResLoader
         return default(T);
     }
 
-    //同步加载，返回缓存资源；用完后需调用 resource.Release()
-    public AbstractResource Load<T>(string bundleName, string assetName) where T : Object
+    /// <summary>
+    /// 同步加载（默认 API）。loadPath 为相对打包根目录的简路径，无扩展名。
+    /// 例：Default 规则下 targetDirectory=Assets/AssetBundle → Load&lt;Sprite&gt;("Atlas/Role/Hog_Attack_000")
+    /// </summary>
+    public AbstractResource Load<T>(string loadPath) where T : Object
     {
-        string key = bundleName + "/" + assetName;
-
-        if (resourceDic.TryGetValue(key, out AbstractResource res))
+        if (!catalogue.TryGetEntryByLoadPath(loadPath, out AssetCatalogEntry entry))
         {
-            res.AddReference();
-            return res;
-        }
-
-        res = new AbstractResource(key, bundleName, assetName);
-        res.onUnLoad = () => resourceDic.Remove(key);
-        resourceDic.Add(key, res);
-        res.AddReference();
-        res.LoadAsset();
-
-        if (res.GetAsset<Object>() == null)
-        {
-            resourceDic.Remove(key);
+            Debug.LogError("Load path not found in catalogue: " + loadPath);
             return null;
         }
 
-        return res;
-    }
-
-    public AbstractResource LoadByPath<T>(string assetPath) where T : Object
-    {
-        if (!catalogue.TryGetEntry(assetPath, out AssetCatalogEntry entry))
-        {
-            Debug.LogError("Asset path not found in catalogue: " + assetPath);
-            return null;
-        }
-
-        return Load<T>(entry.bundleName, entry.assetName);
+        return LoadByBundle<T>(entry.bundleName, entry.assetName);
     }
 
     //TODO 异步加载，期望 UniTask；设计基线默认 API，见 Docs/业务API与CDN规划.md §1 需求2
@@ -123,6 +106,44 @@ public class BundleResLoader
     #endregion
 
     #region 辅助函数
+
+    /// <summary>按 bundle 名 + 包内 asset 名加载，Resource 层与 BundleManager 的桥接。</summary>
+    public AbstractResource LoadByBundle<T>(string bundleName, string assetName) where T : Object
+    {
+        string key = bundleName + "/" + assetName;
+
+        if (resourceDic.TryGetValue(key, out AbstractResource res))
+        {
+            res.AddReference();
+            return res;
+        }
+
+        res = new AbstractResource(key, bundleName, assetName);
+        res.onUnLoad = () => resourceDic.Remove(key);
+        resourceDic.Add(key, res);
+        res.AddReference();
+        res.LoadAsset();
+
+        if (res.GetAsset<Object>() == null)
+        {
+            resourceDic.Remove(key);
+            return null;
+        }
+
+        return res;
+    }
+
+    /// <summary>按 Unity 工程完整 assetPath 加载，如 Assets/AssetBundle/Atlas/Role/Hog.png</summary>
+    public AbstractResource LoadByAssetPath<T>(string assetPath) where T : Object
+    {
+        if (!catalogue.TryGetEntry(assetPath, out AssetCatalogEntry entry))
+        {
+            Debug.LogError("Asset path not found in catalogue: " + assetPath);
+            return null;
+        }
+
+        return LoadByBundle<T>(entry.bundleName, entry.assetName);
+    }
 
     #endregion
 

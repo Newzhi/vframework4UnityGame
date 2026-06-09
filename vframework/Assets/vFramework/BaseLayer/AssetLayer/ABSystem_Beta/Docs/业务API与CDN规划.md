@@ -9,7 +9,7 @@
 
 | # | 需求（设计基线） | 目标 API（形态） | 现状 | 计划模块 |
 |---|------------------|------------------|------|----------|
-| 1 | 同步加载资源 | `LoadByPath<T>` / `Load<T>(bundle, asset)` | ✅ 已实现 | `BundleResLoader` |
+| 1 | 同步加载资源 | `Load<T>(loadPath)` 简路径；`LoadByBundle` / `LoadByAssetPath` 辅助 | ✅ 已实现 | `BundleResLoader` |
 | 2 | 异步加载（**默认**） | `LoadAsync<T>` / `await LoadByPathAsync` | ❌ 占位 | `BundleResLoader` + UniTask（待定） |
 | 3 | 加载 + 完成回调 | `LoadWithCallback<T>(path, onComplete)` | ❌ 占位 | 基于异步封装 |
 | 4 | 预加载资源包 | `PreLoadBundle(moduleName)` / 按 bundle 列表预热 | ❌ 占位 | `BundleManager` 或 `BundleResLoader` |
@@ -28,7 +28,7 @@
 | 打包模式 | 编辑器产出 | 运行时角色 |
 |----------|------------|------------|
 | **DeviceDebug / 首包** | `deviceOutputPath`（默认 StreamingAssets） | 安装包内置，离线可用 |
-| **CdnHotUpdate / CDN联网** | `cdnOutputPath`（默认 `Bundles/CDN`） | CI 上传 CDN，**不**进首包 |
+| **CdnHotUpdate / CDN联网** | `cdnOutputPath`（默认 `Bundles/CDN`） | CI 上传到 **`CDN/{平台}/`**，如 `CDN/Android/`、`CDN/StandaloneWindows64/` |
 | **DlcPackage** | 规划独立目录 | 按需下载（TODO） |
 
 打包器只负责 **打出文件 + 写清单**；**下载与运行时选路** 属于加载侧扩展。
@@ -62,7 +62,7 @@ IRemoteBundleProvider    清单版本检查、HTTP 下载、写缓存       ← 
 
 ### 2.4 CDN 接入步骤（实施 checklist）
 
-1. **配置**：CDN 根 URL、平台路径、`BuildSetting.cdnOutputPath` 与上传目录一致。  
+1. **配置**：CDN 根 URL + **`{Platform}/`** 子路径（与 `usePlatformSubfolders` 产出一致）。  
 2. **启动**：拉远程 `AssetCatalog.json`，与本地（StreamingAssets / 缓存）比 `buildNumber`。  
 3. **下载**：按差异列表下载 `.bundle`（及未来 hash 校验）到 `persistentDataPath/...`。  
 4. **Init**：`BundleResLoader.Init(cacheRoot)` 或 `IBundlePathResolver` 多 root。  

@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: DefaultBuildSetting
   m_EditorClassIdentifier: 
   platform: 0
-  version: 1.0.32
-  buildNumber: 1033
+  version: 1.0.34
+  buildNumber: 1035
   deviceOutputPath: Assets/StreamingAssets
   cdnOutputPath: Bundles/CDN
+  usePlatformSubfolders: 1
   buildMode: 1
   packingRule: 0
   targetDirectory: Assets/AssetBundle

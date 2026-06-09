@@ -88,6 +88,8 @@ public class BuildSetting : ScriptableObject
     public int buildNumber = 1001;
     public string deviceOutputPath = "Assets/StreamingAssets";
     public string cdnOutputPath = "Bundles/CDN";
+    /// <summary>为 true 时在输出路径下追加平台子目录（如 StandaloneWindows64、Android），多端产物可并存。</summary>
+    public bool usePlatformSubfolders = true;
 
     public BuildMode buildMode = BuildMode.DeviceDebug;
     public PackingRule packingRule = PackingRule.Default;

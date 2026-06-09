@@ -64,6 +64,7 @@ public static class CatalogueWriter
             buildMode = setting.buildMode.ToString(),
             packingRule = setting.packingRule.ToString(),
             bundleRoot = bundleRoot,
+            resourceRoot = setting.targetDirectory,
             entries = entries.ToArray(),
             bundles = BuildBundleDependencies(manifest, builds)
         };
