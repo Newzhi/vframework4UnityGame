@@ -15,7 +15,7 @@ public class BundleRuleMaker : EditorWindow
 
     static readonly string[] BuildModeLabels =
     {
-        "编辑器测试", "真机模式/首包", "CDN联网"
+        "编辑器测试", "真机模式/首包", "CDN联网", "DLC分包"
     };
 
     static readonly BuildMode[] BuildModes =
@@ -23,6 +23,7 @@ public class BundleRuleMaker : EditorWindow
         BuildMode.EditorTest,
         BuildMode.DeviceDebug,
         BuildMode.CdnHotUpdate,
+        BuildMode.DlcPackage,
     };
 
     static readonly string[] RuleLabels =
@@ -372,6 +373,8 @@ public class BundleRuleMaker : EditorWindow
                 return "真机模式/首包：AB 输出到首包输出路径（默认 StreamingAssets）。";
             case BuildMode.CdnHotUpdate:
                 return "CDN联网：AB 输出到联网 CDN 输出路径（默认 Bundles/CDN）。";
+            case BuildMode.DlcPackage:
+                return "DLC分包：可选下载内容包，输出到独立 DLC 目录（TODO：未实现，见 BundleBuilder）。";
             default:
                 return "编辑器测试：不生成 .bundle，仅更新清单（模拟阶段）。";
         }

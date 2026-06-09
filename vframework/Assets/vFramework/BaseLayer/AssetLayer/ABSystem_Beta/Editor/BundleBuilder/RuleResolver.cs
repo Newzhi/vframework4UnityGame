@@ -27,6 +27,7 @@ public static class RuleResolver
             { BuildMode.EditorTest, new List<AssetBundleBuild>() },
             { BuildMode.DeviceDebug, new List<AssetBundleBuild>() },
             { BuildMode.CdnHotUpdate, new List<AssetBundleBuild>() },
+            { BuildMode.DlcPackage, new List<AssetBundleBuild>() },
         };
 
         if (items == null)

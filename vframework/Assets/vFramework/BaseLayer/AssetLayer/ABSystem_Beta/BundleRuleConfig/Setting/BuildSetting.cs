@@ -17,12 +17,13 @@ public enum BuildPlatform
 
 #region 枚举 - 打包模式
 
-// UI 文案：EditorTest=编辑器测试，DeviceDebug=真机模式/首包，CdnHotUpdate=CDN联网
+// UI 文案：EditorTest=编辑器测试，DeviceDebug=真机模式/首包，CdnHotUpdate=CDN联网，DlcPackage=DLC分包
 public enum BuildMode
 {
     EditorTest,
     DeviceDebug,
     CdnHotUpdate,
+    DlcPackage,
 }
 
 #endregion

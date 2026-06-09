@@ -84,11 +84,17 @@ public class BundleBuilder
         EnsureOutputDirectory(bundleRoot);
 
         if (mode != BuildMode.EditorTest)
+        {
+            // TODO: DlcPackage 独立输出路径、分包 manifest、与首包/CDN 的目录隔离策略
+            if (mode == BuildMode.DlcPackage)
+                Debug.LogWarning("DLC分包模式尚未实现专用逻辑，当前临时按 CDN 输出路径处理。见 BundleBuilder.BuildByMode / ResolveBundleRoot。");
+
             BuildPipeline.BuildAssetBundles(bundleRoot, builds.ToArray(), options, target);
+        }
             // TODO: 接收 BuildAssetBundles 返回值，将 AssetBundleManifest 传入 CatalogueWriter，
             //       以写入 bundles 依赖表。见 Docs/Catalogue清单说明.md。
 
-        // TODO: 按打包模式区分清单生成策略（编辑器模拟 / 首包 / CDN）；依赖表见 CatalogueWriter.BuildBundleDependencies
+        // TODO: 按打包模式区分清单生成策略（编辑器模拟 / 首包 / CDN / DLC分包）；依赖表见 CatalogueWriter.BuildBundleDependencies
         CatalogueWriter.Write(setting, builds.ToArray(), bundleRoot);
     }
 
@@ -113,7 +119,7 @@ public class BundleBuilder
                 DeleteFileAndMeta(cataloguePath);
         }
 
-        // TODO: 清理 Simulate 目录
+        // TODO: 清理 Simulate 目录；DLC 输出目录（dlcOutputPath）待 BuildSetting 字段落地后接入
 
         AssetDatabase.Refresh();
         Debug.Log("已清理打包输出与清单");
@@ -144,6 +150,13 @@ public class BundleBuilder
                 Debug.LogError("联网 CDN 输出路径不能为空");
                 return false;
             }
+
+            // TODO: DlcPackage 校验独立 dlcOutputPath、DLC 包名/id
+            if (setting.buildMode == BuildMode.DlcPackage && string.IsNullOrEmpty(setting.cdnOutputPath))
+            {
+                Debug.LogError("DLC分包模式：联网 CDN 输出路径暂作占位，不能为空（TODO：改为 dlcOutputPath）");
+                return false;
+            }
         }
         else
         {
@@ -160,18 +173,25 @@ public class BundleBuilder
             }
 
             bool needsCdnPath = false;
+            bool needsDlcPath = false;
             foreach (BundleConfigItem item in setting.customItems)
             {
                 if (item.buildMode == BuildMode.CdnHotUpdate)
-                {
                     needsCdnPath = true;
-                    break;
-                }
+                if (item.buildMode == BuildMode.DlcPackage)
+                    needsDlcPath = true;
             }
 
             if (needsCdnPath && string.IsNullOrEmpty(setting.cdnOutputPath))
             {
                 Debug.LogError("联网 CDN 输出路径不能为空");
+                return false;
+            }
+
+            // TODO: DlcPackage Custom 项校验 dlcOutputPath
+            if (needsDlcPath && string.IsNullOrEmpty(setting.cdnOutputPath))
+            {
+                Debug.LogError("DLC分包配置项：输出路径占位不能为空（TODO：改为 dlcOutputPath）");
                 return false;
             }
         }
@@ -203,6 +223,9 @@ public class BundleBuilder
         switch (mode)
         {
             case BuildMode.CdnHotUpdate:
+                return ResolveOutputPath(setting.cdnOutputPath);
+            case BuildMode.DlcPackage:
+                // TODO: setting.dlcOutputPath（如 Bundles/DLC/{PackageName}），与 CDN 热更主线分离
                 return ResolveOutputPath(setting.cdnOutputPath);
             case BuildMode.DeviceDebug:
                 return ResolveOutputPath(setting.deviceOutputPath);

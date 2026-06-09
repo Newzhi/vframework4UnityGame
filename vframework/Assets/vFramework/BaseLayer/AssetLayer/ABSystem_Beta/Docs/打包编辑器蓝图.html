@@ -528,6 +528,7 @@
                             <option value="editor">编辑器测试</option>
                             <option value="device" selected>真机模式/首包</option>
                             <option value="cdn">CDN联网</option>
+                            <option value="dlc">DLC分包</option>
                         </select>
                     </div>
                 </div>
@@ -559,6 +560,8 @@
                     return '真机模式/首包：AB 输出到首包输出路径（默认 StreamingAssets）。';
                 case 'cdn':
                     return 'CDN联网：AB 输出到联网 CDN 输出路径（默认 Bundles/CDN）。';
+                case 'dlc':
+                    return 'DLC分包：可选下载内容包，输出到独立 DLC 目录（TODO：未实现）。';
                 default:
                     return '编辑器测试：不生成 .bundle，仅更新清单（模拟阶段）。';
             }
@@ -615,11 +618,12 @@
                         <input type="text" placeholder="输入AssetBundle名称" value="bundle_${configCount}">
                     </div>
                     <div class="config-field">
-                        <label title="决定该项 AB 的输出位置：编辑器测试 / 真机模式/首包 / CDN联网。">打包模式</label>
-                        <select title="决定该项 AB 的输出位置：编辑器测试 / 真机模式/首包 / CDN联网。">
+                        <label title="决定该项 AB 的输出位置：编辑器测试 / 真机模式/首包 / CDN联网 / DLC分包。">打包模式</label>
+                        <select title="决定该项 AB 的输出位置：编辑器测试 / 真机模式/首包 / CDN联网 / DLC分包。">
                             <option>编辑器测试</option>
                             <option>真机模式/首包</option>
                             <option>CDN联网</option>
+                            <option>DLC分包</option>
                         </select>
                     </div>
                     <div class="config-field">
