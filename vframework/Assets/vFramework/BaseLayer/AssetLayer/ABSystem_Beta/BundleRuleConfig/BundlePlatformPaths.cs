@@ -56,6 +56,9 @@ public static class BundlePlatformPaths
         if (string.IsNullOrEmpty(basePath) || string.IsNullOrEmpty(platformFolder))
             return basePath;
 
+        if (StreamingAssetsIO.IsNonFileProtocolPath(basePath))
+            return StreamingAssetsIO.CombinePath(basePath, platformFolder);
+
         return Path.Combine(basePath, platformFolder);
     }
 
@@ -102,7 +105,11 @@ public static class BundlePlatformPaths
         if (!usePlatformSubfolders)
             return baseAbs;
 
-        return Path.GetFullPath(AppendPlatformFolder(baseAbs, GetRuntimeFolderName()));
+        string withPlatform = AppendPlatformFolder(baseAbs, GetRuntimeFolderName());
+        if (StreamingAssetsIO.IsNonFileProtocolPath(baseAbs))
+            return withPlatform;
+
+        return Path.GetFullPath(withPlatform);
     }
 
     /// <summary>统一 bundle 文件名为小写 + .bundle 后缀，构建与运行时共用。</summary>

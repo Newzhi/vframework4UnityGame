@@ -18,8 +18,11 @@ public class LoadApiTestLogCollector : MonoBehaviour
     const string DefaultRelativeFolder = "Assets/Test/AB_Test/Logs";
     const string BundleLogSubFolder = "Logs";
 
-    /// <summary>唯一允许调用 BundleResLoader.UnloadAll 的 Runner 标识。</summary>
+    /// <summary>同步套系：允许调用 UnloadAll 的 Runner 标识。</summary>
     public const string UnloadAllRunnerSource = "Myloadtest";
+
+    /// <summary>异步套系：允许调用 UnloadAll 的 Runner 标识。</summary>
+    public const string UnloadAllRunnerSourceUni = "MyLoadUniTest";
 
     [Header("输出")]
     [Tooltip("写入 BundleResLoader 运行时根目录下的 Logs（与 model.bundle 同目录）")]
@@ -35,6 +38,15 @@ public class LoadApiTestLogCollector : MonoBehaviour
     [Header("并发会话")]
     [Tooltip("几个测试脚本同时跑时设为相同数量；全部 NotifyRunnerComplete 后写入同一文件")]
     public int expectedConcurrentRunners = 2;
+
+    [Tooltip("JSON sessionId 前缀；同步套系 ConcurrentLoad_，异步套系 UniConcurrentLoad_")]
+    public string sessionIdPrefix = "ConcurrentLoad_";
+
+    [Tooltip("允许调用 UnloadAll 的 Runner；同步套系 Myloadtest，异步套系 MyLoadUniTest")]
+    public string unloadAllRunnerSource = UnloadAllRunnerSource;
+
+    /// <summary>当前会话配置的 UnloadAll 独占 Runner。</summary>
+    public string AllowedUnloadAllRunner => unloadAllRunnerSource;
 
     [Header("引用计数")]
     [Tooltip("每条 Record 自动附带 Resource/Bundle 层 Ref 快照")]
@@ -136,12 +148,12 @@ public class LoadApiTestLogCollector : MonoBehaviour
     {
         source = NormalizeSource(source);
 
-        if (source != UnloadAllRunnerSource)
+        if (source != unloadAllRunnerSource)
         {
             AppendLine(string.Format(
                 "<color=red>[UnloadAll] denied for {0}; only {1} may call UnloadAll</color>",
                 source,
-                UnloadAllRunnerSource));
+                unloadAllRunnerSource));
             return false;
         }
 
@@ -171,7 +183,7 @@ public class LoadApiTestLogCollector : MonoBehaviour
             failCount = 0;
             entrySequence = 0;
             sessionStartUtc = DateTime.UtcNow.ToString("o");
-            sessionId = BuildSessionId(source);
+            sessionId = BuildSessionId(source, sessionIdPrefix);
             sessionActive = true;
             lastSavedPath = null;
             unloadAllRunnerClaimed = null;
@@ -401,10 +413,13 @@ public class LoadApiTestLogCollector : MonoBehaviour
         return string.CompareOrdinal(a.timestampUtc, b.timestampUtc);
     }
 
-    static string BuildSessionId(string firstSource)
+    static string BuildSessionId(string firstSource, string prefix)
     {
         string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        return "ConcurrentLoad_" + firstSource + "_" + stamp;
+        if (string.IsNullOrEmpty(prefix))
+            prefix = "ConcurrentLoad_";
+
+        return prefix + firstSource + "_" + stamp;
     }
 
     static string NormalizeSource(string source)

@@ -137,7 +137,10 @@ public class BundleManager
 
     static string ResolveBundleFilePath(string root, string bundleName)
     {
-        string path = Path.Combine(root, bundleName);
+        string path = StreamingAssetsIO.CombinePath(root, bundleName);
+        if (StreamingAssetsIO.IsNonFileProtocolPath(root))
+            return path;
+
         if (File.Exists(path))
             return path;
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -36,13 +37,21 @@ public class CatalogueReader
             return false;
         }
 
-        if (!File.Exists(cataloguePath))
+        string json;
+        try
         {
-            Debug.LogError("Catalogue file not found: " + cataloguePath);
+            json = StreamingAssetsIO.ReadAllText(cataloguePath);
+        }
+        catch (IOException ex)
+        {
+            Debug.LogError("Catalogue read failed: " + cataloguePath + " | " + ex.Message);
             return false;
         }
-
-        string json = File.ReadAllText(cataloguePath);
+        catch (Exception ex)
+        {
+            Debug.LogError("Catalogue read failed: " + cataloguePath + " | " + ex.Message);
+            return false;
+        }
         catalog = JsonUtility.FromJson<AssetCatalog>(json);
         if (catalog == null)
         {
@@ -59,7 +68,7 @@ public class CatalogueReader
         if (string.IsNullOrEmpty(bundleRoot))
             bundleRoot = Application.streamingAssetsPath;
 
-        string cataloguePath = Path.Combine(bundleRoot, "Catalogue", RuntimeCatalogueFileName);
+        string cataloguePath = StreamingAssetsIO.CombinePath(bundleRoot, "Catalogue", RuntimeCatalogueFileName);
         return LoadFromFile(cataloguePath);
     }
 

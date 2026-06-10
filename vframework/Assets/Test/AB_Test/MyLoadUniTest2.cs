@@ -1,4 +1,5 @@
-using System.Collections;
+using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,13 +8,13 @@ using UnityEditor;
 #endif
 
 /// <summary>
-/// 同步 Load 并发引用计数测试：TestABScene 默认与 <see cref="Myloadtest"/> 同时跑。
-/// 与 Myloadtest 同时 Load/Release 共享资源；禁止调用 UnloadAll。
+/// LoadUniTaskAsync 并发引用计数测试：与 <see cref="MyLoadUniTest"/> 同时 await Load/Release。
+/// 禁止调用 UnloadAll。默认在 TestABScene 上禁用。
 /// </summary>
-public class MyLoadTest2 : MonoBehaviour
+public class MyLoadUniTest2 : MonoBehaviour
 {
     const int CaseCount = 8;
-    const string LogSource = "MyLoadTest2";
+    const string LogSource = "MyLoadUniTest2";
 
     public float intervalSeconds = 5f;
     public bool runOnStart = true;
@@ -29,10 +30,10 @@ public class MyLoadTest2 : MonoBehaviour
     IAssetHandle uiRes;
     GameObject instance;
     GameObject uiInstance;
-    Coroutine routine;
     int caseIndex;
     int currentCaseId;
     bool finishing;
+    bool running;
 
     void Awake()
     {
@@ -57,11 +58,15 @@ public class MyLoadTest2 : MonoBehaviour
         }
 
         if (runOnStart)
-            routine = StartCoroutine(RunCases());
+            RunCasesAsync().Forget();
     }
 
-    IEnumerator RunCases()
+    async UniTaskVoid RunCasesAsync()
     {
+        if (running)
+            return;
+
+        running = true;
         logCollector?.BeginSession(LogSource);
 
         while (caseIndex < CaseCount)
@@ -69,26 +74,31 @@ public class MyLoadTest2 : MonoBehaviour
             currentCaseId = caseIndex;
             logCollector?.AppendLine("[" + LogSource + "] ---------- Case " + currentCaseId + " ----------");
 
-            switch (currentCaseId)
-            {
-                case 0: CaseCatalogue(); break;
-                case 1: CaseLoadPrefabConcurrent(); break;
-                case 2: CaseReLoadPrefabRef(); break;
-                case 3: CaseLoadSpriteVerify(); break;
-                case 4: CaseCrossAtlas(); break;
-                case 5: CaseCrossUI(); break;
-                case 6: CaseReleaseAux(); break;
-                case 7: CaseVerifyChainAndRelease(); break;
-            }
+            await RunCaseAsync(currentCaseId);
 
             caseIndex++;
             float wait = currentCaseId == 0 ? 0f : intervalSeconds;
             if (wait > 0f)
-                yield return new WaitForSeconds(wait);
+                await UniTask.Delay(TimeSpan.FromSeconds(wait));
         }
 
         logCollector?.NotifyRunnerComplete(LogSource);
-        routine = null;
+        running = false;
+    }
+
+    async UniTask RunCaseAsync(int caseId)
+    {
+        switch (caseId)
+        {
+            case 0: CaseCatalogue(); break;
+            case 1: await CaseLoadPrefabConcurrentAsync(); break;
+            case 2: await CaseReLoadPrefabRefAsync(); break;
+            case 3: await CaseLoadSpriteVerifyAsync(); break;
+            case 4: await CaseCrossAtlasAsync(); break;
+            case 5: await CaseCrossUIAsync(); break;
+            case 6: CaseReleaseAux(); break;
+            case 7: await CaseVerifyChainAndReleaseAsync(); break;
+        }
     }
 
     public void FinishTestAndSaveLog()
@@ -97,16 +107,9 @@ public class MyLoadTest2 : MonoBehaviour
             return;
 
         finishing = true;
-
-        if (routine != null)
-        {
-            StopCoroutine(routine);
-            routine = null;
-        }
-
         logCollector?.ForceEndSession();
         string path = logCollector?.LastSavedPath;
-        Debug.Log("[MyLoadTest2] log saved: " + path);
+        Debug.Log("[MyLoadUniTest2] log saved: " + path);
         logCollector?.AppendLine("[" + LogSource + "] Finish: " + path);
 
         if (!quitApplicationAfterSave)
@@ -127,14 +130,14 @@ public class MyLoadTest2 : MonoBehaviour
             LogFail("Catalogue", "EnsureReady failed");
     }
 
-    void CaseLoadPrefabConcurrent()
+    async UniTask CaseLoadPrefabConcurrentAsync()
     {
         if (prefabRes == null)
-            prefabRes = BundleResLoader.Instance.Load<GameObject>("Model/Prefabs/tester");
+            prefabRes = await BundleResLoader.Instance.LoadUniTaskAsync<GameObject>("Model/Prefabs/tester");
 
         if (prefabRes == null)
         {
-            LogFail("Load Prefab", "Model/Prefabs/tester");
+            LogFail("LoadUni Prefab", "Model/Prefabs/tester");
             return;
         }
 
@@ -142,60 +145,59 @@ public class MyLoadTest2 : MonoBehaviour
         Quaternion rot = spawnRoot != null ? spawnRoot.rotation : Quaternion.identity;
         float range = 1f;
         Vector3 randomOffset = new Vector3(
-            Random.Range(-range, range),
+            UnityEngine.Random.Range(-range, range),
             0f,
-            Random.Range(-range, range)
-        );
+            UnityEngine.Random.Range(-range, range));
 
         instance = prefabRes.InstantiateAt(basePos + randomOffset + Vector3.forward * 2f, rot, null);
         if (instance == null)
         {
-            LogFail("Load Prefab", "Instantiate failed");
+            LogFail("LoadUni Prefab", "Instantiate failed");
             return;
         }
 
-        LogOk("Load Prefab", "concurrent acquirer " + instance.name);
+        LogOk("LoadUni Prefab", "concurrent acquirer " + instance.name);
     }
 
-    void CaseReLoadPrefabRef()
+    async UniTask CaseReLoadPrefabRefAsync()
     {
-        prefabResSecond = BundleResLoader.Instance.Load<GameObject>("Model/Prefabs/tester");
+        prefabResSecond = await BundleResLoader.Instance.LoadUniTaskAsync<GameObject>("Model/Prefabs/tester");
         if (prefabResSecond == null)
         {
-            LogFail("ReLoad Prefab", "second Load returned null");
+            LogFail("ReLoadUni Prefab", "second LoadUniTaskAsync returned null");
             return;
         }
 
         if (prefabResSecond.GetAsset<GameObject>() == null)
         {
-            LogFail("ReLoad Prefab", "GetAsset failed on cache hit");
+            LogFail("ReLoadUni Prefab", "GetAsset failed on cache hit");
             return;
         }
 
-        LogOk("ReLoad Prefab", "cache hit + ref++ OK");
+        LogOk("ReLoadUni Prefab", "cache hit + ref++ OK");
     }
 
-    void CaseLoadSpriteVerify()
+    async UniTask CaseLoadSpriteVerifyAsync()
     {
-        spriteRes = BundleResLoader.Instance.Load<Sprite>("Icon/3");
+        spriteRes = await BundleResLoader.Instance.LoadUniTaskAsync<Sprite>("Icon/3");
         if (spriteRes?.GetAsset<Sprite>() == null)
-            LogFail("Load Sprite", "Icon/3");
+            LogFail("LoadUni Sprite", "Icon/3");
         else
-            LogOk("Load Sprite", "Icon/3 verified");
+            LogOk("LoadUni Sprite", "Icon/3 verified");
     }
 
-    void CaseCrossAtlas()
+    async UniTask CaseCrossAtlasAsync()
     {
-        atlasRes = BundleResLoader.Instance.Load<Sprite>("Atlas/Role/Hog_Attack_000");
+        atlasRes = await BundleResLoader.Instance.LoadUniTaskAsync<Sprite>("Atlas/Role/Hog_Attack_000");
         if (atlasRes?.GetAsset<Sprite>() == null)
             LogFail("Cross Atlas", "Atlas/Role/Hog_Attack_000");
         else
             LogOk("Cross Atlas", "atlas.bundle concurrent OK");
     }
 
-    void CaseCrossUI()
+    async UniTask CaseCrossUIAsync()
     {
-        uiRes = BundleResLoader.Instance.Load<GameObject>("UI/UIRoot");
+        uiRes = await BundleResLoader.Instance.LoadUniTaskAsync<GameObject>("UI/UIRoot");
         if (uiRes == null)
         {
             LogFail("Cross UI", "UI/UIRoot load");
@@ -233,7 +235,7 @@ public class MyLoadTest2 : MonoBehaviour
         LogOk("Release", "sprite/atlas/ui released (prefab kept)");
     }
 
-    void CaseVerifyChainAndRelease()
+    async UniTask CaseVerifyChainAndReleaseAsync()
     {
         if (!BundleResLoader.Instance.EnsureReady())
         {
@@ -241,7 +243,7 @@ public class MyLoadTest2 : MonoBehaviour
             return;
         }
 
-        IAssetHandle probe = BundleResLoader.Instance.Load<Sprite>("Atlas/Role/Hog_Attack_000");
+        IAssetHandle probe = await BundleResLoader.Instance.LoadUniTaskAsync<Sprite>("Atlas/Role/Hog_Attack_000");
         if (probe?.GetAsset<Sprite>() == null)
         {
             LogFail("Verify Chain", "Atlas probe failed");
@@ -261,18 +263,18 @@ public class MyLoadTest2 : MonoBehaviour
         prefabRes?.Release();
         prefabRes = null;
 
-        LogOk("Verify Chain", "Load/Release OK; UnloadAll skipped (Myloadtest only)");
+        LogOk("Verify Chain", "LoadUniTaskAsync OK; UnloadAll skipped (MyLoadUniTest only)");
     }
 
     void LogOk(string api, string detail)
     {
-        Debug.Log("[MyLoadTest2] OK | " + api + " | " + detail);
+        Debug.Log("[MyLoadUniTest2] OK | " + api + " | " + detail);
         logCollector?.Record(LogSource, currentCaseId, caseIndex, api, true, detail);
     }
 
     void LogFail(string api, string detail)
     {
-        Debug.LogError("[MyLoadTest2] FAIL | " + api + " | " + detail);
+        Debug.LogError("[MyLoadUniTest2] FAIL | " + api + " | " + detail);
         logCollector?.Record(LogSource, currentCaseId, caseIndex, api, false, detail);
     }
 
