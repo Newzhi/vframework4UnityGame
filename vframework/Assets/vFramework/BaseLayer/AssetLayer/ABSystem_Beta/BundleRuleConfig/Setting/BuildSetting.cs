@@ -17,7 +17,7 @@ public enum BuildPlatform
 
 #region 枚举 - 打包模式
 
-// UI 文案：EditorTest=编辑器测试，DeviceDebug=真机模式/首包，CdnHotUpdate=CDN联网，DlcPackage=DLC分包
+// UI 文案：EditorTest=编辑器测试，DeviceDebug=首包（真机模式），CdnHotUpdate=CDN联网，DlcPackage=DLC分包
 public enum BuildMode
 {
     EditorTest,
@@ -49,16 +49,15 @@ public enum DownloadPriority
     Optional,
 }
 
-public enum ResourceCategory
+/// <summary>自定义项为文件夹路径时的 AB 拆分粒度（与全局 Default/Detailed 规则语义一致）。</summary>
+public enum BundleFolderRule
 {
-    Scene,
-    Prefab,
-    MaterialTexture,
-    Audio,
-    Script,
-    ConfigData,
-    Mod,
-    Other,
+    /// <summary>整个目录打成一个包，使用配置项「包名」。</summary>
+    EntireFolder,
+    /// <summary>目录下每个第一级子文件夹各打一个包，包名取子文件夹名。</summary>
+    FirstLevelSubfolders,
+    /// <summary>目录下每一个子文件夹（含嵌套）各打一个包。</summary>
+    AllSubfolders,
 }
 
 #endregion
@@ -72,7 +71,8 @@ public class BundleConfigItem
     public string bundleName = "bundle";
     public BuildMode buildMode = BuildMode.EditorTest;
     public DownloadPriority downloadPriority = DownloadPriority.Normal;
-    public ResourceCategory resourceCategory = ResourceCategory.Prefab;
+    /// <summary>资源路径为文件夹时生效；单文件路径时忽略。</summary>
+    public BundleFolderRule folderPackingRule = BundleFolderRule.EntireFolder;
     public string note;
 }
 

@@ -15,7 +15,21 @@ public class BundleRuleMaker : EditorWindow
 
     static readonly string[] BuildModeLabels =
     {
-        "编辑器测试", "真机模式/首包", "CDN联网", "DLC分包"
+        "编辑器测试", "首包（真机模式）", "CDN联网", "DLC分包"
+    };
+
+    static readonly string[] FolderRuleLabels =
+    {
+        "整个文件夹一个包",
+        "第一级子文件夹各一个包",
+        "每一个子文件夹（含嵌套）各一个包",
+    };
+
+    static readonly BundleFolderRule[] FolderRules =
+    {
+        BundleFolderRule.EntireFolder,
+        BundleFolderRule.FirstLevelSubfolders,
+        BundleFolderRule.AllSubfolders,
     };
 
     static readonly BuildMode[] BuildModes =
@@ -111,7 +125,7 @@ public class BundleRuleMaker : EditorWindow
 
         DrawOutputPathField(
             "首包输出路径",
-            "真机模式/首包下 AB 包的输出目录，默认 Assets/StreamingAssets。",
+            "首包（真机模式）下 AB 包的输出目录，默认 Assets/StreamingAssets。",
             ref setting.deviceOutputPath);
         DrawOutputPathField(
             "联网 CDN 输出路径",
@@ -204,7 +218,8 @@ public class BundleRuleMaker : EditorWindow
             {
                 assetPath = setting.targetDirectory,
                 bundleName = "bundle_" + (setting.customItems.Count + 1),
-                buildMode = setting.buildMode
+                buildMode = setting.buildMode,
+                folderPackingRule = BundleFolderRule.EntireFolder,
             });
         }
         EditorGUILayout.EndHorizontal();
@@ -239,9 +254,27 @@ public class BundleRuleMaker : EditorWindow
             }
             EditorGUILayout.EndHorizontal();
 
+            bool isFolderPath = AssetDatabase.IsValidFolder(item.assetPath);
+            int folderRuleIndex = Array.IndexOf(FolderRules, item.folderPackingRule);
+            if (folderRuleIndex < 0)
+                folderRuleIndex = 0;
+            EditorGUI.BeginDisabledGroup(!isFolderPath);
+            int newFolderRuleIndex = EditorGUILayout.Popup(
+                Tip("文件夹打包粒度", "资源路径为文件夹时生效；与全局「默认/细化打包」语义一致。单文件路径时忽略。"),
+                folderRuleIndex,
+                FolderRuleLabels);
+            EditorGUI.EndDisabledGroup();
+            if (isFolderPath)
+                item.folderPackingRule = FolderRules[newFolderRuleIndex];
+
+            bool needsBundleName = !isFolderPath || item.folderPackingRule == BundleFolderRule.EntireFolder;
+            EditorGUI.BeginDisabledGroup(!needsBundleName);
             item.bundleName = EditorGUILayout.TextField(
-                Tip("包名 (Bundle Name)", "AssetBundle 名称，无需手动加 .bundle 后缀。"),
+                Tip("包名 (Bundle Name)", needsBundleName
+                    ? "整个文件夹一个包或单文件时使用的 AssetBundle 名称，无需 .bundle 后缀。"
+                    : "当前粒度下包名由子文件夹名自动生成，此项无效。"),
                 item.bundleName);
+            EditorGUI.EndDisabledGroup();
 
             int itemModeIndex = Array.IndexOf(BuildModes, item.buildMode);
             if (itemModeIndex < 0)
@@ -255,9 +288,6 @@ public class BundleRuleMaker : EditorWindow
             item.downloadPriority = (DownloadPriority)EditorGUILayout.EnumPopup(
                 Tip("下载优先级", "资源下载优先级标记，供后续热更策略使用。"),
                 item.downloadPriority);
-            item.resourceCategory = (ResourceCategory)EditorGUILayout.EnumPopup(
-                Tip("资源类型", "资源分类标记，便于管理与筛选。"),
-                item.resourceCategory);
             item.note = EditorGUILayout.TextField(
                 Tip("备注说明", "可选的配置说明，仅用于编辑器内标注。"),
                 item.note);
@@ -373,17 +403,17 @@ public class BundleRuleMaker : EditorWindow
         switch (rule)
         {
             case PackingRule.Detailed:
-                return "细化打包：指定目录下每一个子文件夹（含嵌套）各打一个 AB 包。全局打包模式默认为「真机模式/首包」。";
+                return "细化打包：指定目录下每一个子文件夹（含嵌套）各打一个 AB 包。全局打包模式默认为「首包（真机模式）」。";
             case PackingRule.Custom:
-                return "自定义打包：每项配置的打包模式决定 AB 输出位置，可自由添加配置项。";
+                return "自定义打包：每项可指定路径、文件夹粒度与打包模式，可自由添加配置项。";
             default:
-                return "默认打包：指定目录下每个第一级子文件夹各打一个 AB 包。全局打包模式默认为「真机模式/首包」。";
+                return "默认打包：指定目录下每个第一级子文件夹各打一个 AB 包。全局打包模式默认为「首包（真机模式）」。";
         }
     }
 
     static string GetBuildModeFieldTooltip(BuildMode mode)
     {
-        return "默认打包 / 细化打包时默认为「真机模式/首包」，可按需切换。\n" + GetBuildModeDescription(mode);
+        return "默认打包 / 细化打包时默认为「首包（真机模式）」，可按需切换。\n" + GetBuildModeDescription(mode);
     }
 
     static string GetBuildModeDescription(BuildMode mode)
@@ -391,7 +421,7 @@ public class BundleRuleMaker : EditorWindow
         switch (mode)
         {
             case BuildMode.DeviceDebug:
-                return "真机模式/首包：AB 输出到首包输出路径（默认 StreamingAssets）。";
+                return "首包（真机模式）：AB 输出到首包输出路径（默认 StreamingAssets）。";
             case BuildMode.CdnHotUpdate:
                 return "CDN联网：AB 输出到联网 CDN 输出路径（默认 Bundles/CDN）。";
             case BuildMode.DlcPackage:

@@ -45,38 +45,14 @@ public static class RuleResolver
     public static List<AssetBundleBuild> ResolveDefault(string targetFolder)
     {
         List<AssetBundleBuild> builds = new List<AssetBundleBuild>();
-
-        if (!AssetDatabase.IsValidFolder(targetFolder))
-            return builds;
-
-        string[] subFolders = AssetDatabase.GetSubFolders(targetFolder);
-        foreach (string subFolder in subFolders)
-            TryAddFolderBuild(subFolder, BundlePlatformPaths.NormalizeBundleName(Path.GetFileName(subFolder) + BundleSuffix), builds);
-
+        AddFirstLevelSubfolderBuilds(targetFolder, builds);
         return builds;
     }
 
     public static List<AssetBundleBuild> ResolveDetailed(string targetFolder)
     {
         List<AssetBundleBuild> builds = new List<AssetBundleBuild>();
-
-        if (!AssetDatabase.IsValidFolder(targetFolder))
-            return builds;
-
-        List<string> folders = new List<string>();
-        CollectAllSubFolders(targetFolder, folders);
-
-        foreach (string folder in folders)
-        {
-            string relative = folder.Substring(targetFolder.Length).TrimStart('/');
-            string bundleName = BundlePlatformPaths.NormalizeBundleName(
-                string.IsNullOrEmpty(relative)
-                    ? Path.GetFileName(folder) + BundleSuffix
-                    : relative.Replace("/", "_") + BundleSuffix);
-
-            TryAddFolderBuild(folder, bundleName, builds);
-        }
-
+        AddAllSubfolderBuilds(targetFolder, builds);
         return builds;
     }
 
@@ -95,26 +71,80 @@ public static class RuleResolver
 
     static void AddCustomItemBuilds(BundleConfigItem item, List<AssetBundleBuild> builds)
     {
-        if (string.IsNullOrEmpty(item.assetPath) || string.IsNullOrEmpty(item.bundleName))
+        if (string.IsNullOrEmpty(item.assetPath))
             return;
-
-        string bundleName = BundlePlatformPaths.NormalizeBundleName(
-            item.bundleName.EndsWith(BundleSuffix)
-                ? item.bundleName
-                : item.bundleName + BundleSuffix);
 
         if (AssetDatabase.IsValidFolder(item.assetPath))
         {
-            TryAddFolderBuild(item.assetPath, bundleName, builds);
+            switch (item.folderPackingRule)
+            {
+                case BundleFolderRule.FirstLevelSubfolders:
+                    AddFirstLevelSubfolderBuilds(item.assetPath, builds);
+                    return;
+                case BundleFolderRule.AllSubfolders:
+                    AddAllSubfolderBuilds(item.assetPath, builds);
+                    return;
+            }
+
+            if (string.IsNullOrEmpty(item.bundleName))
+                return;
+
+            string entireBundleName = NormalizeBundleName(item.bundleName);
+            TryAddFolderBuild(item.assetPath, entireBundleName, builds);
+            return;
         }
-        else if (AssetDatabase.LoadMainAssetAtPath(item.assetPath) != null)
+
+        if (string.IsNullOrEmpty(item.bundleName))
+            return;
+
+        if (AssetDatabase.LoadMainAssetAtPath(item.assetPath) != null)
         {
             builds.Add(new AssetBundleBuild
             {
-                assetBundleName = bundleName,
+                assetBundleName = NormalizeBundleName(item.bundleName),
                 assetNames = new[] { item.assetPath }
             });
         }
+    }
+
+    static void AddFirstLevelSubfolderBuilds(string targetFolder, List<AssetBundleBuild> builds)
+    {
+        if (!AssetDatabase.IsValidFolder(targetFolder))
+            return;
+
+        foreach (string subFolder in AssetDatabase.GetSubFolders(targetFolder))
+        {
+            string bundleName = BundlePlatformPaths.NormalizeBundleName(Path.GetFileName(subFolder) + BundleSuffix);
+            TryAddFolderBuild(subFolder, bundleName, builds);
+        }
+    }
+
+    static void AddAllSubfolderBuilds(string targetFolder, List<AssetBundleBuild> builds)
+    {
+        if (!AssetDatabase.IsValidFolder(targetFolder))
+            return;
+
+        List<string> folders = new List<string>();
+        CollectAllSubFolders(targetFolder, folders);
+
+        foreach (string folder in folders)
+        {
+            string relative = folder.Substring(targetFolder.Length).TrimStart('/');
+            string bundleName = BundlePlatformPaths.NormalizeBundleName(
+                string.IsNullOrEmpty(relative)
+                    ? Path.GetFileName(folder) + BundleSuffix
+                    : relative.Replace("/", "_") + BundleSuffix);
+
+            TryAddFolderBuild(folder, bundleName, builds);
+        }
+    }
+
+    static string NormalizeBundleName(string bundleName)
+    {
+        return BundlePlatformPaths.NormalizeBundleName(
+            bundleName.EndsWith(BundleSuffix)
+                ? bundleName
+                : bundleName + BundleSuffix);
     }
 
     static void CollectAllSubFolders(string folder, List<string> result)

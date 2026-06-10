@@ -135,7 +135,7 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 |----|--------|------|----------|----------|
 | P-040 | P0 | 编辑器测试 | buildMode=EditorTest | **不** 调用 BuildPipeline；输出目录 **无** 新 `.bundle` |
 | P-041 | P0 | 编辑器测试仍写清单 | EditorTest + Basic 夹具 | `AssetCatalog.json` 仍更新；entries 与规则一致 |
-| P-042 | P0 | 真机模式/首包 | buildMode=DeviceDebug | `deviceOutputPath` 下生成真实 `.bundle` + Unity `.manifest` |
+| P-042 | P0 | 首包（真机模式） | buildMode=DeviceDebug | `deviceOutputPath` 下生成真实 `.bundle` + Unity `.manifest` |
 | P-043 | P0 | CDN 联网 | buildMode=CdnHotUpdate | `cdnOutputPath`（默认 `Bundles/CDN`）下生成 AB |
 | P-044 | P1 | EditorTest 的 bundleRoot | 对比清单中 `bundleRoot` 字段 | 当前实现仍指向 deviceOutputPath（占位行为，记录即可） |
 | P-045 | P2 | 连续切换模式打包 | 同一夹具先 EditorTest 再 DeviceDebug | 第二次出现真实 bundle；清单 buildMode 字段更新 |
