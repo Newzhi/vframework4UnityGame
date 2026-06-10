@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -54,14 +56,30 @@ public class BundleResLoader
 
             bundleRootPath = BundlePlatformPaths.ResolveRuntimeBundleRoot(bundleRootPath, usePlatformSubfolder);
 
-            BundleManager.Init(bundleRootPath, catalogue);
+            if (resourceDic.Count > 0)
+            {
+                foreach (AbstractResource res in resourceDic.Values)
+                {
+                    if (res == null)
+                        continue;
+
+                    res.onUnLoad = null;
+                    res.UnLoad();
+                }
+            }
             resourceDic.Clear();
+            BundleManager.Init(bundleRootPath, catalogue);
 
             if (!catalogue.LoadFromBundleRoot(bundleRootPath))
             {
                 initialized = false;
                 Debug.LogError("BundleResLoader Init failed: catalogue not loaded from " + bundleRootPath);
                 return false;
+            }
+
+            if (catalogue.Catalog == null || catalogue.Catalog.bundles == null || catalogue.Catalog.bundles.Length == 0)
+            {
+                Debug.LogWarning("Catalogue loaded but bundle dependency map is empty. Cross-bundle dependencies will not be preloaded (EditorTest may produce this).");
             }
 
             initialized = true;
@@ -116,8 +134,14 @@ public class BundleResLoader
     /// 同步加载。loadPath 为相对打包根目录的简路径，无扩展名。
     /// 例：Default 规则下 targetDirectory=Assets/AssetBundle → Load&lt;Sprite&gt;("Atlas/Role/Hog_Attack_000")
     /// </summary>
-    public AbstractResource Load<T>(string loadPath) where T : Object
+    public IAssetHandle Load<T>(string loadPath) where T : Object
     {
+        if (string.IsNullOrEmpty(loadPath))
+        {
+            Debug.LogError("Load path is null or empty.");
+            return null;
+        }
+
         if (!EnsureInitialized())
         {
             Debug.LogError("BundleResLoader not initialized; cannot load: " + loadPath);
@@ -133,23 +157,122 @@ public class BundleResLoader
         return LoadByBundle<T>(entry.bundleName, entry.assetName, entry.assetPath);
     }
 
-    //TODO 异步加载(默认API)，期望 UniTask；设计基线默认 API，见 Docs/业务API与CDN规划.md §1 需求2
-    T LoadAsync<T>()
+    /// <summary>
+    /// UniTask 异步加载默认入口。当前阶段先提供 await 形态；
+    /// 实际资源 I/O 仍复用同步 Load，后续接入 CDN 下载/并发合并。
+    /// </summary>
+    public async UniTask<IAssetHandle> LoadUniTaskAsync<T>(string loadPath) where T : Object
     {
-        T t = default;
-        return t;
+        // 让调用方可 await，避免在同一调用栈内立即阻塞。
+        await UniTask.Yield(PlayerLoopTiming.Update);
+
+        return Load<T>(loadPath);
     }
 
-    //带有回调函数的加载，默认异步；见 Docs/业务API与CDN规划.md §1 需求3
-    void LoadWithCallback<T>()
+    /// <summary>
+    /// UniTask 带回调加载，默认走 UniTask 异步；useUniTask=false 时走同步 Load 并立即回调。
+    /// </summary>
+    public void LoadUniTaskWithCallback<T>(string loadPath, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true) where T : Object
     {
+        if (!useUniTask)
+        {
+            InvokeSyncLoadWithCallback(
+                () => Load<T>(loadPath),
+                onComplete,
+                onFailed,
+                "LoadUniTaskWithCallback failed, loadPath=" + loadPath);
+            return;
+        }
 
+        InvokeUniTaskLoadWithCallback(
+            () => LoadUniTaskAsync<T>(loadPath),
+            onComplete,
+            onFailed,
+            "LoadUniTaskWithCallback failed, loadPath=" + loadPath);
     }
 
-    //卸载资源
-    void Unload()
+    /// <summary>
+    /// 按 Unity 完整 assetPath 的 UniTask 回调加载，默认走 UniTask 异步。
+    /// </summary>
+    public void LoadByAssetPathUniTaskWithCallback<T>(string assetPath, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true) where T : Object
     {
+        if (!useUniTask)
+        {
+            InvokeSyncLoadWithCallback(
+                () => LoadByAssetPath<T>(assetPath),
+                onComplete,
+                onFailed,
+                "LoadByAssetPathUniTaskWithCallback failed, assetPath=" + assetPath);
+            return;
+        }
 
+        InvokeUniTaskLoadWithCallback(
+            () => LoadByAssetPathUniTaskAsync<T>(assetPath),
+            onComplete,
+            onFailed,
+            "LoadByAssetPathUniTaskWithCallback failed, assetPath=" + assetPath);
+    }
+
+    /// <summary>
+    /// 按 bundle+asset 的 UniTask 回调加载，默认走 UniTask 异步。
+    /// </summary>
+    public void LoadByBundleUniTaskWithCallback<T>(string bundleName, string assetName, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true, string assetPath = null) where T : Object
+    {
+        if (!useUniTask)
+        {
+            InvokeSyncLoadWithCallback(
+                () => LoadByBundle<T>(bundleName, assetName, assetPath),
+                onComplete,
+                onFailed,
+                "LoadByBundleUniTaskWithCallback failed, key=" + bundleName + "/" + assetName);
+            return;
+        }
+
+        InvokeUniTaskLoadWithCallback(
+            async () => await LoadByBundleUniTaskAsync<T>(bundleName, assetName, assetPath),
+            onComplete,
+            onFailed,
+            "LoadByBundleUniTaskWithCallback failed, key=" + bundleName + "/" + assetName);
+    }
+
+    async UniTask<IAssetHandle> LoadByAssetPathUniTaskAsync<T>(string assetPath) where T : Object
+    {
+        await UniTask.Yield(PlayerLoopTiming.Update);
+        return LoadByAssetPath<T>(assetPath);
+    }
+
+    async UniTask<IAssetHandle> LoadByBundleUniTaskAsync<T>(string bundleName, string assetName, string assetPath = null) where T : Object
+    {
+        await UniTask.Yield(PlayerLoopTiming.Update);
+        return LoadByBundle<T>(bundleName, assetName, assetPath);
+    }
+
+    /// <summary>
+    /// 卸载资源：可选直接销毁实例，并减少资源引用计数。
+    /// </summary>
+    /// <param name="resource">由 Load/LoadUniTaskAsync 返回的资源句柄，可为 null。</param>
+    /// <param name="instance">业务侧实例对象，可为 null；不为 null 时会直接 Destroy。</param>
+    /// <param name="onComplete">卸载完成回调，参数表示是否执行了至少一个有效卸载动作。</param>
+    public void Unload(IAssetHandle resource, GameObject instance = null, Action<bool> onComplete = null)
+    {
+        bool unloaded = false;
+
+        if (instance != null)
+        {
+            Object.Destroy(instance);
+            unloaded = true;
+        }
+
+        if (resource != null)
+        {
+            resource.Release();
+            unloaded = true;
+        }
+
+        if (!unloaded)
+            Debug.LogWarning("Unload called with null resource and null instance.");
+
+        onComplete?.Invoke(unloaded);
     }
 
     //卸载全部资源
@@ -173,8 +296,14 @@ public class BundleResLoader
     #region 辅助函数
 
     /// <summary>按 bundle 名 + 包内 asset 名加载，Resource 层与 BundleManager 的桥接。</summary>
-    public AbstractResource LoadByBundle<T>(string bundleName, string assetName, string assetPath = null) where T : Object
+    public IAssetHandle LoadByBundle<T>(string bundleName, string assetName, string assetPath = null) where T : Object
     {
+        if (string.IsNullOrEmpty(bundleName) || string.IsNullOrEmpty(assetName))
+        {
+            Debug.LogError("LoadByBundle failed, bundleName or assetName is null/empty.");
+            return null;
+        }
+
         if (!EnsureInitialized())
         {
             Debug.LogError("BundleResLoader not initialized; cannot load bundle: " + bundleName + "/" + assetName);
@@ -186,6 +315,13 @@ public class BundleResLoader
         if (resourceDic.TryGetValue(key, out AbstractResource res))
         {
             res.AddReference();
+            if (res.GetAsset<T>() == null)
+            {
+                // 命中缓存但泛型不匹配时回滚本次引用，避免悬挂引用。
+                res.Release();
+                Debug.LogError("LoadByBundle type mismatch for cached resource: " + key + ", requested type: " + typeof(T).Name);
+                return null;
+            }
             return res;
         }
 
@@ -197,7 +333,7 @@ public class BundleResLoader
 
         if (res.GetAsset<T>() == null)
         {
-            resourceDic.Remove(key);
+            res.Release();
             return null;
         }
 
@@ -205,8 +341,14 @@ public class BundleResLoader
     }
 
     /// <summary>按 Unity 工程完整 assetPath 加载，如 Assets/AssetBundle/Atlas/Role/Hog.png</summary>
-    public AbstractResource LoadByAssetPath<T>(string assetPath) where T : Object
+    public IAssetHandle LoadByAssetPath<T>(string assetPath) where T : Object
     {
+        if (string.IsNullOrEmpty(assetPath))
+        {
+            Debug.LogError("Asset path is null or empty.");
+            return null;
+        }
+
         if (!EnsureInitialized())
         {
             Debug.LogError("BundleResLoader not initialized; cannot load asset path: " + assetPath);
@@ -220,6 +362,61 @@ public class BundleResLoader
         }
 
         return LoadByBundle<T>(entry.bundleName, entry.assetName, entry.assetPath);
+    }
+
+    void InvokeSyncLoadWithCallback(Func<IAssetHandle> loader, Action<IAssetHandle> onComplete, Action<string> onFailed, string failMessage)
+    {
+        try
+        {
+            IAssetHandle handle = loader.Invoke();
+            if (handle != null)
+            {
+                onComplete?.Invoke(handle);
+                return;
+            }
+
+            if (onFailed != null)
+                onFailed.Invoke(failMessage);
+            else
+                Debug.LogError(failMessage);
+        }
+        catch (Exception ex)
+        {
+            string msg = failMessage + ", exception=" + ex.Message;
+            if (onFailed != null)
+                onFailed.Invoke(msg);
+            else
+                Debug.LogError(msg);
+        }
+    }
+
+    void InvokeUniTaskLoadWithCallback(Func<UniTask<IAssetHandle>> loader, Action<IAssetHandle> onComplete, Action<string> onFailed, string failMessage)
+    {
+        UniTask.Void(async () =>
+        {
+            try
+            {
+                IAssetHandle handle = await loader.Invoke();
+                if (handle != null)
+                {
+                    onComplete?.Invoke(handle);
+                    return;
+                }
+
+                if (onFailed != null)
+                    onFailed.Invoke(failMessage);
+                else
+                    Debug.LogError(failMessage);
+            }
+            catch (Exception ex)
+            {
+                string msg = failMessage + ", exception=" + ex.Message;
+                if (onFailed != null)
+                    onFailed.Invoke(msg);
+                else
+                    Debug.LogError(msg);
+            }
+        });
     }
 
     #endregion

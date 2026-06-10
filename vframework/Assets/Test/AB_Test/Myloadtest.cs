@@ -7,11 +7,14 @@ using UnityEditor;
 #endif
 
 /// <summary>
-/// AB 集成测试：tester → 换贴图/材质 → 跨包 atlas/ui → 释放 → 结束。
+/// AB 集成测试主脚本：Catalogue → Load → 跨包 → Release → 唯一 UnloadAll 收尾。
+/// 与 <see cref="MyLoadTest2"/> 并发时，Case 8 会等待对方跑完再执行 UnloadAll。
 /// </summary>
 public class Myloadtest : MonoBehaviour
 {
     const int CaseCount = 9;
+    const string LogSource = "Myloadtest";
+    const string PeerRunnerSource = "MyLoadTest2";
 
     public float intervalSeconds = 5f;
     public bool runOnStart = true;
@@ -20,22 +23,24 @@ public class Myloadtest : MonoBehaviour
     public Button finishButton;
     public bool quitApplicationAfterSave = true;
 
-    AbstractResource prefabRes;
-    AbstractResource spriteRes;
-    AbstractResource materialRes;
-    AbstractResource atlasRes;
-    AbstractResource uiRes;
+    IAssetHandle prefabRes;
+    IAssetHandle spriteRes;
+    IAssetHandle materialRes;
+    IAssetHandle atlasRes;
+    IAssetHandle uiRes;
     GameObject instance;
     GameObject uiInstance;
     Coroutine routine;
     int caseIndex;
     int currentCaseId;
     bool finishing;
+    bool unloadAllDone;
 
     void Awake()
     {
         if (logCollector == null)
             logCollector = GetComponent<LoadApiTestLogCollector>();
+        logCollector = LoadApiTestLogCollector.EnsureShared(logCollector);
     }
 
     void Start()
@@ -59,24 +64,30 @@ public class Myloadtest : MonoBehaviour
 
     IEnumerator RunCases()
     {
-        logCollector?.BeginSession("Myloadtest");
+        logCollector?.BeginSession(LogSource);
 
         while (caseIndex < CaseCount)
         {
             currentCaseId = caseIndex;
-            logCollector?.AppendLine("---------- Case " + currentCaseId + " ----------");
+            logCollector?.AppendLine("[" + LogSource + "] ---------- Case " + currentCaseId + " ----------");
 
-            switch (currentCaseId)
+            if (currentCaseId == 8)
             {
-                case 0: CaseCatalogue(); break;
-                case 1: CaseLoadPrefab(); break;
-                case 2: CaseApplySprite(); break;
-                case 3: CaseReplaceMaterial(); break;
-                case 4: CaseCrossAtlas(); break;
-                case 5: CaseCrossUI(); break;
-                case 6: CaseReleaseAux(); break;
-                case 7: CaseDestroyPrefab(); break;
-                case 8: CaseUnloadAll(); break;
+                yield return CaseUnloadAllAfterPeers();
+            }
+            else
+            {
+                switch (currentCaseId)
+                {
+                    case 0: CaseCatalogue(); break;
+                    case 1: CaseLoadPrefab(); break;
+                    case 2: CaseApplySprite(); break;
+                    case 3: CaseReplaceMaterial(); break;
+                    case 4: CaseCrossAtlas(); break;
+                    case 5: CaseCrossUI(); break;
+                    case 6: CaseReleaseAux(); break;
+                    case 7: CaseDestroyPrefab(); break;
+                }
             }
 
             caseIndex++;
@@ -85,13 +96,13 @@ public class Myloadtest : MonoBehaviour
                 yield return new WaitForSeconds(wait);
         }
 
-        logCollector?.SaveSessionAndGetPath();
+        logCollector?.NotifyRunnerComplete(LogSource);
         routine = null;
     }
 
     public void LoadPrefabNow()
     {
-        logCollector?.BeginSession("Myloadtest");
+        logCollector?.BeginSession(LogSource);
         currentCaseId = 1;
         caseIndex = 1;
         CaseLoadPrefab();
@@ -110,9 +121,10 @@ public class Myloadtest : MonoBehaviour
             routine = null;
         }
 
-        string path = logCollector?.SaveSessionAndGetPath();
+        logCollector?.ForceEndSession();
+        string path = logCollector?.LastSavedPath;
         Debug.Log("[Myloadtest] log saved: " + path);
-        logCollector?.AppendLine("Finish: " + path);
+        logCollector?.AppendLine("[" + LogSource + "] Finish: " + path);
 
         if (!quitApplicationAfterSave)
             return;
@@ -149,7 +161,17 @@ public class Myloadtest : MonoBehaviour
             return;
         }
 
-        instance = prefabRes.Instantiate();
+        Vector3 basePos = spawnRoot != null ? spawnRoot.position : Vector3.zero;
+        Quaternion rot = spawnRoot != null ? spawnRoot.rotation : Quaternion.identity;
+
+        float range = 1f;
+        Vector3 randomOffset = new Vector3(
+            Random.Range(-range, range),
+            0f,
+            Random.Range(-range, range)
+        );
+
+        instance = prefabRes.InstantiateAt(basePos + randomOffset, rot, null);
         if (instance == null)
         {
             LogFail("Load Prefab", "Instantiate failed");
@@ -268,22 +290,87 @@ public class Myloadtest : MonoBehaviour
         LogOk("Destroy Prefab", "instance destroyed");
     }
 
-    void CaseUnloadAll()
+    IEnumerator CaseUnloadAllAfterPeers()
     {
+        if (logCollector != null
+            && logCollector.expectedConcurrentRunners > 1
+            && logCollector.IsRunnerRegistered(PeerRunnerSource))
+        {
+            float timeout = intervalSeconds * 12f;
+            float elapsed = 0f;
+
+            while (!logCollector.IsRunnerComplete(PeerRunnerSource) && elapsed < timeout)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            if (!logCollector.IsRunnerComplete(PeerRunnerSource))
+            {
+                LogFail("UnloadAll", "timeout waiting for " + PeerRunnerSource);
+                yield break;
+            }
+
+            LogOk("UnloadAll Wait", PeerRunnerSource + " finished");
+        }
+
+        if (logCollector != null && !logCollector.TryClaimUnloadAll(LogSource))
+        {
+            LogFail("UnloadAll", "only " + LoadApiTestLogCollector.UnloadAllRunnerSource + " may call UnloadAll");
+            yield break;
+        }
+
+        if (!VerifyLoadChain())
+        {
+            LogFail("UnloadAll", "chain verification failed before UnloadAll");
+            yield break;
+        }
+
         BundleResLoader.Instance.UnloadAll();
-        LogOk("Finish", "UnloadAll done");
+        ClearLocalHandles();
+        unloadAllDone = true;
+        LogOk("UnloadAll", "exclusive cleanup done");
+    }
+
+    bool VerifyLoadChain()
+    {
+        if (!BundleResLoader.Instance.EnsureReady())
+            return false;
+
+        CatalogueReader catalogue = BundleResLoader.Instance.GetCatalogue();
+        if (catalogue == null || !catalogue.IsLoaded)
+            return false;
+
+        IAssetHandle probe = BundleResLoader.Instance.Load<Sprite>("Icon/3");
+        if (probe?.GetAsset<Sprite>() == null)
+            return false;
+
+        probe.Release();
+        LogOk("Verify Chain", "Catalogue + Load/Release probe OK");
+        return true;
+    }
+
+    void ClearLocalHandles()
+    {
+        instance = null;
+        uiInstance = null;
+        prefabRes = null;
+        spriteRes = null;
+        materialRes = null;
+        atlasRes = null;
+        uiRes = null;
     }
 
     void LogOk(string api, string detail)
     {
         Debug.Log("[Myloadtest] OK | " + api + " | " + detail);
-        logCollector?.Record(currentCaseId, caseIndex, api, true, detail);
+        logCollector?.Record(LogSource, currentCaseId, caseIndex, api, true, detail);
     }
 
     void LogFail(string api, string detail)
     {
         Debug.LogError("[Myloadtest] FAIL | " + api + " | " + detail);
-        logCollector?.Record(currentCaseId, caseIndex, api, false, detail);
+        logCollector?.Record(LogSource, currentCaseId, caseIndex, api, false, detail);
     }
 
     void OnDestroy()
@@ -291,11 +378,14 @@ public class Myloadtest : MonoBehaviour
         if (instance != null)
             Destroy(instance);
 
+        if (unloadAllDone)
+            return;
+
         spriteRes?.Release();
         materialRes?.Release();
         atlasRes?.Release();
         uiRes?.Release();
         prefabRes?.Release();
-        logCollector?.EndSession();
+        logCollector?.NotifyRunnerComplete(LogSource);
     }
 }

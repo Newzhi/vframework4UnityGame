@@ -63,19 +63,19 @@ public class ABLoadSmokeTest : MonoBehaviour
 
         if (!string.IsNullOrEmpty(loadPath))
         {
-            AbstractResource res = loader.Load<Sprite>(loadPath);
+            IAssetHandle res = loader.Load<Sprite>(loadPath);
             LogResult("Load", loadPath, res);
         }
 
         if (!string.IsNullOrEmpty(assetPath))
         {
-            AbstractResource byAssetPath = loader.LoadByAssetPath<Sprite>(assetPath);
+            IAssetHandle byAssetPath = loader.LoadByAssetPath<Sprite>(assetPath);
             LogResult("LoadByAssetPath", assetPath, byAssetPath);
         }
 
         if (!string.IsNullOrEmpty(bundleName) && !string.IsNullOrEmpty(assetName))
         {
-            AbstractResource byBundle = loader.LoadByBundle<Sprite>(bundleName, assetName);
+            IAssetHandle byBundle = loader.LoadByBundle<Sprite>(bundleName, assetName);
             LogResult("LoadByBundle", bundleName + "/" + assetName, byBundle);
         }
     }
@@ -87,7 +87,7 @@ public class ABLoadSmokeTest : MonoBehaviour
         Debug.Log("[ABLoadSmokeTest] UnloadAll done");
     }
 
-    static void LogResult(string method, string id, AbstractResource res)
+    static void LogResult(string method, string id, IAssetHandle res)
     {
         if (res == null)
             Debug.LogError("[ABLoadSmokeTest] " + method + " failed: " + id);

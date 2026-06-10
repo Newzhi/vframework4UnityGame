@@ -502,7 +502,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 2100000004}
-        m_TargetAssemblyTypeName: Myloadtest, Assembly-CSharp
+        m_TargetAssemblyTypeName: MyLoadTest2, Assembly-CSharp
         m_MethodName: FinishTestAndSaveLog
         m_Mode: 1
         m_Arguments:
@@ -754,19 +754,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1301642778}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2100000004}
-        m_TargetAssemblyTypeName: Myloadtest, Assembly-CSharp
-        m_MethodName: LoadPrefabNow
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1301642778
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1369,6 +1357,7 @@ GameObject:
   - component: {fileID: 2100000003}
   - component: {fileID: 2100000004}
   - component: {fileID: 2100000005}
+  - component: {fileID: 2100000006}
   m_Layer: 0
   m_Name: ABundleTestRunner
   m_TagString: Untagged
@@ -1420,15 +1409,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 2100000001}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45e49c72c1dfecd4e9a8387b10a40f7c, type: 3}
+  m_Script: {fileID: 11500000, guid: aa95507f350fa56449ff583d9e6e5cc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  intervalSeconds: 5
+  intervalSeconds: 3
   runOnStart: 1
-  logCollector: {fileID: 2100000005}
-  spawnRoot: {fileID: 638507355}
-  finishButton: {fileID: 888892725}
-  quitApplicationAfterSave: 1
+  logCollector: {fileID: 0}
+  spawnRoot: {fileID: 0}
+  finishButton: {fileID: 0}
+  quitApplicationAfterSave: 0
 --- !u!114 &2100000005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1441,17 +1430,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6cada1e258b4e9140b84caf367db48a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  outputRelativeFolder: Assets/Test/AB_Test/Logs
   useBundleRootForLogs: 1
+  outputRelativeFolder: Assets/Test/AB_Test/Logs
   prettyPrint: 1
   flushOnEachEntry: 0
   flushOnDestroy: 1
+  expectedConcurrentRunners: 2
+  appendRefSnapshotOnRecord: 1
   logText: {fileID: 457885320}
   maxDisplayLines: 150
   sessionId: 
   passCount: 0
   failCount: 0
   lastSavedPath: 
+  registeredRunnersSnapshot: []
+  completedRunnersSnapshot: []
+--- !u!114 &2100000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45e49c72c1dfecd4e9a8387b10a40f7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  intervalSeconds: 5
+  runOnStart: 1
+  logCollector: {fileID: 0}
+  spawnRoot: {fileID: 0}
+  finishButton: {fileID: 0}
+  quitApplicationAfterSave: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

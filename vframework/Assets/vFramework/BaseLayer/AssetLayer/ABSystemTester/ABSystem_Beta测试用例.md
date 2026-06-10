@@ -15,8 +15,8 @@
 | 规则制定器 | `BundleRuleMaker`、`BuildSetting` | 约 75% |
 | 打包器 | `BundleBuilder`、`RuleResolver` | 约 65% |
 | 清单桥梁 | `CatalogueWriter`、`CatalogueReader`、`AssetCatalog` | `entries` + `bundles[]` 已写入/读取 |
-| 抽象资源 | `AbstractResource` | 引用计数 + Release |
-| 加载器 | `BundleManager`、`BundleResLoader` | 同步 `Load(简路径)`、依赖预加载 ✅；`LoadAsync`（默认 API）/ CDN ❌ |
+| 抽象资源 | `IAssetHandle`（对外）+ `AbstractResource`（内部） | 引用计数 + Release |
+| 加载器 | `BundleManager`、`BundleResLoader` | 同步 `Load(简路径)`、依赖预加载 ✅；`LoadUniTaskAsync` + UniTask 回调加载 ✅；CDN ❌ |
 
 ### 1.2 测试分类
 
@@ -206,7 +206,7 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 
 | ID | 优先级 | 场景 | 操作步骤 | 预期结果 |
 |----|--------|------|----------|----------|
-| L-001 | P0 | 同步加载 | `LoadByBundle<GameObject>("ui.bundle", "Panel")` 或 `Load("UI/Panel/Panel")` | 返回非 null `AbstractResource` |
+| L-001 | P0 | 同步加载 | `LoadByBundle<GameObject>("ui.bundle", "Panel")` 或 `Load("UI/Panel/Panel")` | 返回非 null `IAssetHandle` |
 | L-002 | P0 | Instantiate | 对上例调用 `Instantiate()` | 场景中出现实例；与直接拖 Prefab 表现一致 |
 | L-003 | P0 | 重复 Load 同一资源 | 连续两次 Load 相同 bundleName+assetName | 第二次走缓存；Resource 层 Ref 增加 |
 | L-004 | P1 | Load 不存在 bundle | 错误 bundleName | Console 报错「Bundle load failed」；返回 null |
@@ -221,7 +221,7 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 | L-010 | P0 | 单次 Release | Load 一次后 `Release()` 一次 | Resource Ref=0，从 resourceDic 移除；对应 bundle Ref=0 并 Unload |
 | L-011 | P0 | 多次引用 Release | Load 两次（或 AddReference 两次） | 需 Release 两次才真正 Unload bundle |
 | L-012 | P1 | 重复 Release | Ref 已为 0 再 Release | 不崩溃；ReduceReference 保护（Ref 不低于 0） |
-| L-013 | P1 | UnloadAll | 加载多个资源后 `loader.UnloadAll()` | 全部 AbstractResource 卸载；`BundleManager` 清空 |
+| L-013 | P1 | UnloadAll | 加载多个资源后 `loader.UnloadAll()` | 全部资源句柄对应资源卸载；`BundleManager` 清空 |
 | L-014 | P2 | Instantiate 与 Release 独立 | Instantiate 后仅 Release 抽象资源 | 已实例化 GameObject 仍存在（设计约定：Destroy 与 Release 无关） |
 | L-015 | P2 | 先 Destroy 实例再 Release | 正常业务顺序 | 无泄漏报错 |
 
@@ -252,15 +252,15 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 | L-040 | P2 | 顺序加载 1000 资源 | LargeScale 清单 | 无 OOM；记录总耗时 |
 | L-041 | P2 | 加载后全部 Release | 对上例逐个 Release | 内存回落至合理水平；无 bundle 残留 |
 | L-042 | P2 | 100 个不同 bundle 各 Load 1 资源 | | loadedBundles.Count=100；内存监控 |
-| L-043 | P3 | 同一 bundle 1000 次 Load 同一 asset | | 仅 1 个 AbstractResource；Ref=1000；Release 1000 次后卸载 |
+| L-043 | P3 | 同一 bundle 1000 次 Load 同一 asset | | 仅 1 个内部资源对象；Ref=1000；Release 1000 次后卸载 |
 | L-044 | P3 | 并发 Load（若后续有 Async） | 多协程同时 Load | 无竞态重复创建；当前同步 API 可测多线程不适用 |
 
-### 4.6 异步与 API 占位（当前未实现）
+### 4.6 异步与回调 API（已实现基础版）
 
 | ID | 优先级 | 场景 | 预期（实现后） |
 |----|--------|------|----------------|
-| L-050 | P3 | LoadAsync（设计基线默认 API） | 回调/await 与同步 Load 结果一致 |
-| L-051 | P3 | LoadWithCallback | 默认异步，完成回调 |
+| L-050 | P1 | LoadUniTaskAsync（设计基线默认 API） | `await` 结果与同步 Load 一致；失败返回 null 并记录日志 |
+| L-051 | P1 | LoadUniTaskWithCallback | 默认走 UniTask；成功回调触发，失败走 onFailed |
 | L-052 | P3 | PreLoad 模块 | 按模块批量预热 bundle |
 
 ---
@@ -300,7 +300,7 @@ Console 摘要：
 | EditorTest 不产出 AB | 加载测试需 DeviceDebug/CDN 产物 | 加载用例统一先跑真机模式打包 |
 | Custom 混合模式多次 Write 清单 | P-034 可能只保留最后一次 | 单独记录实际覆盖行为，必要时提缺陷 |
 | 无增量打包 | P-084 仅记录全量耗时 | 功能上线后补充对比用例 |
-| 无 LoadAsync | L-050 Blocked | 实现后启用 |
+| 无 CDN 下载链路 | 远程更新相关用例 Blocked | 待 `IRemoteBundleProvider` 落地后启用 |
 | `CollectAssetPaths` 跳过 .cs | 脚本不能单独进包 | 若业务需要 ScriptableObject 配置，用 .asset 测 |
 
 ---

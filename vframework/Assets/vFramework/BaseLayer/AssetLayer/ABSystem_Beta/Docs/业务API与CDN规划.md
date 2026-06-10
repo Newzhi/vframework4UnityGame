@@ -10,14 +10,18 @@
 | # | 需求（设计基线） | 目标 API（形态） | 现状 | 计划模块 |
 |---|------------------|------------------|------|----------|
 | 1 | 同步加载资源 | `Load<T>(loadPath)` 简路径；`LoadByBundle` / `LoadByAssetPath` 辅助 | ✅ 已实现 | `BundleResLoader` |
-| 2 | 异步加载（设计基线 **默认 API**） | `LoadAsync<T>(loadPath)` / `await` 形态 | ❌ 占位 | `BundleResLoader` + UniTask（待定） |
-| 3 | 加载 + 完成回调 | `LoadWithCallback<T>(path, onComplete)` | ❌ 占位 | 基于异步封装 |
+| 2 | 异步加载（设计基线 **默认 API**） | `LoadUniTaskAsync<T>(loadPath)` / `await` 形态 | ✅ 已接入（基础版） | `BundleResLoader` + UniTask |
+| 3 | 加载 + 完成回调 | `LoadUniTaskWithCallback<T>(path, onComplete, onFailed, useUniTask)` | ✅ 已实现 | 基于 `Load/LoadUniTaskAsync` 封装 |
 | 4 | 预加载资源包 | `PreLoadBundle(moduleName)` / 按 bundle 列表预热 | ❌ 占位 | `BundleManager` 或 `BundleResLoader` |
-| 5 | 卸载单个资源 | `AbstractResource.Release()` | ✅ | `AbstractResource` |
+| 5 | 卸载单个资源 | `IAssetHandle.Release()` 或 `Unload(handle, instance, cb)` | ✅ | `BundleResLoader` + `IAssetHandle` |
 | 6 | 卸载全部 | `BundleResLoader.UnloadAll()` | ✅ | `BundleResLoader` + `BundleManager` |
 | 7 | **CDN 联网下载** | 远程清单对比 → 下载 AB → 本地缓存 → 再 Load | ❌ **仅扩展点** | 见下文 §二 |
 
 **测试要求**（设计基线）：依赖顺序加载 ✅；异常 Log ✅；竞态安全 ❌；引用计数 ✅（依赖包 Release 策略待完善）。
+
+> 异步说明：当前 `LoadUniTaskAsync` 已提供 UniTask `await` 入口，内部仍复用同步 `Load` 完成 AB 读取；真实下载队列/并发合并/后台 I/O 仍在后续迭代。
+
+> UniTask 依赖：通过 `Packages/manifest.json` 的 OpenUPM 源接入 `com.cysharp.unitask: 2.5.10`。
 
 ---
 
@@ -66,7 +70,7 @@ IRemoteBundleProvider    清单版本检查、HTTP 下载、写缓存       ← 
 2. **启动**：拉远程 `AssetCatalog.json`，与本地（StreamingAssets / 缓存）比 `buildNumber`。  
 3. **下载**：按差异列表下载 `.bundle`（及未来 hash 校验）到 `persistentDataPath/...`。  
 4. **Init**：`BundleResLoader.Init(cacheRoot)` 或 `IBundlePathResolver` 多 root。  
-5. **Load**：同步 `Load(loadPath)` 与依赖预加载不变；未来 **LoadAsync** 成为默认 API 后业务侧逐步迁移。
+5. **Load**：同步 `Load(loadPath)` 与依赖预加载不变；业务侧异步入口统一为 **LoadUniTaskAsync**（UniTask）。
 
 ### 2.5 本阶段明确不做
 

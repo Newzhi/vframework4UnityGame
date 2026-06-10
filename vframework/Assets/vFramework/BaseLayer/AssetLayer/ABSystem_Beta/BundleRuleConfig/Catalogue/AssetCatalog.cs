@@ -21,7 +21,7 @@ public class AssetCatalogEntry
 #region 资源清单 - Bundle 依赖
 
 /// <summary>
-/// 按 AssetBundle 粒度记录「直接依赖的其他 bundle 名」。
+/// 按 AssetBundle 粒度记录「全量依赖的其他 bundle 名」（由 GetAllDependencies 生成）。
 /// 与 AssetCatalogEntry（资源→包）互补，供加载器在 LoadAsset 前先 AcquireBundle 依赖包。
 /// </summary>
 /// <remarks>
@@ -35,7 +35,7 @@ public class BundleCatalogInfo
     public string bundleName;
 
     /// <summary>
-    /// 直接依赖的包名列表（仅 bundle 文件名，不含路径）。
+    /// 全量依赖的包名列表（仅 bundle 文件名，不含路径）。
     /// 例：ui.bundle 依赖 atlas.bundle、common.bundle。
     /// </summary>
     public string[] dependencies;

@@ -1,10 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 //抽象资源：Resource层引用计数，Ref为0时释放Bundle引用
-public class AbstractResource
+internal class AbstractResource : IAssetHandle
 {
     #region 变量定义
 
@@ -13,6 +14,7 @@ public class AbstractResource
     private string assetName;
     private Object asset;
     private int Ref;
+    private readonly List<string> acquiredBundleNames = new List<string>();
     internal Action onUnLoad;
 
     #endregion
@@ -55,15 +57,19 @@ public class AbstractResource
         if (assetType == null)
             assetType = typeof(Object);
 
-        AssetBundle bundle = BundleManager.AcquireBundleWithDependencies(bundleName);
+        ReleaseTrackedBundles();
+        AssetBundle bundle = BundleManager.AcquireBundleWithDependencies(bundleName, acquiredBundleNames);
         if (bundle == null)
+        {
+            ReleaseTrackedBundles();
             return;
+        }
 
         asset = TryLoadFromBundle(bundle, assetName, assetType, fallbackAssetPath);
 
         if (asset == null)
         {
-            BundleManager.ReleaseBundle(bundleName);
+            ReleaseTrackedBundles();
             Debug.LogError("Asset load failed: " + assetName + " in " + bundleName);
         }
     }
@@ -76,7 +82,7 @@ public class AbstractResource
             asset = null;
         }
 
-        BundleManager.ReleaseBundle(bundleName);
+        ReleaseTrackedBundles();
         onUnLoad?.Invoke();
         onUnLoad = null;
     }
@@ -102,6 +108,9 @@ public class AbstractResource
     }
 
     //Prefab需业务侧自行Instantiate，实例Destroy与Release无关
+    //语法糖：每次访问都会创建一个新的实例
+    public GameObject Instance => Instantiate();
+
     public GameObject Instantiate()
     {
         return InstantiateAt(Vector3.zero, Quaternion.identity, null);
@@ -159,6 +168,14 @@ public class AbstractResource
         }
 
         return bundle.LoadAsset(fallbackAssetPath);
+    }
+
+    void ReleaseTrackedBundles()
+    {
+        for (int i = acquiredBundleNames.Count - 1; i >= 0; i--)
+            BundleManager.ReleaseBundle(acquiredBundleNames[i]);
+
+        acquiredBundleNames.Clear();
     }
 
     #endregion

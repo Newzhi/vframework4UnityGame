@@ -22,6 +22,15 @@ public class BundleManager
 
     public static void Init(string rootPath, CatalogueReader reader = null)
     {
+        if (loadedBundles.Count > 0)
+        {
+            foreach (BundleEntry entry in loadedBundles.Values)
+            {
+                if (entry?.Bundle != null)
+                    entry.Bundle.Unload(true);
+            }
+        }
+
         bundleRootPath = rootPath;
         catalogue = reader;
         loadedBundles.Clear();
@@ -36,7 +45,7 @@ public class BundleManager
 
     #region 加载/卸载
 
-    public static AssetBundle AcquireBundleWithDependencies(string bundleName)
+    public static AssetBundle AcquireBundleWithDependencies(string bundleName, List<string> acquiredBundles = null)
     {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
 
@@ -47,11 +56,17 @@ public class BundleManager
                 if (string.IsNullOrEmpty(dep))
                     continue;
 
-                AcquireBundle(dep);
+                AssetBundle depBundle = AcquireBundle(dep);
+                if (depBundle != null)
+                    acquiredBundles?.Add(dep);
             }
         }
 
-        return AcquireBundle(bundleName);
+        AssetBundle bundle = AcquireBundle(bundleName);
+        if (bundle != null)
+            acquiredBundles?.Add(bundleName);
+
+        return bundle;
     }
 
     //获取bundle，Bundle层引用计数+1；未加载则LoadFromFile
