@@ -2,31 +2,65 @@
 
 > 目标：给业务侧一份可直接抄用的加载/卸载范式。  
 > 入口类：`BundleResLoader`  
-> 句柄接口：`IAssetHandle`
+> 句柄接口：`IAssetHandle`  
+> 通用参考：[ResourceSystemDesignGuide.md](../../../../Resources/ResourceSystemDesignGuide.md)（不驱动本项目改方向）
 
 ---
 
-## 1. 推荐调用方式（链式）
+## 1. 推荐写法（保存句柄 + 成对卸载）
 
-### 1.1 同步加载 + 链式实例化（推荐）
+**原则**：每次 `Load` 成功应对应一次 `Release` 或 `Unload(handle, instance)`。  
+C# **没有** C++ 式析构：链式临时句柄出作用域 **不会** 自动 `Release`，AB 会继续占内存。
+
+### 1.1 推荐：字段 + OnDestroy（Prefab / 多资源）
+
+```csharp
+IAssetHandle _prefab;
+IAssetHandle _icon;
+GameObject _instance;
+
+void Start()
+{
+    _prefab = BundleResLoader.Instance.Load<GameObject>("Model/Prefabs/tester");
+    _instance = _prefab?.Instance;
+    _icon = BundleResLoader.Instance.Load<Sprite>("Icon/3");
+}
+
+void OnDestroy()
+{
+    BundleResLoader.Instance.Unload(_icon, null);
+    BundleResLoader.Instance.Unload(_prefab, _instance);
+}
+```
+
+### 1.2 同步加载（须保存句柄）
+
+```csharp
+IAssetHandle handle = BundleResLoader.Instance.Load<GameObject>("UI/UIRoot");
+GameObject go = handle?.Instance;
+// 用完后：BundleResLoader.Instance.Unload(handle, go);
+```
+
+- `loadPath` 是清单简路径（无扩展名）。
+
+### 1.3 链式写法（仅限短生命周期，须另有 Release 计划）
 
 ```csharp
 GameObject go = BundleResLoader.Instance.Load<GameObject>("UI/UIRoot")?.Instance;
 ```
 
-- `?.Instance` 可避免加载失败时空引用。
-- `Load<T>(loadPath)` 的 `loadPath` 是清单简路径（无扩展名）。
+- ⚠️ **不推荐作为默认范式**：未保存 `IAssetHandle` → **无法** `Release` → Resource Ref 泄漏（除非稍后 `UnloadAll()`）。
 
-### 1.2 UniTask 异步加载 + 链式实例化
+### 1.4 UniTask 异步加载
 
 ```csharp
-GameObject go = (await BundleResLoader.Instance.LoadUniTaskAsync<GameObject>("UI/UIRoot"))?.Instance;
+IAssetHandle handle = await BundleResLoader.Instance.LoadUniTaskAsync<GameObject>("UI/UIRoot");
+GameObject go = handle?.Instance;
 ```
 
-- 方法名含 `UniTask`，表示依赖 Cysharp UniTask 的 `await` 入口。
-- 异步必须先 `await` 到 `IAssetHandle`，再链式取 `Instance`。
+- 须 `await` 到句柄后再取 `Instance`；卸载方式同同步。
 
-### 1.3 UniTask 回调加载（默认走 UniTask）
+### 1.5 UniTask 回调加载
 
 ```csharp
 BundleResLoader.Instance.LoadUniTaskWithCallback<GameObject>(
@@ -34,15 +68,11 @@ BundleResLoader.Instance.LoadUniTaskWithCallback<GameObject>(
     onComplete: handle =>
     {
         GameObject go = handle.Instance;
+        // 须在适当时机 handle.Release() 或 Unload(handle, go)
     },
-    onFailed: err =>
-    {
-        Debug.LogError(err);
-    }
+    onFailed: err => Debug.LogError(err)
 );
 ```
-
-- `useUniTask=false` 时可改为同步 `Load` 并立即回调。
 
 ---
 
@@ -62,6 +92,8 @@ if (go != null && tex != null)
     Material mat = go.GetComponentInChildren<Renderer>().material;
     mat.SetTexture("_BaseMap", tex);
 }
+
+// OnDestroy: Unload(icon, null); Unload(prefab, go);
 ```
 
 ### 2.2 跨包加载
@@ -76,7 +108,7 @@ GameObject uiGo = ui?.Instance;
 
 ---
 
-## 3. 卸载资源（尽量一句话）
+## 3. 卸载资源
 
 ### 3.1 一句话卸载（句柄 + 实例）
 
@@ -98,6 +130,8 @@ handle?.Release();
 BundleResLoader.Instance.Unload(null, instance);
 ```
 
+- ⚠️ 只 `Destroy` **不会** 减少 Resource Ref；实例与 AB 释放仍分离（通用指南痛点 C）。
+
 ### 3.4 全量卸载
 
 ```csharp
@@ -106,33 +140,10 @@ BundleResLoader.Instance.UnloadAll();
 
 ---
 
-## 4. 推荐生命周期写法
-
-```csharp
-IAssetHandle _prefab;
-IAssetHandle _icon;
-GameObject _instance;
-
-void Start()
-{
-    _prefab = BundleResLoader.Instance.Load<GameObject>("Model/Prefabs/tester");
-    _instance = _prefab?.Instance;
-    _icon = BundleResLoader.Instance.Load<Sprite>("Icon/3");
-}
-
-void OnDestroy()
-{
-    BundleResLoader.Instance.Unload(_icon, null);
-    BundleResLoader.Instance.Unload(_prefab, _instance);
-}
-```
-
----
-
-## 5. 使用注意事项
+## 4. 使用注意事项
 
 - 每次 `Load` 成功后都应有对应的 `Release/Unload`，避免引用计数悬挂。
-- `Destroy` 与 `Release` 是两件事：销毁实例不等于释放句柄。
+- **DestroyInstance / AutoUnload** 延后（见 [主路线.md](./主路线.md) §4）；业务用「保存句柄 + Release」。
+- 链式 `Load()?.Instance` 不等于 RAII；局部变量出作用域 **不会** 触发 AB 卸载。
 - 当前加载器按主线程调用设计；不要在多线程并发直接调用 `Load/Unload`。
-- `LoadUniTaskAsync` 当前是“UniTask 异步入口 + 同步加载内核”，后续再接 CDN 下载与并发队列。
-
+- `LoadUniTaskAsync` 当前是「UniTask 异步入口 + 同步加载内核」，后续再接 inFlight 合并、CDN 与 ref==0 完成丢弃。

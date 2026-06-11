@@ -171,7 +171,7 @@ manifestBundle.Unload(true);
 
 ---
 
-## 六、其它规划（见 TODO）
+## 六、其它规划
 
-- 清单格式 **JSON → 二进制**（性能/加密）：`bundles` 适合作为独立索引段，与 `entries` 并列。  
-- 详细待办可集中写在 `Docs/TODO.md`（若已创建）。
+- 清单 **JSON → 二进制**（性能/加密）：见 [主路线.md](./主路线.md) P3。  
+- 运行时 **version/buildNumber 比对**：阶段 C，见 [业务API与CDN规划.md](./业务API与CDN规划.md) §2。

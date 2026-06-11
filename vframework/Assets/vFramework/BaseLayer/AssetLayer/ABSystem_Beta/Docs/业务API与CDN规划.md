@@ -1,7 +1,6 @@
 # 业务 API 与 CDN 规划
 
-> 对照 **设计目标与实现细节.md** 禁止区「业务侧需要」§1–7。  
-> 本文在 **Docs** 集中说明业务 API 路线图与 **CDN 联网加载** 扩展设计；实现细节见 [ResLoader/加载器设计说明.md](../ResLoader/加载器设计说明.md)。
+> 对照 [主路线.md](./主路线.md) 阶段 B/C；实现细节见 [ResLoader/加载器设计说明.md](../ResLoader/加载器设计说明.md)。
 
 ---
 
@@ -17,7 +16,7 @@
 | 6 | 卸载全部 | `BundleResLoader.UnloadAll()` | ✅ | `BundleResLoader` + `BundleManager` |
 | 7 | **CDN 联网下载** | 远程清单对比 → 下载 AB → 本地缓存 → 再 Load | ❌ **仅扩展点** | 见下文 §二 |
 
-**测试要求**（设计基线）：依赖顺序加载 ✅；异常 Log ✅；竞态安全 ❌；引用计数 ✅（依赖包 Release 策略待完善）。
+**测试要求**（设计基线）：依赖顺序 ✅；异常 Log 🟡；**竞态安全 ✅**（同步双 Runner 三端 19/19）；引用计数 ✅。
 
 > 异步说明：当前 `LoadUniTaskAsync` 已提供 UniTask `await` 入口，内部仍复用同步 `Load` 完成 AB 读取；真实下载队列/并发合并/后台 I/O 仍在后续迭代。
 
@@ -95,6 +94,7 @@ IRemoteBundleProvider    清单版本检查、HTTP 下载、写缓存       ← 
 
 ## 四、相关文档
 
+- [主路线.md](./主路线.md) — 阶段 B/C 排期  
 - [设计目标与实现细节.md](./设计目标与实现细节.md) — 首包 / CDN / persistentDataPath 目录约定  
 - [Catalogue清单说明.md](./Catalogue清单说明.md) — 清单字段与版本号  
 - [ResLoader/加载器设计说明.md](../ResLoader/加载器设计说明.md) — 双层加载与 API 现状  

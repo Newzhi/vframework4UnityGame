@@ -2,7 +2,7 @@
 
 > 针对 `Assets/vFramework/BaseLayer/AssetLayer/ABSystem_Beta` 资源打包与加载系统的测试设计。  
 > 被测系统入口：**Unity → vFramework → AssetBundle Packer**  
-> 参考文档：[Docs/文档索引.md](../ABSystem_Beta/Docs/文档索引.md)、[业务API与CDN规划.md](../ABSystem_Beta/Docs/业务API与CDN规划.md)
+> 参考文档：[主路线.md](../ABSystem_Beta/Docs/主路线.md)、[Docs/文档索引.md](../ABSystem_Beta/Docs/文档索引.md)
 
 ---
 
