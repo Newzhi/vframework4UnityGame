@@ -68,14 +68,23 @@ public class BundleResLoader
                 }
             }
             resourceDic.Clear();
-            BundleManager.Init(bundleRootPath, catalogue);
 
-            if (!catalogue.LoadFromBundleRoot(bundleRootPath))
+            bool catalogueLoaded = catalogue.LoadFromBundleRoot(bundleRootPath);
+#if UNITY_EDITOR
+            if (!catalogueLoaded)
+                catalogueLoaded = catalogue.LoadFromProjectCatalogue();
+#endif
+
+            if (!catalogueLoaded)
             {
                 initialized = false;
                 Debug.LogError("BundleResLoader Init failed: catalogue not loaded from " + bundleRootPath);
                 return false;
             }
+
+            DefaultBundlePathResolver resolver = DefaultBundlePathResolver.Create(bundleRootPath);
+            BundleManager.Init(bundleRootPath, catalogue);
+            AssetRouter.Instance.Init(catalogue, resolver);
 
             if (catalogue.Catalog == null || catalogue.Catalog.bundles == null || catalogue.Catalog.bundles.Length == 0)
             {
@@ -148,13 +157,45 @@ public class BundleResLoader
             return null;
         }
 
+        if (ResourcesAssetProvider.IsResourcesLoadPath(loadPath))
+            return LoadResources<T>(loadPath);
+
         if (!catalogue.TryGetEntryByLoadPath(loadPath, out AssetCatalogEntry entry))
         {
             Debug.LogError("Load path not found in catalogue: " + loadPath);
             return null;
         }
 
-        return LoadByBundle<T>(entry.bundleName, entry.assetName, entry.assetPath);
+        return LoadByBundle<T>(entry.bundleName, entry.assetName, entry.assetPath, loadPath);
+    }
+
+    IAssetHandle LoadResources<T>(string loadPath) where T : Object
+    {
+        if (resourceDic.TryGetValue(loadPath, out AbstractResource res))
+        {
+            res.AddReference();
+            if (res.GetAsset<T>() == null)
+            {
+                res.Release();
+                Debug.LogError("LoadResources type mismatch for: " + loadPath + ", requested type: " + typeof(T).Name);
+                return null;
+            }
+            return res;
+        }
+
+        res = new AbstractResource(loadPath, null, null, null, loadPath);
+        res.onUnLoad = () => resourceDic.Remove(loadPath);
+        resourceDic.Add(loadPath, res);
+        res.AddReference();
+        res.LoadAsset(typeof(T), null, loadPath);
+
+        if (res.GetAsset<T>() == null)
+        {
+            res.Release();
+            return null;
+        }
+
+        return res;
     }
 
     /// <summary>
@@ -296,7 +337,7 @@ public class BundleResLoader
     #region 辅助函数
 
     /// <summary>按 bundle 名 + 包内 asset 名加载，Resource 层与 BundleManager 的桥接。</summary>
-    public IAssetHandle LoadByBundle<T>(string bundleName, string assetName, string assetPath = null) where T : Object
+    public IAssetHandle LoadByBundle<T>(string bundleName, string assetName, string assetPath = null, string loadPath = null) where T : Object
     {
         if (string.IsNullOrEmpty(bundleName) || string.IsNullOrEmpty(assetName))
         {
@@ -325,11 +366,11 @@ public class BundleResLoader
             return res;
         }
 
-        res = new AbstractResource(key, bundleName, assetName);
+        res = new AbstractResource(key, bundleName, assetName, assetPath, loadPath);
         res.onUnLoad = () => resourceDic.Remove(key);
         resourceDic.Add(key, res);
         res.AddReference();
-        res.LoadAsset(typeof(T), assetPath);
+        res.LoadAsset(typeof(T), assetPath, loadPath);
 
         if (res.GetAsset<T>() == null)
         {
@@ -361,7 +402,11 @@ public class BundleResLoader
             return null;
         }
 
-        return LoadByBundle<T>(entry.bundleName, entry.assetName, entry.assetPath);
+        return LoadByBundle<T>(
+            entry.bundleName,
+            entry.assetName,
+            entry.assetPath,
+            CatalogueReader.ToLoadPath(entry.assetPath, catalogue.Catalog?.resourceRoot));
     }
 
     void InvokeSyncLoadWithCallback(Func<IAssetHandle> loader, Action<IAssetHandle> onComplete, Action<string> onFailed, string failMessage)

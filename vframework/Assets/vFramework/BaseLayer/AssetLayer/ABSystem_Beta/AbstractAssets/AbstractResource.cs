@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -12,8 +11,11 @@ internal class AbstractResource : IAssetHandle
     private string assetKey;
     private string bundleName;
     private string assetName;
+    private string catalogueAssetPath;
+    private string loadPath;
     private Object asset;
     private int Ref;
+    private AssetSource loadedSource;
     private readonly List<string> acquiredBundleNames = new List<string>();
     internal Action onUnLoad;
 
@@ -21,11 +23,13 @@ internal class AbstractResource : IAssetHandle
 
     #region 构造
 
-    internal AbstractResource(string assetKey, string bundleName, string assetName)
+    internal AbstractResource(string assetKey, string bundleName, string assetName, string catalogueAssetPath = null, string loadPath = null)
     {
         this.assetKey = assetKey;
         this.bundleName = bundleName;
         this.assetName = assetName;
+        this.catalogueAssetPath = catalogueAssetPath;
+        this.loadPath = loadPath;
     }
 
     #endregion
@@ -51,43 +55,42 @@ internal class AbstractResource : IAssetHandle
 
     #region 加载/卸载
 
-    //首次加载：AcquireBundle + LoadAsset
-    internal void LoadAsset(Type assetType, string fallbackAssetPath = null)
+    internal void LoadAsset(Type assetType, string fallbackAssetPath = null, string explicitLoadPath = null)
     {
         if (assetType == null)
             assetType = typeof(Object);
 
-        ReleaseTrackedBundles();
-        AssetBundle bundle = BundleManager.AcquireBundleWithDependencies(bundleName, acquiredBundleNames);
-        if (bundle == null)
-        {
-            ReleaseTrackedBundles();
-            return;
-        }
+        ReleaseLoadedAsset();
 
-        asset = TryLoadFromBundle(bundle, assetName, assetType, fallbackAssetPath);
+        string resolvedLoadPath = explicitLoadPath ?? loadPath ?? assetKey;
+        string resolvedAssetPath = !string.IsNullOrEmpty(fallbackAssetPath) ? fallbackAssetPath : catalogueAssetPath;
+
+        var ctx = new AssetLoadContext
+        {
+            loadPath = resolvedLoadPath,
+            assetPath = resolvedAssetPath,
+            bundleName = bundleName,
+            assetName = assetName,
+            assetType = assetType,
+            acquiredBundleNames = acquiredBundleNames
+        };
+
+        asset = AssetRouter.Instance.Load(ref ctx, out loadedSource);
 
         if (asset == null)
         {
-            ReleaseTrackedBundles();
-            Debug.LogError("Asset load failed: " + assetName + " in " + bundleName);
+            ReleaseLoadedAsset();
+            Debug.LogError("Asset load failed: " + assetName + " in " + bundleName + ", loadPath=" + resolvedLoadPath);
         }
     }
 
-    //Resource引用为0时调用，释放Bundle引用
     internal void UnLoad()
     {
-        if (asset != null)
-        {
-            asset = null;
-        }
-
-        ReleaseTrackedBundles();
+        ReleaseLoadedAsset();
         onUnLoad?.Invoke();
         onUnLoad = null;
     }
 
-    //释放一次引用；Ref为0时自动UnLoad
     public void Release()
     {
         if (Ref <= 0)
@@ -107,8 +110,6 @@ internal class AbstractResource : IAssetHandle
         return asset as T;
     }
 
-    //Prefab需业务侧自行Instantiate，实例Destroy与Release无关
-    //语法糖：每次访问都会创建一个新的实例
     public GameObject Instance => Instantiate();
 
     public GameObject Instantiate()
@@ -124,7 +125,7 @@ internal class AbstractResource : IAssetHandle
             return null;
         }
 
-        GameObject instance = Object.Instantiate(prefab);
+        GameObject instance = UnityEngine.Object.Instantiate(prefab);
         instance.transform.SetPositionAndRotation(worldPosition, worldRotation);
         if (parent != null)
             instance.transform.SetParent(parent, true);
@@ -132,50 +133,22 @@ internal class AbstractResource : IAssetHandle
         return instance;
     }
 
-    static Object TryLoadFromBundle(AssetBundle bundle, string assetName, Type assetType, string fallbackAssetPath)
+    void ReleaseLoadedAsset()
     {
-        if (bundle == null)
-            return null;
+        if (asset == null && acquiredBundleNames.Count == 0)
+            return;
 
-        if (!string.IsNullOrEmpty(assetName))
+        var ctx = new AssetReleaseContext
         {
-            Object loaded = bundle.LoadAsset(assetName, assetType);
-            if (loaded != null)
-                return loaded;
-        }
+            asset = asset,
+            source = loadedSource,
+            acquiredBundleNames = acquiredBundleNames
+        };
 
-        if (string.IsNullOrEmpty(fallbackAssetPath))
-            return null;
-
-        Object byPath = bundle.LoadAsset(fallbackAssetPath, assetType);
-        if (byPath != null)
-            return byPath;
-
-        string fileName = Path.GetFileName(fallbackAssetPath);
-        if (!string.IsNullOrEmpty(fileName) && fileName != assetName && fileName != fallbackAssetPath)
-        {
-            byPath = bundle.LoadAsset(fileName, assetType);
-            if (byPath != null)
-                return byPath;
-        }
-
-        string nameNoExt = Path.GetFileNameWithoutExtension(fallbackAssetPath);
-        if (!string.IsNullOrEmpty(nameNoExt) && nameNoExt != assetName)
-        {
-            byPath = bundle.LoadAsset(nameNoExt, assetType);
-            if (byPath != null)
-                return byPath;
-        }
-
-        return bundle.LoadAsset(fallbackAssetPath);
-    }
-
-    void ReleaseTrackedBundles()
-    {
-        for (int i = acquiredBundleNames.Count - 1; i >= 0; i--)
-            BundleManager.ReleaseBundle(acquiredBundleNames[i]);
-
+        AssetRouter.Instance.Release(in ctx);
+        asset = null;
         acquiredBundleNames.Clear();
+        loadedSource = AssetSource.ABUNDLE;
     }
 
     #endregion

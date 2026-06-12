@@ -72,6 +72,18 @@ public class CatalogueReader
         return LoadFromFile(cataloguePath);
     }
 
+#if UNITY_EDITOR
+    public bool LoadFromProjectCatalogue(string relativeAssetPath = null)
+    {
+        if (string.IsNullOrEmpty(relativeAssetPath))
+            relativeAssetPath = "Assets/vFramework/BaseLayer/AssetLayer/ABSystem_Beta/BundleRuleConfig/Catalogue/AssetCatalog.json";
+
+        string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+        string fullPath = Path.GetFullPath(Path.Combine(projectRoot, relativeAssetPath.Replace("/", Path.DirectorySeparatorChar.ToString())));
+        return LoadFromFile(fullPath);
+    }
+#endif
+
     #endregion
 
     #region 查询

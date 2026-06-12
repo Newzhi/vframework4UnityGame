@@ -18,7 +18,7 @@ MonoBehaviour:
   deviceOutputPath: Assets/StreamingAssets
   cdnOutputPath: Bundles/CDN
   usePlatformSubfolders: 1
-  buildMode: 1
+  buildMode: 0
   packingRule: 0
   targetDirectory: Assets/AssetBundle
   customItems: []

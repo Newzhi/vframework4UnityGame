@@ -9,8 +9,8 @@
 |------|------|
 | `BundleRuleConfig/Catalogue/AssetCatalog.cs` | 清单数据结构（`AssetCatalogEntry` / `BundleCatalogInfo` / `AssetCatalog`，#region 分区） |
 | `Editor/BundleBuilder/CatalogueWriter.cs` | 打包后写清单（含 Manifest 依赖） |
-| `ResLoader/CatalogueReader.cs` | 运行时读 JSON |
-| `ResLoader/BundleManager.cs` | 按 `bundles[]` 依赖预加载后 LoadFromFile |
+| `ResLoader/Catalogue/CatalogueReader.cs` | 运行时读 JSON |
+| `ResLoader/Bundle/BundleManager.cs` | 按 `bundles[]` 依赖预加载后 LoadFromFile |
 
 ---
 
@@ -153,7 +153,7 @@ manifestBundle.Unload(true);
 1. **数据结构** — ✅ 已启用 `AssetCatalog.bundles`  
 2. **CatalogueWriter** — ✅ `BuildBundleDependencies` + `Write(..., manifest)`  
 3. **BundleBuilder** — ✅ 捕获 `BuildAssetBundles` 返回值  
-4. **CatalogueReader** — ✅ `ResLoader/CatalogueReader.cs`  
+4. **CatalogueReader** — ✅ `ResLoader/Catalogue/CatalogueReader.cs`  
 5. **BundleManager** — ✅ `AcquireBundleWithDependencies`  
 6. **验收** — 手动：DeviceDebug 打包 + `ABLoadSmokeTest`（L-024 / L-033 / P-055）
 

@@ -8,12 +8,13 @@ public class BundleManager
 
     private static string bundleRootPath;
     private static CatalogueReader catalogue;
+    private static IBundlePathResolver pathResolver;
     private static Dictionary<string, BundleEntry> loadedBundles = new Dictionary<string, BundleEntry>();
 
     private class BundleEntry
     {
         public AssetBundle Bundle;
-        public int Ref; //Bundle层引用计数
+        public int Ref;
     }
 
     #endregion
@@ -39,6 +40,11 @@ public class BundleManager
     public static void SetCatalogue(CatalogueReader reader)
     {
         catalogue = reader;
+    }
+
+    public static void SetPathResolver(IBundlePathResolver resolver)
+    {
+        pathResolver = resolver;
     }
 
     #endregion
@@ -69,9 +75,6 @@ public class BundleManager
         return bundle;
     }
 
-    //获取bundle，Bundle层引用计数+1；未加载则LoadFromFile
-    // TODO(CDN): 接入 IBundlePathResolver — 按 persistentDataPath → StreamingAssets → 远程下载 解析物理路径。
-    // 见 Docs/业务API与CDN规划.md §2.3
     public static AssetBundle AcquireBundle(string bundleName)
     {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
@@ -82,11 +85,7 @@ public class BundleManager
             return entry.Bundle;
         }
 
-        string root = string.IsNullOrEmpty(bundleRootPath)
-            ? Application.streamingAssetsPath
-            : bundleRootPath;
-        string path = ResolveBundleFilePath(root, bundleName);
-
+        string path = ResolveBundleFilePath(bundleName);
         AssetBundle bundle = AssetBundle.LoadFromFile(path);
         if (bundle == null)
         {
@@ -98,7 +97,6 @@ public class BundleManager
         return bundle;
     }
 
-    //释放bundle引用，Bundle层引用计数-1；为0时Unload
     public static void ReleaseBundle(string bundleName)
     {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
@@ -134,6 +132,18 @@ public class BundleManager
     #endregion
 
     #region 辅助函数
+
+    static string ResolveBundleFilePath(string bundleName)
+    {
+        if (pathResolver != null && pathResolver.TryResolveLocalPath(bundleName, out string resolvedPath))
+            return resolvedPath;
+
+        string root = string.IsNullOrEmpty(bundleRootPath)
+            ? Application.streamingAssetsPath
+            : bundleRootPath;
+
+        return ResolveBundleFilePath(root, bundleName);
+    }
 
     static string ResolveBundleFilePath(string root, string bundleName)
     {

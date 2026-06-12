@@ -53,15 +53,19 @@ CDN / OSS                          ← HTTP(S) 下载，写入 persistentDataPat
 ```text
 BundleResLoader          业务 API 不变
     ↓
+AbstractResource         LoadAsset / Release
+    ↓
+AssetRouter              RouteAssetSource → 四 Provider
+    ↓
 BundleManager            AcquireBundle 前解析物理路径
     ↓
-IBundlePathResolver      本地多根目录优先级（首包 / 缓存）     ← TODO
+IBundlePathResolver      本地多根目录优先级（首包 / 缓存）     ← ✅ DefaultBundlePathResolver
     ↓
-IRemoteBundleProvider    清单版本检查、HTTP 下载、写缓存       ← TODO
+IRemoteBundleProvider    清单版本检查、HTTP 下载、写缓存       ← 🟡 StubRemoteBundleProvider
 ```
 
-**当前代码**：`BundleManager.AcquireBundle` 仅 `Path.Combine(bundleRoot, bundleName)` + `LoadFromFile`。  
-已在 `BundleManager.cs` 内标注 `TODO(CDN)`，接入时 **不要** 让业务直接写 UnityWebRequest。
+**当前代码**：`AbstractResource` 经 `AssetRouter` 加载；`BundleManager.AcquireBundle` 优先 `IBundlePathResolver`；本地无包时路由 `NETCDN`（Stub 打 Log，不真下载）。  
+业务 **不应** 直接写 UnityWebRequest。
 
 ### 2.4 CDN 接入步骤（实施 checklist）
 
@@ -75,9 +79,10 @@ IRemoteBundleProvider    清单版本检查、HTTP 下载、写缓存       ← 
 
 - 真实 HTTP 下载、断点续传、后台队列  
 - 多 CDN 容灾、加密 bundle  
-- 与 `AssetRouter`（Resources / AB 统一入口）合并  
+- 清单 `version` / `buildNumber` **运行时**拉取与比对（打包侧已写入）
 
-以上在接口预留与文档中考虑，**实现留后续迭代**。
+**已实现（2026-06-08）**：`AssetRouter` 四源统一入口；EditorTest 走 AssetDatabase；`Resources/` 前缀走 Resources；CDN 路由 + Stub。  
+**仍留后续**：真实 HTTP、下载队列、version 比对决策。
 
 ---
 
