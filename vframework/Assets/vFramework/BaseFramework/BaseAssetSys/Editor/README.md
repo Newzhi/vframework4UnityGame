@@ -1,0 +1,80 @@
+﻿# Editor 打包模块说明
+
+> 路径：`BaseAssetSys/Editor/`  
+> 菜单：**vFramework → AssetBundle Packer**（单窗口双页签）
+
+---
+
+## 分层架构
+
+```text
+BundlePacker/          UI 层：统一窗口（Builder 页签 + Reporter 页签）
+        │
+        ├── BundleBuilder/     打包编排（Build / Clean / Validate / RuleResolver）
+        │   └── Catalogue/     清单写入与 loadPath 校验
+        ├── BundleReporter/    构建后只读分析（Analyzer → JSON 报告）
+        │
+        ▼
+BundleRuleConfig/      配置层：BuildSetting、AssetCatalog schema、拓扑工具
+        │
+        ▼
+产出                   {deviceOutputPath|cdnOutputPath}/{平台}/*.bundle
+                       + Catalogue/AssetCatalog.json
+                       + Reports/BundleBuildReport.json
+```
+
+| 模块 | 目录 | 职责 |
+|------|------|------|
+| **Packer UI** | `BundlePacker/` | `BundlePackerWindow` 双页签；`BundleBuilderTabView` / `BundleReporterTabView` |
+| **Builder** | `BundleBuilder/` | `BundleBuilder` 编排 BuildPipeline |
+| **Builder** | `BundleBuilder/RuleResolver.cs` | Default / Detailed / Custom → `AssetBundleBuild[]` |
+| **Builder** | `BundleBuilder/Catalogue/` | `CatalogueWriter`（拓扑序 + 环检测）、`CatalogueValidator` |
+| **Builder** | `BundleBuilder/Tests/` | EditMode 单测（`BundleDependencyTopologyTests`） |
+| **Reporter** | `BundleReporter/` | `BundleBuildAnalyzer`、`BundleBuildReport` DTO |
+| **配置** | `BundleRuleConfig/` | `BuildSetting`、`AssetCatalog`、`BundleDependencyTopology` |
+| **Player** | 根目录 | `StreamingAssetsPlatformBuildFilter` |
+
+---
+
+## 打包流水线（Builder）
+
+```text
+BundlePackerWindow [Builder 页签] → Save BuildSetting
+  → BundleBuilder.Build
+    → RuleResolver.Resolve
+    → BuildPipeline.BuildAssetBundles（EditorTest 跳过）
+    → CatalogueValidator（loadPath）
+    → CatalogueWriter（拓扑排序 + 写 JSON）
+    → BundleBuildAnalyzer（可选，写 Reports/BundleBuildReport.json）
+```
+
+**Reporter 页签**只读上述 JSON，不触发 Build。
+
+---
+
+## UI 蓝图
+
+| 页签 | HTML 原型 |
+|------|-----------|
+| Builder | [BuilderEditorBlueprint.html](../Docs/BuilderEditorBlueprint.html) |
+| Reporter | [ReportEditorBlueprint.html](../Docs/ReportEditorBlueprint.html) |
+
+---
+
+## 打包模式与输出
+
+| 模式 | AB | 清单 | 报告 |
+|------|-----|------|------|
+| EditorTest | 不打 AB | 写 JSON（`bundles` 空） | loadPath 等（无包体） |
+| DeviceDebug | `deviceOutputPath` | 双份 JSON | 完整 |
+| CdnHotUpdate | `cdnOutputPath` | 双份 JSON | 完整 |
+| DlcPackage | 临时同 CDN + Warning | 双份 JSON | 完整 |
+
+---
+
+## 相关文档
+
+- [Docs/MainRoadmap.md](../Docs/MainRoadmap.md)  
+- [BundleRuleConfig/README.md](../BundleRuleConfig/README.md)  
+- [Docs/CatalogueReference.md](../Docs/CatalogueReference.md)  
+- [Docs/BundleBuildOptimizationAndTopologyPlan.md](../Docs/BundleBuildOptimizationAndTopologyPlan.md)

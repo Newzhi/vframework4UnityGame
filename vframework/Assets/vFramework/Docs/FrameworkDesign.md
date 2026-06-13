@@ -62,15 +62,15 @@ Assets/vFramework/
 ├── BaseFramework/                 # 基础架构层
 │   ├── GameRoot/                  # 启动入口 MonoBehaviour
 │   ├── BaseEventSys/              # 事件总线（Interface / Impt）
+│   ├── BaseAssetSys/              # AB 打包与加载（原 ABSystem_Beta）
 │   ├── BaseFSM/                   # 状态机内核
 │   ├── BaseNetwork/               # 传输、包结构、编解码
 │   ├── BaseSerialization/         # 序列化抽象
 │   └── Log/                       # 日志
 │
 ├── BaseLayer/                     # 全局系统层
-│   ├── AssetLayer/                # 资源域（推荐主目录）
-│   │   ├── InterFace/             # IResMgr, ISceneMgr, IObjPoolMgr
-│   │   └── Impt/                  # 实现 + Pool
+│   ├── AssetLayer/                # 资源域文档与测试夹具（学习指南、ABSystemTester 等）
+│   ├── TimeLayer/
 │   ├── UI/
 │   ├── Audio/
 │   ├── Timer/
@@ -85,7 +85,7 @@ Assets/vFramework/
     └── GameFlow/
 ```
 
-> **说明**：目录内统一采用 `InterFace`（接口）与 `Impt`（实现）子文件夹。若存在 `AssetMgr`、`ResMgr` 等历史目录，逐步合并至 `AssetLayer`。
+> **说明**：`BaseAssetSys` 承载当前 AB 打包/加载实现；`BaseLayer/AssetLayer` 保留学习文档与测试夹具。资源域 Manager（`ResMgr` / `SceneMgr` / `ObjPoolMgr`）接口与实现目录规划中，逐步与 `BaseAssetSys` 对齐。
 
 ---
 

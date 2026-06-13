@@ -35,7 +35,7 @@
 
 - 提供清晰的三层结构：**基础架构层 → 全局系统层 → 业务逻辑层**。
 - 全局 Manager 统一由 **GameRoot** 注册与销毁，生命周期可控。
-- **资源域**（`AssetLayer`）统一管理资源加载、场景、对象池。
+- **资源域**（`BaseAssetSys` + `BaseLayer/AssetLayer`）统一管理资源加载、场景、对象池；AB 打包/加载实现在 `BaseFramework/BaseAssetSys`。
 - **第三方依赖下沉**：UniTask、Addressables 等仅在底层引用，上层通过接口访问。
 - 业务层采用 **MVC + Proxy**：Proxy 处理网络数据更新 Model，Controller 协调玩法与 View。
 
@@ -59,7 +59,7 @@
 
 - [ ] GameRoot 与模块注册中心
 - [ ] BaseEventSys 事件总线
-- [ ] AssetLayer：`ResMgr` / `SceneMgr` / `ObjPoolMgr` 接口与最小实现
+- [ ] BaseAssetSys / AssetLayer：`ResMgr` / `SceneMgr` / `ObjPoolMgr` 接口与最小实现
 - [ ] 网络底层与消息分发
 - [ ] HotUpdateLayer：AppContext、Proxy / Controller 骨架
 - [ ] 单机可跑的塔防原型场景（验证框架，非完整产品）
