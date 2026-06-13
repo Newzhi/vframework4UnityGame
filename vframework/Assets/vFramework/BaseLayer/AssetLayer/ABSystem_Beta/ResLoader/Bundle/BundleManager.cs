@@ -51,13 +51,21 @@ public class BundleManager
 
     #region 加载/卸载
 
+    /// <summary>
+    /// 按清单顺序 Acquire 依赖包再 Acquire 主包。
+    /// catalogue.bundles[].dependencies 已为拓扑序（叶→根），与 Unity Manifest 一致。
+    /// </summary>
     public static AssetBundle AcquireBundleWithDependencies(string bundleName, List<string> acquiredBundles = null)
     {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
 
         if (catalogue != null && catalogue.IsLoaded)
         {
-            foreach (string dep in catalogue.GetBundleDependencies(bundleName))
+            string[] deps = catalogue.GetBundleDependencies(bundleName);
+#if DEVELOPMENT_BUILD
+            ValidateDependencyOrder(bundleName, deps);
+#endif
+            foreach (string dep in deps)
             {
                 if (string.IsNullOrEmpty(dep))
                     continue;
@@ -166,6 +174,46 @@ public class BundleManager
 
         return path;
     }
+
+#if DEVELOPMENT_BUILD
+    static void ValidateDependencyOrder(string bundleName, string[] deps)
+    {
+        if (deps == null || deps.Length <= 1 || catalogue?.Catalog?.bundles == null)
+            return;
+
+        var graph = new Dictionary<string, List<string>>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (BundleCatalogInfo info in catalogue.Catalog.bundles)
+        {
+            if (info == null || string.IsNullOrEmpty(info.bundleName))
+                continue;
+
+            string key = BundlePlatformPaths.NormalizeBundleName(info.bundleName);
+            var list = new List<string>();
+            if (info.dependencies != null)
+            {
+                foreach (string dep in info.dependencies)
+                {
+                    string normalizedDep = BundlePlatformPaths.NormalizeBundleName(dep);
+                    if (!string.IsNullOrEmpty(normalizedDep) && !list.Contains(normalizedDep))
+                        list.Add(normalizedDep);
+                }
+            }
+
+            graph[key] = list;
+        }
+
+        var closure = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (string dep in deps)
+        {
+            string normalized = BundlePlatformPaths.NormalizeBundleName(dep);
+            if (!string.IsNullOrEmpty(normalized))
+                closure.Add(normalized);
+        }
+
+        if (!BundleDependencyTopology.TryTopologicalSort(closure, graph, out _, out string cycleHint))
+            Debug.LogWarning("Bundle dependency order may be invalid for " + bundleName + ": cycle near " + cycleHint);
+    }
+#endif
 
     #endregion
 }

@@ -1,10 +1,10 @@
 {
     "version": "1.0.34",
     "buildNumber": 1035,
-    "platform": "Android",
-    "buildMode": "EditorTest",
+    "platform": "Windows",
+    "buildMode": "DeviceDebug",
     "packingRule": "Default",
-    "bundleRoot": "F:\\Eriuka\\vFramework\\vframework\\Assets\\StreamingAssets\\Android",
+    "bundleRoot": "F:\\Eriuka\\vFramework\\vframework\\Assets\\StreamingAssets\\StandaloneWindows64",
     "resourceRoot": "Assets/AssetBundle",
     "entries": [
         {
@@ -398,5 +398,41 @@
             "assetName": "UIRoot"
         }
     ],
-    "bundles": []
+    "bundles": [
+        {
+            "bundleName": "atlas.bundle",
+            "dependencies": []
+        },
+        {
+            "bundleName": "background.bundle",
+            "dependencies": []
+        },
+        {
+            "bundleName": "common.bundle",
+            "dependencies": []
+        },
+        {
+            "bundleName": "icon.bundle",
+            "dependencies": []
+        },
+        {
+            "bundleName": "model.bundle",
+            "dependencies": [
+                "icon.bundle"
+            ]
+        },
+        {
+            "bundleName": "shader.bundle",
+            "dependencies": []
+        },
+        {
+            "bundleName": "ui.bundle",
+            "dependencies": [
+                "atlas.bundle",
+                "background.bundle",
+                "common.bundle",
+                "icon.bundle"
+            ]
+        }
+    ]
 }

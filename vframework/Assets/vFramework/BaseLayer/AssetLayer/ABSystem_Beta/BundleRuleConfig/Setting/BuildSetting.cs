@@ -96,6 +96,16 @@ public class BuildSetting : ScriptableObject
     public string targetDirectory = "Assets/AssetBundle";
 
     public List<BundleConfigItem> customItems = new List<BundleConfigItem>();
+
+    [Header("Catalogue / 构建分析")]
+    [Tooltip("写入 bundles[] 时对依赖做拓扑排序（推荐开启）")]
+    public bool useTopologicalSort = true;
+
+    [Tooltip("打包成功后生成 BundleBuildReport.json")]
+    public bool runBuildAnalyzer = true;
+
+    [Tooltip("loadPath 重复时阻断写清单；关闭则仅 Warning")]
+    public bool loadPathDuplicateAsError = false;
 }
 
 #endregion

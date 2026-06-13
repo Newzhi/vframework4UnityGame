@@ -164,7 +164,16 @@ public class CatalogueReader
                 if (info == null || string.IsNullOrEmpty(info.bundleName))
                     continue;
 
-                dependencyMap[info.bundleName] = info.dependencies ?? new string[0];
+                string[] deps = info.dependencies ?? new string[0];
+                if (deps.Length > 1)
+                {
+                    deps = BundleDependencyTopology.SortUsingCatalogAllDeps(
+                        catalog.bundles,
+                        info.bundleName,
+                        deps);
+                }
+
+                dependencyMap[info.bundleName] = deps;
             }
         }
     }

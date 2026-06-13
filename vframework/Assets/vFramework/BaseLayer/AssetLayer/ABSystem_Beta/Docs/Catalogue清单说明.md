@@ -1,7 +1,8 @@
 # Catalogue 清单说明
 
 > 打包器与加载器之间的桥梁。当前实现：**JSON + `entries` + `bundles[]`**；运行时由 `CatalogueReader` 只读。  
-> 文档索引：[Docs/文档索引.md](./文档索引.md)
+> 文档索引：[Docs/文档索引.md](./文档索引.md)  
+> **拓扑排序与构建优化计划**：[Bundle构建优化与拓扑排序计划.md](./Bundle构建优化与拓扑排序计划.md)
 
 相关文件：
 
@@ -55,9 +56,7 @@ Dependencies:
 - 同一 bundle 内上百条 asset，**依赖完全相同**，逐条重复会撑大清单（JSON/未来二进制都不划算）。
 - 依赖是 **bundle 与 bundle** 的关系，不是 asset 级别。
 
-### 推荐结构：`bundles[]`
-
-在 `AssetCatalog` 上增加（规划，尚未启用）：
+### 推荐结构：`bundles[]`（✅ 已启用）
 
 ```json
 {
@@ -84,14 +83,28 @@ Dependencies:
 约定：
 
 - 只存 **bundle 文件名**（如 `atlas.bundle`），不存 `F:/...` 绝对路径；
-- 只存 **直接依赖**；加载时递归展开即可；
+- 当前写入 **全量依赖**（`GetAllDependencies`），并经 **`BundleDependencyTopology` 拓扑排序**（叶→根，供 `AcquireBundleWithDependencies` 顺序 Acquire）；
 - 无依赖的包：`dependencies: []` 或省略该条（实现时二选一，建议显式空数组）。
 
 对应 C# 类型：`BundleCatalogInfo`（`bundleName` + `dependencies[]`）。
 
----
+### 拓扑序约定（✅ 已实现）
 
-## 三、依赖数据从哪来？
+- **边语义**：若 `ui.bundle` 依赖 `atlas.bundle`，则 `dependencies[]` 中 **`atlas.bundle` 排在 `ui.bundle` 之前**（叶→根）。
+- **写端**：`CatalogueWriter.TryBuildBundleDependencies` 用 Manifest 直接依赖建图 + Kahn 排序；**环检测失败**或排序改变集合 → `Write` 返回 `false`，不写 JSON。
+- **读端**：`CatalogueReader.BuildLookupTables` 对每条 `dependencies` 用 `SortUsingCatalogAllDeps` **幂等再排序**（双保险）。
+- **开关**：`BuildSetting.useTopologicalSort`（默认 `true`）；`false` 时回退 Unity 原始顺序。
+
+### `Write` 失败条件
+
+| 条件 | 行为 |
+|------|------|
+| 依赖环 | `LogError`，不写清单 |
+| 拓扑排序改变依赖集合 | `LogError`，不写清单 |
+| loadPath 重复 + `loadPathDuplicateAsError=true` | `LogError`，不写清单 |
+| loadPath 重复 + 默认 `false` | `LogWarning`，仍写清单 |
+
+loadPath 校验由 `CatalogueValidator.ValidateEntries` 执行，Analyzer 报告复用同一结果。
 
 **权威来源**：Unity 本次 `BuildPipeline.BuildAssetBundles` 生成的 **AssetBundleManifest**（不是手填）。
 

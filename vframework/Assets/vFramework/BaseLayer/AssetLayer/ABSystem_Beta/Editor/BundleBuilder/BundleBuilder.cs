@@ -38,7 +38,9 @@ public class BundleBuilder
             return false;
         }
 
-        BuildByMode(setting.buildMode, builds, setting, target, options);
+        if (!BuildByMode(setting.buildMode, builds, setting, target, options))
+            return false;
+
         AssetDatabase.Refresh();
         Debug.Log("打包完成，bundle 数量: " + builds.Count
             + "，输出: " + ResolveBundleRoot(setting.buildMode, setting));
@@ -52,6 +54,7 @@ public class BundleBuilder
 
         int totalCount = 0;
         bool anyBuild = false;
+        bool allSucceeded = true;
 
         foreach (KeyValuePair<BuildMode, List<AssetBundleBuild>> pair in grouped)
         {
@@ -60,7 +63,8 @@ public class BundleBuilder
 
             anyBuild = true;
             totalCount += pair.Value.Count;
-            BuildByMode(pair.Key, pair.Value, setting, target, options);
+            if (!BuildByMode(pair.Key, pair.Value, setting, target, options))
+                allSucceeded = false;
         }
 
         if (!anyBuild)
@@ -70,11 +74,15 @@ public class BundleBuilder
         }
 
         AssetDatabase.Refresh();
-        Debug.Log("自定义打包完成，bundle 数量: " + totalCount);
-        return true;
+        if (allSucceeded)
+            Debug.Log("自定义打包完成，bundle 数量: " + totalCount);
+        else
+            Debug.LogError("自定义打包部分失败，bundle 数量: " + totalCount);
+
+        return allSucceeded;
     }
 
-    static void BuildByMode(
+    static bool BuildByMode(
         BuildMode mode,
         List<AssetBundleBuild> builds,
         BuildSetting setting,
@@ -96,7 +104,19 @@ public class BundleBuilder
         }
 
         // TODO: 按打包模式区分清单生成策略（编辑器模拟 / 首包 / CDN / DLC分包）
-        CatalogueWriter.Write(setting, builds.ToArray(), bundleRoot, manifest);
+        if (!CatalogueWriter.Write(setting, builds.ToArray(), bundleRoot, manifest))
+            return false;
+
+        if (setting.runBuildAnalyzer)
+        {
+            BundleBuildAnalyzer.AnalyzeAndWriteReport(
+                setting,
+                builds.ToArray(),
+                bundleRoot,
+                manifest);
+        }
+
+        return true;
     }
 
     public static void Clean(BuildSetting setting)
