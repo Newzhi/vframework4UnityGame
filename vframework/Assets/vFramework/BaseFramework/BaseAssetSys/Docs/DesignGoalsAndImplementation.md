@@ -1,4 +1,4 @@
-﻿# 设计目标与实现细节
+# 设计目标与实现细节
 
 ---
 
@@ -58,9 +58,9 @@
 ## 实现细节
 
 > 本节随开发进度更新，可自由修改。上方 **禁止修改区域** 为原始构思；此处对照 **设计目标四条模块**，说明当前做到哪一步。  
-> **复核日期：2026-06-11**（对照源码 + 集成测试 JSON；**禁止区正文未改**）。  
+> **复核日期：2026-06-13**（对照源码 + 集成测试 JSON；**禁止区正文未改**）。  
 > **主路线（2026-06-08 定稿）**：不换同步地基，**阶段 B 异步 → 阶段 C CDN**；详见 **[MainRoadmap.md](./MainRoadmap.md)**。  
-> **本阶段结论**：阶段 A **打包 → 清单 → 同步 Load + 三端双 Runner（19/19）** 已验收；阶段 B `UniConcurrentLoad_*` 待归档；CDN 运行时未做。
+> **本阶段结论**：阶段 A **19/19** 已验收；阶段 **B-1 三端异步 19/19** 已验收；**B-Pool** `PrefabPool` 已实现；B-2 inFlight / 真异步未做；CDN 运行时未做。
 
 ### 主路线符合度（摘要）
 
@@ -68,6 +68,7 @@
 |------|------|------|
 | **A** | 打包 + 清单 + 同步 Load + Ref | ✅ |
 | **B-1** | 异步双 Runner 集成 JSON | ✅ 三端 19/0（`225805`/`230136`/`231720`） |
+| **B-Pool** | `PrefabPool` + `BundleResLoader.CreatPool` | ✅ |
 | **B-2** | 真异步 / inFlight / ref==0 丢弃 | ❌ |
 | **C** | CDN 下载 + 多 root + version 比对 | ❌ |
 
@@ -125,7 +126,7 @@
 | **Prefab + 换贴图/材质** | `Load<GameObject>` + `Load<Sprite>` / `Load<Material>`，`GetAsset<T>()` 赋给 Renderer | 先 Release 辅助资源，再 Release Prefab | Case 2～3 |
 | **跨包 UI** | `Load<GameObject>("UI/UIRoot")`；依赖包由清单 `bundles[]` 自动 Acquire | 同模块卸载 | Case 5 Cross UI |
 | **同 Prefab 多实例（刷怪/列表）** | **`Load` 一次**，循环 `handle.Instantiate()`；列表保存 `GameObject` | 先 `Destroy` 全部实例，再 **`Release` 一次** | ReLoad 测 Ref++，非实例数 |
-| **对象池** | 句柄 **长期 Load 不 Release**；池内只 `Instantiate`/`Destroy` 或 SetActive | 池销毁或切大场景时再 `Release` | 无 AutoUnload（延后） |
+| **对象池** | `CreatPool` → `GetObj(pos,rot,parent)` 开火帧采样 FirePoint；`ReleaseObj` | `DestroyPool`（`CanDestroyPool`） | — |
 | **Common / 常驻资源** | 启动时 `Load` 一次，**不 Release**（或等 `PreLoad` P2） | 仅 `UnloadAll` 或关游戏 | 主路线 §5 |
 | **切场景 / 关游戏** | `BundleResLoader.Instance.UnloadAll()`（进程级，慎用） | 独占 Runner 收尾 | Case 8 UnloadAll |
 | **Resources 路径** | `Load<T>("Resources/子路径/名")`（无扩展名） | 同 AB，`Release` | Router 套系 Case 2 |
@@ -241,8 +242,8 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | # | 需求 | 状态 | 说明 |
 |---|------|------|------|
 | 1 | 同步加载 | ✅ | `Load<T>(loadPath)`；辅助 `LoadByBundle` / `LoadByAssetPath`；**三端双 Runner 已验** |
-| 2 | 异步加载（设计基线 **默认 API**） | 🟡 | `LoadUniTaskAsync` **API 已有**，内部 `UniTask.Yield` + 同步 `Load`；**无**后台 I/O / 下载队列；`MyLoadUniTest` 脚本就绪、**无归档 JSON** |
-| 3 | 加载 + 回调 | 🟡 | `LoadUniTaskWithCallback` 等 **已实现**，内核同上；**无**集成 Case |
+| 2 | 异步加载（设计基线 **默认 API**） | 🟡 | `LoadUniTaskAsync` **三端双 Runner 19/19**；内核仍为 `Yield` + 同步 `Load`；无后台 I/O |
+| 3 | 加载 + 回调 | 🟡 | `LoadUniTaskWithCallback` 等已实现，内核同上 |
 | 4 | 预加载资源包 | ❌ | `PreLoad<T>()` 仍返回 `default` |
 | 5 | 卸载单个资源 | ✅ | `IAssetHandle.Release()` / `Unload(handle, instance, cb)` |
 | 6 | 卸载全部 | ✅ | `UnloadAll()`；双 Runner 中仅 `Myloadtest` 独占 |
@@ -255,7 +256,7 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | 1 | API 加载 + 依赖顺序 | ✅ | `AcquireBundleWithDependencies` + 跨包 Case；清单 `bundles[]` 已写入（依赖项多为空数组，**依赖预加载 Case 未单独验**） |
 | 2 | 异常捕捉 / 规避 | 🟡 | 失败路径 `LogError`；无统一错误码 / 断言框架 / 非法路径 Case |
 | 3 | 竞态安全（多脚本同资源） | ✅ | **同步**双 Runner：**Editor / Windows Player / Android** 均 `passCount=19`（`004641` / `004530` / `004612`） |
-| 4 | 引用计数 | ✅ | 同上 + UnloadAll 独占；Android `jar:` Catalogue（`StreamingAssetsIO`）已验 |
+| 4 | 引用计数 | ✅ | 同步/异步双 Runner 19/19；**Resource Ref=0 → UnLoad + ReleaseBundle** 已实现；B-2「在途 ref==0 丢弃」未做 |
 
 **阶段判断（加载）**：阶段 A 已达标；主路线见 **[MainRoadmap.md](./MainRoadmap.md)**（阶段 B 异步 → 阶段 C CDN）。
 
@@ -365,9 +366,10 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | `AbstractResource` / `IAssetHandle` | Resource 层 Ref；`LoadAsset` / Release 经 `AssetRouter` |
 | `BundleManager` | `LoadFromFile` + `IBundlePathResolver`；`AcquireBundleWithDependencies` 读清单 `bundles[]` |
 | `CatalogueReader` + `StreamingAssetsIO` | 读 JSON；Editor 可 `LoadFromProjectCatalogue`；Android `jar:` 已验 |
-| `BundleResLoader` | 同步 `Load` ✅；Resources 简路径分支 ✅；`LoadUniTaskAsync` + 回调 **基础版** ✅；`PreLoad` ❌ |
-| `AssetRouter` | ✅ 四源：`ABUNDLE` / `RESOURCES` / `EDITORRESOURCES`（EditorTest）/ `NETCDN`（Stub） |
-| **集成测试** | 同步双 Runner **Editor / Player / Android 19/19**；异步套系脚本就绪、JSON 待归档 |
+| `BundleResLoader` | 同步 `Load` ✅；`LoadUniTaskAsync` + 回调 ✅；`PreLoad` ❌ |
+| `AssetPool` | ✅ `PrefabPool`；`BundleResLoader.CreatPool` |
+| `AssetRouter` | ✅ 四源：`ABUNDLE` / `RESOURCES` / `EDITORRESOURCES` / `NETCDN`（Stub） |
+| **集成测试** | 同步/异步双 Runner **三端 19/19** |
 
 设计基线 §1 同步 `Load(简路径)` 与 §3 回调入口已实现；§2 **默认异步** 仅 UniTask 形态，**非**设计终态的真异步 I/O。§4 预加载、§7 CDN、路由器仍见 [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)。
 
@@ -378,6 +380,7 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 ```text
 Assets/vFramework/BaseFramework/BaseAssetSys/
 ├── AbstractAssets/          # AbstractResource + README.md
+├── AssetPool/               # PrefabPool
 ├── ResLoader/               # Business / Bundle / Catalogue / Router + README.md
 ├── BundleRuleConfig/        # BuildSetting、AssetCatalog、BundleDependencyTopology + README.md
 ├── Editor/                  # 打包工具 + README.md

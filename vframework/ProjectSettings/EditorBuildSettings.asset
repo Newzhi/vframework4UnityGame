@@ -5,6 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+  - enabled: 1
+    path: Assets/Test/comprehensiveTest/Scenes/StartGame.unity
+    guid: d83d38ad27fceb945a3dcbc59dc40663
+  - enabled: 1
+    path: Assets/Test/comprehensiveTest/Scenes/PoolTest.unity
+    guid: c63b4585c02fe88439c0cf29b1981da9
   - enabled: 0
     path: Assets/Test/ResTest/ResTest.unity
     guid: bcce67c7271ac8c41a0da03c984f4940

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea4ff2eaaeaf8c3469cdb57093ee63d5, type: 3}
   m_Name: DefaultBuildSetting
   m_EditorClassIdentifier: 
-  platform: 1
+  platform: 0
   version: 1.0.34
   buildNumber: 1035
   deviceOutputPath: Assets/StreamingAssets

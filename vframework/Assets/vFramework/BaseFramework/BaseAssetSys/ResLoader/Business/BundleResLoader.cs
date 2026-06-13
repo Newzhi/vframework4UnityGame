@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -39,6 +39,7 @@ public class BundleResLoader
 
     readonly CatalogueReader catalogue = new CatalogueReader();
     Dictionary<string, AbstractResource> resourceDic = new Dictionary<string, AbstractResource>();
+    readonly Dictionary<string, PrefabPool> poolsByLoadPath = new Dictionary<string, PrefabPool>();
 
     #endregion
 
@@ -319,6 +320,8 @@ public class BundleResLoader
     //卸载全部资源
     public void UnloadAll()
     {
+        DestroyAllPools();
+
         AbstractResource[] resources = new AbstractResource[resourceDic.Count];
         resourceDic.Values.CopyTo(resources, 0);
         resourceDic.Clear();
@@ -331,6 +334,121 @@ public class BundleResLoader
 
         BundleManager.UnloadAll();
     }
+
+    #endregion
+
+    #region 对象池
+
+    #region CreatPool
+
+    /// <summary>
+    /// Load Prefab 并创建 <see cref="PrefabPool"/>；句柄所有权移交池，业务勿再 Release，由 <see cref="PrefabPool.DestroyPool"/> 统一回收。
+    /// </summary>
+    public PrefabPool CreatPool(string loadPath, Transform inactiveRoot = null, int maxInactiveCapacity = 0)
+    {
+        if (string.IsNullOrEmpty(loadPath))
+        {
+            Debug.LogError("CreatPool: loadPath is null or empty.");
+            return null;
+        }
+
+        IAssetHandle handle = Load<GameObject>(loadPath);
+        if (handle == null)
+        {
+            Debug.LogError("CreatPool: Load failed, path=" + loadPath);
+            return null;
+        }
+
+        PrefabPool pool = new PrefabPool(handle, inactiveRoot, maxInactiveCapacity);
+        pool.CreatPool();
+        if (!pool.IsPoolCreated)
+        {
+            Debug.LogError("CreatPool: PrefabPool.CreatPool failed, path=" + loadPath);
+            handle.Release();
+            return null;
+        }
+
+        return pool;
+    }
+
+    /// <summary>
+    /// 按 loadPath 去重创建池：多脚本调用同一路径时共享同一 <see cref="PrefabPool"/> 与闲置根节点。
+    /// inactiveRoot 仅在首次创建时生效；已存在池时忽略该参数。
+    /// </summary>
+    public PrefabPool GetOrCreatPool(string loadPath, Transform inactiveRoot = null, int maxInactiveCapacity = 0)
+    {
+        if (string.IsNullOrEmpty(loadPath))
+        {
+            Debug.LogError("GetOrCreatPool: loadPath is null or empty.");
+            return null;
+        }
+
+        if (poolsByLoadPath.TryGetValue(loadPath, out PrefabPool existing) && existing != null && existing.IsPoolCreated)
+            return existing;
+
+        Transform root = inactiveRoot ?? PoolSceneRoots.GetOrCreateInactiveRoot(loadPath);
+        PrefabPool pool = CreatPool(loadPath, root, maxInactiveCapacity);
+        if (pool != null && pool.IsPoolCreated)
+            poolsByLoadPath[loadPath] = pool;
+
+        return pool;
+    }
+
+    /// <summary>活跃实例逻辑父节点，命名 Active_{logicalName}，挂在 <see cref="PoolSceneRoots.RuntimeRootName"/> 下。</summary>
+    public Transform GetOrCreateActivePoolRoot(string logicalName)
+    {
+        return PoolSceneRoots.GetOrCreateActiveRoot(logicalName);
+    }
+
+    public bool TryGetPool(string loadPath, out PrefabPool pool)
+    {
+        if (string.IsNullOrEmpty(loadPath))
+        {
+            pool = null;
+            return false;
+        }
+
+        return poolsByLoadPath.TryGetValue(loadPath, out pool) && pool != null && pool.IsPoolCreated;
+    }
+
+    /// <summary>销毁已注册池并移除去重表项；活跃实例须已全部 Release。</summary>
+    public bool DestroyPoolByLoadPath(string loadPath)
+    {
+        if (string.IsNullOrEmpty(loadPath))
+            return false;
+
+        if (!poolsByLoadPath.TryGetValue(loadPath, out PrefabPool pool) || pool == null)
+            return false;
+
+        if (!pool.CanDestroyPool)
+        {
+            Debug.LogWarning("DestroyPoolByLoadPath: pool still has active instances, path=" + loadPath);
+            return false;
+        }
+
+        pool.DestroyPool();
+        poolsByLoadPath.Remove(loadPath);
+        return true;
+    }
+
+    public void DestroyAllPools()
+    {
+        foreach (KeyValuePair<string, PrefabPool> pair in poolsByLoadPath)
+        {
+            if (pair.Value == null)
+                continue;
+
+            if (!pair.Value.CanDestroyPool)
+                Debug.LogWarning("DestroyAllPools: skipping pool with active instances, path=" + pair.Key);
+
+            pair.Value.DestroyPool();
+        }
+
+        poolsByLoadPath.Clear();
+        PoolSceneRoots.ClearCache();
+    }
+
+    #endregion
 
     #endregion
 

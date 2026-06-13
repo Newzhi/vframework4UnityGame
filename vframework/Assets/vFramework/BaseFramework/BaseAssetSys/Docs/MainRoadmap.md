@@ -1,4 +1,4 @@
-﻿# ABSystem_Beta 主路线
+# ABSystem_Beta 主路线
 
 > **唯一排期与方向文档**（2026-06-08 定稿）  
 > 进度细节见 [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md)；集成测试见 [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md)。
@@ -37,9 +37,9 @@
 | **A** | 规则制定器 + 打包器 + Catalogue + 同步 API | `ConcurrentLoad_*` passCount=19（Editor / Player / Android） |
 | **B-1** | 在 **现有 `TestABScene`** 启用异步双 Runner，`LoadUniTaskAsync` 集成 | `UniConcurrentLoad_*` passCount=19（**Editor / Player / Android ✅**） |
 | **B-2** | 真异步 I/O、同 path inFlight 合并、完成时 ref==0 丢弃 | 新 Case + **不回归**阶段 A 同步 19/19 |
-| **B-Pool-1** | 对象池 **业务范式**落地（句柄长期持有、Return 不 Release） | 文档 + 业务侧可抄 [业务API调用指南 §7.7](./BusinessApiUsageGuide.md) |
-| **B-Pool-2** | **TestABScene** 增加对象池集成 Case（如 `MyPoolTest`） | `PoolLoad_*` failCount=0；与同步/异步 Runner **互斥**启用 |
-| **B-Pool-3** | （可选）框架层 `PrefabPool` / 池化 Helper，封装 Handle + 实例队列 | 不替代 `IAssetHandle`；Clear 时统一 Release |
+| **B-Pool-1** | 对象池 **业务范式** + `BundleResLoader.CreatPool` | ✅ `PrefabPool` + §7.7 |
+| **B-Pool-2** | 对象池集成自动化 Case | ⏸ 暂不纳入 AB_Test 套系 |
+| **B-Pool-3** | （可选）池化 Helper 扩展 | ⏳ 可选 |
 | **C-1** | `IBundlePathResolver` 多根目录（首包 / persistentDataPath） | 本地缓存命中 Load |
 | **C-2** | `IRemoteBundleProvider` 清单对比 + HTTP 下载 | CdnHotUpdate 产物可拉取并 Load |
 | **C-3** | 首包 / 远程分包策略上线 | 非全部 AB 进 StreamingAssets |
@@ -67,9 +67,9 @@
 
 | 子项 | 内容 | 状态 |
 |------|------|------|
-| **范式** | Init：`Load` 一次；Get：`Instantiate` 或复用 deactivated 实例；Return：**不** Release；Clear/模块销毁：`Destroy` 实例 + `Release` 一次 | ✅ 文档已有 |
-| **集成** | `TestABScene` 挂载 `MyPoolTest`（规划）：Init→Get×N→Return→Clear，断言 Ref 与 UnloadAll 行为 | ⏳ 待实现 |
-| **框架封装** | 可选 `PrefabPool`（内部持有一个 `IAssetHandle` + `Queue<GameObject>`） | ⏳ 可选，B-Pool-3 |
+| **范式** | `CreatPool` + `GetObj(pos,rot,parent)`（与 `InstantiateAt` 对齐）；`ReleaseObj` 不 Release | ✅ `PrefabPool` + §7.7 |
+| **集成 Case** | AB_Test 自动化套系 | ⏸ 已移除，业务侧按 §7.7 手测 |
+| **框架封装** | `PrefabPool` | ✅ |
 | **与 B/C 关系** | **依赖 B-1**：异步 Load 路径稳定后再跑池 Case；**先于 C**：CDN 下载与池化正交，避免并发改 Ref 语义 |
 
 **延后（不纳入 B-Pool 首版）**：AutoUnload、延迟卸载队列、池内跨 bundle 热替换。
@@ -83,7 +83,7 @@
 | 同步 `Load<T>` + Release / UnloadAll | ✅ 三端双 Runner 19/19 |
 | 打包三种模式 + Player 平台过滤 | ✅ |
 | `LoadUniTaskAsync` / 回调 API | ✅ **三端异步双 Runner 19/19**（`225805` / `230136` / `231720`） |
-| 对象池集成 Case（`MyPoolTest`） | ⏳ 阶段 B-Pool-2 规划 |
+| `BundleResLoader.CreatPool` / `PrefabPool` | ✅ |
 | CDN 打包产出 | ✅ `cdnOutputPath` |
 | CDN 运行时下载 | 🟡 `AssetRouter` + `CdnBundleAssetProvider` 路由已接；真实 HTTP 仍 Stub |
 | `AssetRouter` 四源路由 | ✅ ABUNDLE / RESOURCES / EDITORRESOURCES / NETCDN |
@@ -117,11 +117,9 @@
 
 | # | 项 | 完成标准 |
 |---|-----|----------|
-| 1 | 对象池范式审查 | [业务API调用指南 §7.7](./BusinessApiUsageGuide.md) 与 Case 一致 |
-| 2 | `TestABScene` + `MyPoolTest` | `PoolLoad_*`，Init/Get/Return/Clear + Ref 断言 |
-| 3 | （可选）`PrefabPool` Helper | Clear 时单次 Release；不破坏 A/B 门禁 |
-
-**与测试场景关系**：`MyPoolTest` 与同步/异步双 Runner **互斥**挂载（同 §3 切换规则）；可复用 `LoadApiTestLogCollector`。
+| 1 | 对象池范式 + `CreatPool` | ✅ [业务API调用指南 §7.7](./BusinessApiUsageGuide.md) |
+| 2 | （可选）业务模块手测 GetObj/DestroyPool | 不纳入 AB_Test JSON 门禁 |
+| 3 | （可选）`PrefabPool` 扩展 | Clear 时单次 Release |
 
 ### P1 — 加载补全 + 清单/打包增强（与 B/C 并行）
 
@@ -196,7 +194,6 @@ BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
 | 同步单 Runner | `TestABScene` | `Myloadtest_*` | 9 | A |
 | 同步双 Runner | `TestABScene` | `ConcurrentLoad_*` | **19**（回归基准） | A |
 | 异步双 Runner | `TestABScene` | `UniConcurrentLoad_*` | **19** | **B-1**（三端 ✅） |
-| 对象池 | `TestABScene`（规划） | `PoolLoad_*` | TBD | **B-Pool-2** |
 
 同步基准：`004612`（Android）、`004530`（Player）、`004641`（Editor）。
 
@@ -229,4 +226,5 @@ BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
 | 2026-06-08 | 落地 `AssetRouter` 四源（EditorTest→AssetDatabase、Resources、AB、CDN Stub）；业务 API 不变 |
 | 2026-06-08 | 阶段 B 明确在 **TestABScene** 切换异步双 Runner；新增 **阶段 B-Pool**（对象池，介于 B 与 C）；P2 拆为 B-2 与 C |
 | 2026-06-13 | 集成归档：Android 同步 19/19 复测；异步 Editor/Player **19/19**（`225805`/`230136`）；场景 Collector 默认异步套系 |
+| 2026-06-13 | **B-Pool**：`PrefabPool` + `BundleResLoader.CreatPool` |
 | 2026-06-13 | 异步 **Android 19/19**（`231720`）；**阶段 B-1 三端完成** |

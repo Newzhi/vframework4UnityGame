@@ -146,6 +146,43 @@ BundleResLoader.Instance.UnloadAll();
 
 - 进程级收尾（切场景 / 关游戏）；清空全部 Resource 缓存并 `BundleManager.UnloadAll()`。  
 - 与单资源 `Release` 分开使用，避免混用。
+- **会先** `DestroyAllPools()`（销毁池内全部实例并对每个池 `Release` 句柄一次），再清 `resourceDic` 与 Bundle。
+
+### 5.4 对象池卸载（`PrefabPool` / `BundleResLoader`）
+
+实现：`AssetPool/PrefabPool.cs`、`AssetPool/PoolSceneRoots.cs`。
+
+| API | 说明 |
+|-----|------|
+| `CreatPool(loadPath, inactiveRoot?, maxInactiveCapacity?)` | `Load` 一次并创建池；句柄所有权移交池 |
+| `GetOrCreatPool(loadPath, inactiveRoot?, maxInactiveCapacity?)` | 按 `loadPath` **去重**；多脚本共享同一 `PrefabPool` |
+| `TryGetPool(loadPath, out pool)` | 查询已注册池（调试 / 日志） |
+| `GetOrCreateActivePoolRoot(logicalName)` | 活跃实例父节点 `Active_{name}`（如 `Bullets`） |
+| `DestroyPoolByLoadPath(loadPath)` | 单池销毁；要求 `CanDestroyPool`（无未归还实例） |
+| `DestroyAllPools()` | 销毁全部已注册池（**含未归还活跃实例**，先 Destroy 再 Release） |
+| `PrefabPool.GetObj` / `ReleaseObj` | 借出 / 归还实例；**不改变**句柄 Ref |
+| `PrefabPool.DestroyPool()` | Destroy 全部实例 + 句柄 `Release` **一次** |
+
+**引用计数（池专用）**
+
+| 阶段 | Resource Ref |
+|------|----------------|
+| `CreatPool` / 首次 `GetOrCreatPool` | `Load` +1，由池持有 |
+| `GetObj` / `ReleaseObj` 循环 | **不变** |
+| `DestroyPool` / `DestroyAllPools` | `Release` -1（每池一次） |
+| `UnloadAll()` | 先 `DestroyAllPools`，再清其余 Resource |
+
+**何时销毁池、释放引用**
+
+| 时机 | 行为 |
+|------|------|
+| 业务调用 `pool.DestroyPool()` | 仅该池；须 `CanDestroyPool` 或强制 Destroy 全部实例 |
+| `DestroyPoolByLoadPath` | 单路径池；有 `borrowed` 时 **拒绝** |
+| `DestroyAllPools()` | 全部池强制收尾（有 borrowed 会 Warning 但仍 Destroy） |
+| `UnloadAll()` | 切场景 / 关游戏；池 + 全部 Resource + Bundle |
+| 对局中 `GetObj`/`ReleaseObj` | **不** 卸包、**不** Release 句柄 |
+
+`UnloadAll` 之后勿再使用旧池或旧句柄；重新进场景需重新 `GetOrCreatPool`。
 
 ---
 
@@ -296,7 +333,7 @@ UnloadAll();  // 其它模块仍持有的句柄已失效
 | 同一 Prefab 多实例（低频） | 1 次 | 模块 `OnDestroy` **1 次** |
 | 每实例 Destroy 里收尾 | 每 spawn `Load` 1 次 | 实例 `OnDestroy` 各 `Release` 1 次 |
 | Load 1 次 + 提前卸 AB | 1 次 + 活实例计数 | 计数为 0 时 **Release 1 次** |
-| 对象池 | 池 Init `Load` 1 次 | 池 Clear / 销毁 **Release 1 次**；Return **不** Release |
+| 对象池 | 池 `CreatPool` / `GetOrCreatPool` **Load 1 次** | 池 `DestroyPool` / `UnloadAll` **Release 1 次**；`ReleaseObj` **不** Release |
 
 选定一种后，**生成方与卸载方一致**：模块持句柄就由模块 Release；每实例 Bind 就由实例 Release。
 
@@ -447,44 +484,95 @@ internal void OnInstanceDestroyed()
 }
 ```
 
-### 7.7 对象池
+### 7.7 对象池（`PrefabPool`）
+
+高频 Prefab（子弹、小怪等）用对象池：**Load 一次**，`Instantiate` 复用，**归还时不 Release**，池销毁时 **Release 一次**。API 总表见 §5.4。
+
+#### 7.7.1 推荐入口：`GetOrCreatPool`（共享池）
+
+同一 `loadPath` 全局只建一个池；玩家与敌人共用子弹池时**必须**用此 API：
 
 ```csharp
-IAssetHandle _handle;
-readonly Queue<GameObject> _pool = new();
+const string BulletPath = "Model/Prefabs/Bullet";
 
-void InitPool()
+PrefabPool bulletPool = BundleResLoader.Instance.GetOrCreatPool(
+    BulletPath,
+    maxInactiveCapacity: 48);   // 0 = 不限制闲置数量
+
+Transform bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
+```
+
+- `inactiveRoot`：仅在**首次创建**时生效；默认 `PoolSceneRoots.GetOrCreateInactiveRoot(loadPath)`。  
+- `maxInactiveCapacity`：仅在**首次创建**时生效；闲置超限时 `ReleaseObj` **直接 Destroy** 实例。
+
+#### 7.7.2 生命周期
+
+```
+CreatPool / GetOrCreatPool  →  Load 一次，句柄归池
+GetObj(pos, rot, parent)    →  借出实例（复用或 InstantiateAt）
+ReleaseObj(go)              →  归还（Deactivate + 回闲置栈），不 Release 句柄
+DestroyPool / UnloadAll     →  Destroy 全部实例 + Release 句柄一次
+```
+
+| 属性 / 方法 | 含义 |
+|-------------|------|
+| `ActiveCount` / `InactiveCount` | 已借出 / 闲置数量 |
+| `CanDestroyPool` | 无未归还实例时可安全 `DestroyPool` |
+| `MaxInactiveCapacity` | 闲置上限（0 不限） |
+
+**安全约定**：`CreatPool` 后勿再对同一句柄 `Release`；`DestroyPoolByLoadPath` 有 borrowed 时失败；`UnloadAll` 强制销毁全部池。
+
+#### 7.7.3 场景 Hierarchy（`PoolSceneRoots`）
+
+```
+PoolRuntime
+├── Inactive_Model_Prefabs_Bullet    ← ReleaseObj 父节点
+├── Active_Bullets                   ← GetObj parent
+├── Inactive_Model_Prefabs_tester
+└── Active_Enemies
+```
+
+切场景：`UnloadAll()` → 销毁 `PoolRuntime` → `PoolSceneRoots.ClearCache()`。
+
+#### 7.7.4 射击与位姿
+
+`GetObj(worldPosition, worldRotation, parent)` 与 `InstantiateAt` 一致；复用实例也会重设位姿。开火帧采样 FirePoint；弹丸 `parent` 用 `Active_Bullets`，勿挂玩家。
+
+```csharp
+GameObject bullet = bulletPool.GetObj(firePoint.position, firePoint.rotation, bulletsRoot);
+```
+
+#### 7.7.5 完整范例
+
+```csharp
+const string BulletPath = "Model/Prefabs/Bullet";
+const string EnemyPath = "Model/Prefabs/tester";
+
+PrefabPool bulletPool;
+PrefabPool enemyPool;
+Transform bulletsRoot;
+Transform enemiesRoot;
+
+void Start()
 {
-    _handle = BundleResLoader.Instance.Load<GameObject>("FX/Bullet");
+    bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
+    enemyPool = BundleResLoader.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: 12);
+    bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
+    enemiesRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Enemies");
 }
 
-GameObject Get()
-{
-    if (_pool.Count > 0)
-    {
-        var go = _pool.Dequeue();
-        go.SetActive(true);
-        return go;
-    }
-    return _handle.Instantiate();
-}
+void OnEnemyDead(GameObject enemy) => enemyPool.ReleaseObj(enemy);
+void OnBulletEnd(GameObject bullet) => bulletPool.ReleaseObj(bullet);
 
-void Return(GameObject go)
+void OnLeaveGame()
 {
-    go.SetActive(false);
-    _pool.Enqueue(go);
-}
-
-void ClearPool()
-{
-    while (_pool.Count > 0)
-        Destroy(_pool.Dequeue());
-    _handle?.Release();
-    _handle = null;
+    BundleResLoader.Instance.UnloadAll();
+    var rt = GameObject.Find(PoolSceneRoots.RuntimeRootName);
+    if (rt != null) Destroy(rt);
 }
 ```
 
-池活跃期间 **不** `Release`；Clear / 模块销毁时再 Release。
+集成验证：`Assets/Test/comprehensiveTest`（见 `综合测试归档.md`）。
 
 ### 7.8 加载 Prefab 并替换贴图
 

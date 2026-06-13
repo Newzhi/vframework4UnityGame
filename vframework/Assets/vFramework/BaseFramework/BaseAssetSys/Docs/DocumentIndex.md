@@ -29,6 +29,7 @@
 | `ResLoader/` | [README.md](../ResLoader/README.md)（**含加载侧架构 Mermaid 图**）、[LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md) | `Business/` `Bundle/` `Catalogue/` `Router/` |
 | `BundleRuleConfig/` | [README.md](../BundleRuleConfig/README.md) | `BuildSetting`、`AssetCatalog` |
 | `Editor/` | [README.md](../Editor/README.md) | `BundlePacker`、`BundleBuilder`、`BundleReporter` |
+| `AssetPool/` | `PrefabPool.cs`、`PoolSceneRoots.cs` | `CreatPool` / `GetOrCreatPool` / `GetObj` / `ReleaseObj` / `DestroyPool`；见 [业务API §5.4 / §7.7](./BusinessApiUsageGuide.md) |
 | `ABSystemTester/` | [ABSystem_BetaTestCases.md](../../../../BaseLayer/AssetLayer/ABSystemTester/ABSystem_BetaTestCases.md) | `ABLoadSmokeTest.cs` |
 | `Assets/Test/AB_Test/` | [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md)、[测试说明.md](../../../../Test/AB_Test/测试说明.md) | `Myloadtest`、`MyRouterTest`、`LoadApiTestLogCollector` |
 
