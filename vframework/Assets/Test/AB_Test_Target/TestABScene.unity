@@ -1409,7 +1409,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2100000001}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa95507f350fa56449ff583d9e6e5cc7, type: 3}
   m_Name: 
@@ -1438,6 +1438,8 @@ MonoBehaviour:
   flushOnEachEntry: 0
   flushOnDestroy: 1
   expectedConcurrentRunners: 2
+  sessionIdPrefix: UniConcurrentLoad_
+  unloadAllRunnerSource: MyLoadUniTest
   appendRefSnapshotOnRecord: 1
   logText: {fileID: 457885320}
   maxDisplayLines: 150
@@ -1455,7 +1457,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2100000001}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45e49c72c1dfecd4e9a8387b10a40f7c, type: 3}
   m_Name: 
@@ -1473,7 +1475,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2100000001}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f1a2b3c4d5e6789012345678abcdef01, type: 3}
   m_Name: 
@@ -1491,7 +1493,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2100000001}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b3c4d5e6f7890123456789abcdef012, type: 3}
   m_Name: 

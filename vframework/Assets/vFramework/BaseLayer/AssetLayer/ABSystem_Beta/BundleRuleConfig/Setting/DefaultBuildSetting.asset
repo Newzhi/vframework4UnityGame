@@ -24,4 +24,4 @@ MonoBehaviour:
   customItems: []
   useTopologicalSort: 1
   runBuildAnalyzer: 1
-  loadPathDuplicateAsError: 1
+  loadPathDuplicateAsError: 0
