@@ -8,11 +8,14 @@ using Object = UnityEngine.Object;
 /// </summary>
 public sealed class PrefabPool
 {
-    IAssetHandle prefabHandle;
+    #region 变量定义
+    
+    IAssetHandle prefabHandle; //句柄
     readonly Transform inactiveRoot;
     readonly Stack<GameObject> inactiveInstances = new Stack<GameObject>(32);
     readonly HashSet<GameObject> activeInstances = new HashSet<GameObject>();
     int maxInactiveCapacity;
+    int refCount;//如果是别人也需要创建则引用计数+1，然后扩容
     bool isPoolCreated;
 
     public bool IsPoolCreated => isPoolCreated;
@@ -22,6 +25,9 @@ public sealed class PrefabPool
 
     /// <summary>闲置上限；0 表示不限制。超出时 Release 直接 Destroy 实例。</summary>
     public int MaxInactiveCapacity => maxInactiveCapacity;
+    
+    #endregion
+   
 
     internal PrefabPool(IAssetHandle prefabHandle, Transform inactiveRoot = null, int maxInactiveCapacity = 0)
     {
@@ -29,7 +35,9 @@ public sealed class PrefabPool
         this.inactiveRoot = inactiveRoot;
         this.maxInactiveCapacity = maxInactiveCapacity;
     }
-
+    
+    #region 业务接口（创建池/销毁池）
+    
     public void CreatPool()
     {
         if (isPoolCreated)
@@ -173,4 +181,8 @@ public sealed class PrefabPool
                 Object.Destroy(instance);
         }
     }
+    
+    #endregion
+
+    
 }

@@ -9,6 +9,8 @@ public class enemyTest : MonoBehaviour
         Shoot
     }
 
+    const string BulletPath = "Model/Prefabs/Bullet";
+    const int BulletMaxInactive = 48;
     const float ShootRange = 12f;
     const float ShootRangeSqr = ShootRange * ShootRange;
     const float FireCooldown = 1.1f;
@@ -23,15 +25,30 @@ public class enemyTest : MonoBehaviour
     Transform target;
     float nextShootTime;
 
-    public void Init(PrefabPool pool, Transform playerTarget, PrefabPool sharedBulletPool, Transform sharedBulletsRoot)
+    public void Init(PrefabPool pool, Transform playerTarget)
     {
         ownerPool = pool;
         target = playerTarget;
-        bulletPool = sharedBulletPool;
-        bulletsRoot = sharedBulletsRoot;
         hp = 30f;
         state = EnemyState.Chase;
         nextShootTime = 0f;
+        bulletPool = null;
+        bulletsRoot = null;
+    }
+
+    void EnsureBulletPool()
+    {
+        if (bulletPool != null)
+            return;
+
+        if (BundleResLoader.Instance.TryGetPool(BulletPath, out bulletPool))
+        {
+            bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
+            return;
+        }
+
+        bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: BulletMaxInactive);
+        bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
     }
 
     void Update()
@@ -77,6 +94,7 @@ public class enemyTest : MonoBehaviour
 
     void TryShoot()
     {
+        EnsureBulletPool();
         if (bulletPool == null || Time.time < nextShootTime)
             return;
 

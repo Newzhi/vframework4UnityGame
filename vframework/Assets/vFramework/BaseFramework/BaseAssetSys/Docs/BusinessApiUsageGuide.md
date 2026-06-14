@@ -184,6 +184,25 @@ BundleResLoader.Instance.UnloadAll();
 
 `UnloadAll` 之后勿再使用旧池或旧句柄；重新进场景需重新 `GetOrCreatPool`。
 
+### 5.5 谁创建谁销毁（池所有权）
+
+与 §6.3「生成方与卸载方一致」同理：**谁调用 `CreatPool` / `GetOrCreatPool`，谁负责对称销毁**。
+
+| 角色 | 允许 | 禁止 |
+|------|------|------|
+| **池所有者**（先建者） | `GetOrCreatPool` / `CreatPool`；`OnDestroy` 时 `DestroyPool` + `DestroyPoolByLoadPath`（仅当 `TryGetPool` 为 false 时建池） | 全局 PoolHost 集中建所有池；建池后无人对称销毁 |
+| **共享借用人** | 同路径 `GetOrCreatPool` 或 `TryGetPool` 取用；只 `GetObj` / `ReleaseObj` | 在池化实例 `OnDestroy` 卸共享池 |
+| **场景流** | 切场景 / ExitGame **前** `UnloadAll()` + 销毁 `PoolRuntime` | 只 `LoadScene` 不卸池 → AB / 句柄泄漏 |
+
+**推荐落地**
+
+1. **不要**用全局 PoolHost 集中建池；谁要生成实例谁 `GetOrCreatPool`（或首次射击时懒加载）。  
+2. 同一 `loadPath` 共享池：`GetOrCreatPool` 去重；先建者 `TryGetPool` 为 false 时记 `ownsPool`，`OnDestroy` 仅所有者 `DestroyPool` + `DestroyPoolByLoadPath`。  
+3. **池化实例**（如 `enemyTest`）可懒加载共享子弹池并借还，**不在实例 `OnDestroy` 卸池**（`ReleaseObj` 不会触发 `OnDestroy`）。  
+4. 切场景 / ExitGame：`UnloadAll()` + 销毁 `PoolRuntime` 作进程级兜底。
+
+综合测试：`PlayerTest`（玩家子弹所有者）、`enemyManager`（敌人池）、`enemyTest`（敌人射击时共享子弹池）；`ComprehensiveTestSceneFlow.CleanupBeforeSceneChange()` 切场景收尾。
+
 ---
 
 ## 6. 引用计数与规范用法
@@ -333,9 +352,9 @@ UnloadAll();  // 其它模块仍持有的句柄已失效
 | 同一 Prefab 多实例（低频） | 1 次 | 模块 `OnDestroy` **1 次** |
 | 每实例 Destroy 里收尾 | 每 spawn `Load` 1 次 | 实例 `OnDestroy` 各 `Release` 1 次 |
 | Load 1 次 + 提前卸 AB | 1 次 + 活实例计数 | 计数为 0 时 **Release 1 次** |
-| 对象池 | 池 `CreatPool` / `GetOrCreatPool` **Load 1 次** | 池 `DestroyPool` / `UnloadAll` **Release 1 次**；`ReleaseObj` **不** Release |
+| 对象池 | **所有者** `CreatPool` / `GetOrCreatPool` **Load 1 次**；消费者只 `GetObj` | **同一所有者** `DestroyPool` + `DestroyPoolByLoadPath`；切场景 `UnloadAll` **Release 1 次**；`ReleaseObj` **不** Release |
 
-选定一种后，**生成方与卸载方一致**：模块持句柄就由模块 Release；每实例 Bind 就由实例 Release。
+选定一种后，**生成方与卸载方一致**：模块持句柄就由模块 Release；每实例 Bind 就由实例 Release；**池由谁 `GetOrCreatPool` 就由谁在退场时 `DestroyPool`**（见 §5.5）。
 
 ### 6.4 子脚本自控 Destroy 时
 
@@ -542,37 +561,52 @@ PoolRuntime
 GameObject bullet = bulletPool.GetObj(firePoint.position, firePoint.rotation, bulletsRoot);
 ```
 
-#### 7.7.5 完整范例
+#### 7.7.5 谁创建谁销毁（范例：发射方建池，无全局管理者）
 
 ```csharp
-const string BulletPath = "Model/Prefabs/Bullet";
-const string EnemyPath = "Model/Prefabs/tester";
+// —— PlayerTest：玩家要子弹 → 首次射击时建池；若池已存在则只借用 ——
+void EnsureBulletPool()
+{
+    if (bulletPool != null) return;
+    if (BundleResLoader.Instance.TryGetPool(BulletPath, out bulletPool))
+        ownsBulletPool = false;
+    else
+    {
+        bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
+        ownsBulletPool = true;
+    }
+    bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
+}
 
-PrefabPool bulletPool;
-PrefabPool enemyPool;
-Transform bulletsRoot;
-Transform enemiesRoot;
+void OnDestroy()
+{
+    if (ownsBulletPool)
+        ReleaseOwnedPool(BulletPath, bulletPool);
+}
 
+// —— enemyManager：刷怪者建敌人池 ——
 void Start()
 {
-    bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
     enemyPool = BundleResLoader.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: 12);
-    bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
     enemiesRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Enemies");
 }
 
-void OnEnemyDead(GameObject enemy) => enemyPool.ReleaseObj(enemy);
-void OnBulletEnd(GameObject bullet) => bulletPool.ReleaseObj(bullet);
+void OnDestroy() => ReleaseOwnedPool(EnemyPath, enemyPool);
 
-void OnLeaveGame()
+// —— enemyTest：敌人要子弹 → 射击时 GetOrCreatPool 共享玩家池；实例不卸池 ——
+void EnsureBulletPool()
 {
-    BundleResLoader.Instance.UnloadAll();
-    var rt = GameObject.Find(PoolSceneRoots.RuntimeRootName);
-    if (rt != null) Destroy(rt);
+    if (bulletPool != null) return;
+    if (!BundleResLoader.Instance.TryGetPool(BulletPath, out bulletPool))
+        bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
+    bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
 }
+
+// —— 场景流：切场景 / ExitGame 前进程级兜底 ——
+BundleResLoader.Instance.UnloadAll();
 ```
 
-集成验证：`Assets/Test/comprehensiveTest`（见 `综合测试归档.md`）。
+集成验证：`Assets/Test/comprehensiveTest`（`ComprehensiveTestSceneFlow`；见 `综合测试归档.md`）。
 
 ### 7.8 加载 Prefab 并替换贴图
 

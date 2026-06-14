@@ -4,15 +4,13 @@ using UnityEngine;
 public class enemyManager : MonoBehaviour
 {
     const string EnemyPath = "Model/Prefabs/tester";
-    const string BulletPath = "Model/Prefabs/Bullet";
+    const int EnemyMaxInactive = 12;
     const float SpawnInterval = 2.5f;
     const float SpawnRadius = 18f;
     const int MaxActiveEnemies = 8;
 
     PrefabPool enemyPool;
-    PrefabPool bulletPool;
     Transform enemiesRoot;
-    Transform bulletsRoot;
     Transform player;
     float nextSpawnTime;
 
@@ -20,22 +18,31 @@ public class enemyManager : MonoBehaviour
     {
         if (!BundleResLoader.Instance.EnsureReady())
         {
-            Debug.LogError("enemyManager: BundleResLoader.EnsureReady failed.");
+            Debug.LogError("enemyManager: EnsureReady failed.");
             return;
         }
+
+        enemyPool = BundleResLoader.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: EnemyMaxInactive);
+        enemiesRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Enemies");
 
         player = GameObject.Find("Player")?.transform;
         if (player == null)
-        {
             Debug.LogError("enemyManager: Player not found.");
-            return;
-        }
 
-        enemyPool = BundleResLoader.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: 12);
-        bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
-        enemiesRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Enemies");
-        bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
         nextSpawnTime = Time.time + 1f;
+    }
+
+    void OnDestroy()
+    {
+        ReleaseOwnedPool(EnemyPath, enemyPool);
+    }
+
+    static void ReleaseOwnedPool(string loadPath, PrefabPool pool)
+    {
+        if (pool != null && pool.IsPoolCreated)
+            pool.DestroyPool();
+
+        BundleResLoader.Instance.DestroyPoolByLoadPath(loadPath);
     }
 
     void Update()
@@ -61,7 +68,7 @@ public class enemyManager : MonoBehaviour
             return;
 
         enemyTest logic = enemy.GetComponent<enemyTest>() ?? enemy.AddComponent<enemyTest>();
-        logic.Init(enemyPool, player, bulletPool, bulletsRoot);
+        logic.Init(enemyPool, player);
 
         GameEventBus.SentEvent(new EnemySpawnedEvent { Enemy = enemy });
     }

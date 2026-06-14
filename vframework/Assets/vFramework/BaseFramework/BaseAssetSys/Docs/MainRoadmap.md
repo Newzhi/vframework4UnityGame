@@ -117,7 +117,7 @@
 
 | # | 项 | 完成标准 |
 |---|-----|----------|
-| 1 | 对象池范式 + `CreatPool` | ✅ [业务API调用指南 §7.7](./BusinessApiUsageGuide.md) |
+| 1 | 对象池范式 + `CreatPool` + **谁创建谁销毁** | ✅ [业务API §5.5 / §7.7](./BusinessApiUsageGuide.md)；手测 `comprehensiveTest` 发射方建池 |
 | 2 | （可选）业务模块手测 GetObj/DestroyPool | 不纳入 AB_Test JSON 门禁 |
 | 3 | （可选）`PrefabPool` 扩展 | Clear 时单次 Release |
 

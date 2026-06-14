@@ -53,6 +53,8 @@ public class StartGameMenu : MonoBehaviour
         if (statusText != null)
             statusText.text = message;
 
+        ComprehensiveTestSceneFlow.CleanupBeforeSceneChange();
+
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

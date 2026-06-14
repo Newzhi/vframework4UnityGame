@@ -117,6 +117,7 @@
 | **Load 与 Release 成对** | 每成功一次 `Load`（或命中缓存后的 Ref++）最终要有对应 `Release` / `Unload(handle, …)`；C# **无析构**，句柄出作用域不会自动卸 AB。 |
 | **Instantiate / Destroy 与 Ref 无关** | `Instantiate` 100 次 **不会** Ref+100；`Destroy(go)` **不会** Ref-1。Ref 只统计 **Load 次数**，不统计实例个数。 |
 | **业务只认简路径** | `Load<T>("Atlas/Role/Hog_Attack_000")`；bundle 名、依赖顺序、四源选路由由框架 + 清单完成，**不要**业务侧选 `AssetSource`。 |
+| **谁创建谁销毁** | 谁 `Load` / `CreatPool` / `GetOrCreatPool`，谁对称 `Release` / `DestroyPool`；消费者只 `GetObj`/`ReleaseObj`；切场景须 `UnloadAll` 或所有者先销毁池。见 [业务API §5.5](./BusinessApiUsageGuide.md)。 |
 
 #### 2. 常见场景速查
 
@@ -126,7 +127,7 @@
 | **Prefab + 换贴图/材质** | `Load<GameObject>` + `Load<Sprite>` / `Load<Material>`，`GetAsset<T>()` 赋给 Renderer | 先 Release 辅助资源，再 Release Prefab | Case 2～3 |
 | **跨包 UI** | `Load<GameObject>("UI/UIRoot")`；依赖包由清单 `bundles[]` 自动 Acquire | 同模块卸载 | Case 5 Cross UI |
 | **同 Prefab 多实例（刷怪/列表）** | **`Load` 一次**，循环 `handle.Instantiate()`；列表保存 `GameObject` | 先 `Destroy` 全部实例，再 **`Release` 一次** | ReLoad 测 Ref++，非实例数 |
-| **对象池** | `CreatPool` → `GetObj(pos,rot,parent)` 开火帧采样 FirePoint；`ReleaseObj` | `DestroyPool`（`CanDestroyPool`） | — |
+| **对象池** | 发射方/刷怪方各自 `GetOrCreatPool`；共享路径用去重池 | 建池方 `OnDestroy` 卸池；切场景 `UnloadAll` | comprehensiveTest `PlayerTest` / `enemyManager` / `enemyTest` |
 | **Common / 常驻资源** | 启动时 `Load` 一次，**不 Release**（或等 `PreLoad` P2） | 仅 `UnloadAll` 或关游戏 | 主路线 §5 |
 | **切场景 / 关游戏** | `BundleResLoader.Instance.UnloadAll()`（进程级，慎用） | 独占 Runner 收尾 | Case 8 UnloadAll |
 | **Resources 路径** | `Load<T>("Resources/子路径/名")`（无扩展名） | 同 AB，`Release` | Router 套系 Case 2 |

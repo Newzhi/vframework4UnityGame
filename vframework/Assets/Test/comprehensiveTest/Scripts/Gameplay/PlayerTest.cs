@@ -4,6 +4,7 @@ using UnityEngine;
 public class PlayerTest : MonoBehaviour, IPlayerGameplay
 {
     const string BulletPath = "Model/Prefabs/Bullet";
+    const int BulletMaxInactive = 48;
     const float MoveSpeed = 14f;
     const float FireCooldown = 0.12f;
     const float FireForwardOffset = 1.4f;
@@ -12,21 +13,13 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
     float nextFireTime;
     PrefabPool bulletPool;
     Transform bulletsRoot;
+    bool ownsBulletPool;
     Camera mainCamera;
     bool gameplayEnabled = true;
 
     void Start()
     {
         mainCamera = Camera.main;
-
-        if (!BundleResLoader.Instance.EnsureReady())
-        {
-            Debug.LogError("PlayerTest: BundleResLoader.EnsureReady failed.");
-            return;
-        }
-
-        bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
-        bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
     }
 
     public void SetGameplayEnabled(bool enabled)
@@ -43,6 +36,42 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
         Move();
         if (Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0))
             Shot();
+    }
+
+    void OnDestroy()
+    {
+        if (ownsBulletPool)
+            ReleaseOwnedPool(BulletPath, bulletPool);
+    }
+
+    void EnsureBulletPool()
+    {
+        if (bulletPool != null)
+            return;
+
+        if (!BundleResLoader.Instance.EnsureReady())
+        {
+            Debug.LogError("PlayerTest: EnsureReady failed.");
+            return;
+        }
+
+        if (BundleResLoader.Instance.TryGetPool(BulletPath, out bulletPool))
+            ownsBulletPool = false;
+        else
+        {
+            bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: BulletMaxInactive);
+            ownsBulletPool = true;
+        }
+
+        bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
+    }
+
+    static void ReleaseOwnedPool(string loadPath, PrefabPool pool)
+    {
+        if (pool != null && pool.IsPoolCreated)
+            pool.DestroyPool();
+
+        BundleResLoader.Instance.DestroyPoolByLoadPath(loadPath);
     }
 
     void UpdateAimRotation()
@@ -65,6 +94,7 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
 
     void Shot()
     {
+        EnsureBulletPool();
         if (bulletPool == null || Time.time < nextFireTime)
             return;
 

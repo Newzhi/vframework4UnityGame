@@ -177,6 +177,8 @@ public class ComprehensiveTestLogger : MonoBehaviour
         Write("已写入 " + path, pin: true);
         RefreshLogText();
 
+        ComprehensiveTestSceneFlow.CleanupBeforeSceneChange();
+
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

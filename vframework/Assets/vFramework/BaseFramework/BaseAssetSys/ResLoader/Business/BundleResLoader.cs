@@ -368,7 +368,17 @@ public class BundleResLoader
     #endregion
 
     #region 对象池
-
+    
+    /* ------------------------------------------------------------------------
+     * 对象池用来解决一个业务需要大量加载某个预制体的情况
+     * 创建池的时候会移交Handle处理权，由池来负责最后句柄的回收，保证引用计数安全
+     * 创建池子的时候会检查是否已经有对应池子了，如果有的话则扩容复用已有的池子，池子会变成共享池
+     * 理论上是谁创建的池子谁负责回收池子，保证引用计数安全，符合RAII原则
+     * 业务场景举例：
+     * 比如一个敌人创建的池子，那么在他死亡的时候就需要销毁
+     * 如果这个池子是个共享池，那么池可能也需要维护一个引用计数，计数到0的时候才能被销毁
+     ------------------------------------------------------------------------- */
+    
     #region CreatPool
 
     /// <summary>
@@ -440,6 +450,9 @@ public class BundleResLoader
 
         return poolsByLoadPath.TryGetValue(loadPath, out pool) && pool != null && pool.IsPoolCreated;
     }
+    #endregion
+    
+    #region 销毁池
 
     /// <summary>销毁已注册池并移除去重表项；活跃实例须已全部 Release。</summary>
     public bool DestroyPoolByLoadPath(string loadPath)
