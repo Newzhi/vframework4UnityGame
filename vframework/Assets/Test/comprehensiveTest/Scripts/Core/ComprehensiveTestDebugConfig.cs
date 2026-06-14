@@ -7,7 +7,7 @@ public class ComprehensiveTestDebugConfig : MonoBehaviour
 {
     public enum EnemySpawnMode
     {
-        /// <summary>敌人 PrefabPool GetObj / ReleaseObj（死亡不 Destroy，子弹 ref 不因死亡下降）。</summary>
+        /// <summary>敌人 PrefabPool GetObj / RecycleObj（死亡不 Destroy，子弹 ref 不因死亡下降）。</summary>
         Pooled = 0,
 
         /// <summary>Load + Instantiate / 死亡 Destroy（OnDestroy 卸子弹池份额，便于验 refCount）。</summary>

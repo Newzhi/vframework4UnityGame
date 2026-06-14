@@ -7,12 +7,13 @@ public enum BulletOwner
 }
 
 /// <summary>
-/// 池化弹丸：寿命或碰撞后通过 <see cref="PrefabPool.ReleaseObj"/> 归还，不调用 DestroyPool。
+/// 池化弹丸：OnEnable 自查子弹池；发射方仅需 <see cref="SetOwner"/>；归还走 <see cref="RecycleObj"/>。
 /// </summary>
 public class Bullet : MonoBehaviour
 {
     #region 游戏逻辑
 
+    const string BulletPath = "Model/Prefabs/Bullet";
     const float Speed = 28f;
     const float MaxLife = 4f;
 
@@ -33,14 +34,15 @@ public class Bullet : MonoBehaviour
             rb.isKinematic = true;
             rb.useGravity = false;
         }
+
+        if (ownerPool == null)
+            PrefabPoolManager.Instance.TryGetPool(BulletPath, out ownerPool);
     }
 
-    public void Init(PrefabPool pool, BulletOwner bulletOwner)
+    /// <summary>发射方在 GetObj 后设置归属（玩家弹 / 敌人弹）。</summary>
+    public void SetOwner(BulletOwner bulletOwner)
     {
-        ownerPool = pool;
         owner = bulletOwner;
-        released = false;
-        spawnTime = Time.time;
     }
 
     void Update()
@@ -84,9 +86,9 @@ public class Bullet : MonoBehaviour
 
         released = true;
         if (ownerPool != null)
-            ownerPool.ReleaseObj(gameObject);
+            ownerPool.RecycleObj(gameObject);
         else
-            Destroy(gameObject);
+            PrefabPoolManager.Instance.RecycleObj(gameObject, BulletPath);
     }
 
     #endregion

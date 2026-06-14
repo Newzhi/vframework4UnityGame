@@ -200,7 +200,7 @@ public class ComprehensiveTestLogger : MonoBehaviour
     void WriteBulletPoolRef(string reason)
     {
         int holders = PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount;
-        if (!BundleResLoader.Instance.TryGetPool(BulletPath, out PrefabPool pool))
+        if (!PrefabPoolManager.Instance.TryGetPool(BulletPath, out PrefabPool pool))
         {
             Write("池ref[" + reason + "] 未注册 holders=" + holders, pin: true);
             return;
@@ -265,7 +265,7 @@ public class ComprehensiveTestLogger : MonoBehaviour
     /// </summary>
     void LogHierarchyCrossCheck(Scene scene, string loadPath, string shortName)
     {
-        if (!BundleResLoader.Instance.TryGetPool(loadPath, out PrefabPool pool))
+        if (!PrefabPoolManager.Instance.TryGetPool(loadPath, out PrefabPool pool))
             return;
 
         if (!PoolSceneRootsUtil.TryGetPoolRoot(loadPath, scene, out Transform poolRoot))
@@ -300,13 +300,13 @@ public class ComprehensiveTestLogger : MonoBehaviour
     /// </summary>
     void LogPoolStats(string loadPath, string shortName, int expectedRefCount, int baseMaxInactive)
     {
-        if (!BundleResLoader.Instance.TryGetPool(loadPath, out PrefabPool pool))
+        if (!PrefabPoolManager.Instance.TryGetPool(loadPath, out PrefabPool pool))
         {
             Write("池未注册 " + shortName, pin: true);
             return;
         }
 
-        // ActiveCount = 已 GetObj 未 ReleaseObj；InactiveCount = 闲置队列深度；RefCount = GetOrCreatPool 次数
+        // ActiveCount = 已 GetObj 未 RecycleObj；InactiveCount = 闲置队列深度；RefCount = GetOrCreatPool 次数
         Write(
             "池 " + shortName + " b=" + pool.ActiveCount + " p=" + pool.InactiveCount +
             " ref=" + pool.RefCount + " max=" + pool.MaxInactiveCapacity +

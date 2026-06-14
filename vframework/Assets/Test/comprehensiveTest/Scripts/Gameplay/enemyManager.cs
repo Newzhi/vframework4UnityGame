@@ -31,7 +31,7 @@ public class enemyManager : MonoBehaviour
         }
 
         if (IsPooledSpawnMode())
-            enemyPool = BundleResLoader.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: EnemyMaxInactive);
+            enemyPool = PrefabPoolManager.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: EnemyMaxInactive);
         else
             enemyPrefabHandle = BundleResLoader.Instance.Load<GameObject>(EnemyPath);
 
@@ -45,7 +45,7 @@ public class enemyManager : MonoBehaviour
     void OnDestroy()
     {
         if (IsPooledSpawnMode())
-            BundleResLoader.Instance.DestroyPoolByLoadPath(EnemyPath);
+            PrefabPoolManager.Instance.ReleasePoolShare(EnemyPath);
         else
         {
             enemyPrefabHandle?.Release();

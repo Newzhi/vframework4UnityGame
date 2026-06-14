@@ -4,7 +4,7 @@ using UnityEngine;
 
 
 /// <summary>
-/// 对象池教学模版（Resources + Queue）。正式业务请使用 <see cref="PrefabPool"/> + <see cref="BundleResLoader"/>。
+/// 对象池教学模版（Resources + Queue）。正式业务请使用 <see cref="PrefabPoolManager"/> + <see cref="PrefabPool"/>。
 /// GetObj：队列有则 Dequeue 并激活；无则 Instantiate。RecycleObj：Deactivate 后 Enqueue。
 /// </summary>
 public class PoolTemp

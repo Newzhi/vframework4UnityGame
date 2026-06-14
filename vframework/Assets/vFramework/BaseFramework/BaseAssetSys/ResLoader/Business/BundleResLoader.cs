@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 //从AssetBundle加载抽象资源，管理Resource层缓存与引用
@@ -40,20 +39,8 @@ public class BundleResLoader
 
     readonly CatalogueReader catalogue = new CatalogueReader();
     Dictionary<string, AbstractResource> resourceDic = new Dictionary<string, AbstractResource>();
-    readonly Dictionary<int, Dictionary<string, PrefabPool>> poolsBySceneAndPath =
-        new Dictionary<int, Dictionary<string, PrefabPool>>(); //scene.handle + loadPath 去重；同场景共享，跨场景分池
 
     #endregion
-
-    static BundleResLoader()
-    {
-        SceneManager.sceneUnloaded += OnSceneUnloaded;
-    }
-
-    static void OnSceneUnloaded(Scene scene)
-    {
-        Instance.DestroyPoolsForScene(scene);
-    }
 
     #region 初始化
 
@@ -362,7 +349,7 @@ public class BundleResLoader
     //卸载全部资源
     public void UnloadAll()
     {
-        DestroyAllPools();
+        PrefabPoolManager.Instance.DeleteAllPools();
 
         AbstractResource[] resources = new AbstractResource[resourceDic.Count];
         resourceDic.Values.CopyTo(resources, 0);
@@ -376,171 +363,6 @@ public class BundleResLoader
 
         BundleManager.UnloadAll();
     }
-
-    #endregion
-
-    #region 对象池（同 Active Scene + loadPath 共享 refCount；跨场景分池）
-
-    #region CreatPool
-
-    static Scene ResolvePoolScene() => SceneManager.GetActiveScene();
-
-    Dictionary<string, PrefabPool> GetOrCreatePoolMapForScene(Scene scene)
-    {
-        int handle = scene.handle;
-        if (!poolsBySceneAndPath.TryGetValue(handle, out Dictionary<string, PrefabPool> map))
-        {
-            map = new Dictionary<string, PrefabPool>(4);
-            poolsBySceneAndPath[handle] = map;
-        }
-
-        return map;
-    }
-
-    void DestroyPoolsForScene(Scene scene)
-    {
-        int handle = scene.handle;
-        if (!poolsBySceneAndPath.TryGetValue(handle, out Dictionary<string, PrefabPool> map))
-        {
-            PoolSceneRootsUtil.ClearCacheForScene(scene);
-            return;
-        }
-
-        foreach (PrefabPool pool in map.Values)
-        {
-            if (pool != null)
-                pool.ForceDestroyPool();
-        }
-
-        poolsBySceneAndPath.Remove(handle);
-        PoolSceneRootsUtil.ClearCacheForScene(scene);
-    }
-
-    /// <summary>
-    /// Load 并创建池；内部 <see cref="PrefabPool.CreatPool"/>，refCount=1。
-    /// </summary>
-    public PrefabPool CreatPool(string loadPath, Transform poolRoot = null, int maxInactiveCapacity = 0)
-    {
-        if (string.IsNullOrEmpty(loadPath))
-        {
-            Debug.LogError("CreatPool: loadPath is null or empty.");
-            return null;
-        }
-
-        IAssetHandle handle = Load<GameObject>(loadPath);
-        if (handle == null)
-        {
-            Debug.LogError("CreatPool: Load failed, path=" + loadPath);
-            return null;
-        }
-
-        PrefabPool pool = new PrefabPool(handle, poolRoot, maxInactiveCapacity);
-        pool.CreatPool();
-        if (!pool.IsPoolCreated)
-        {
-            Debug.LogError("CreatPool: PrefabPool.CreatPool failed, path=" + loadPath);
-            handle.Release();
-            return null;
-        }
-
-        return pool;
-    }
-
-    /// <summary>
-    /// 当前 Active Scene 内同路径共享池：已存在则 refCount++，否则新建并注册。
-    /// </summary>
-    public PrefabPool GetOrCreatPool(string loadPath, Transform poolRoot = null, int maxInactiveCapacity = 0)
-    {
-        if (string.IsNullOrEmpty(loadPath))
-        {
-            Debug.LogError("GetOrCreatPool: loadPath is null or empty.");
-            return null;
-        }
-
-        Scene scene = ResolvePoolScene();
-        Dictionary<string, PrefabPool> map = GetOrCreatePoolMapForScene(scene);
-
-        if (map.TryGetValue(loadPath, out PrefabPool existing) && existing != null && existing.IsPoolCreated)
-        {
-            existing.CreatPool();
-            return existing;
-        }
-
-        Transform root = poolRoot ?? PoolSceneRootsUtil.GetOrCreatePoolRoot(loadPath, scene);
-        PrefabPool pool = CreatPool(loadPath, root, maxInactiveCapacity);
-        if (pool != null && pool.IsPoolCreated)
-            map[loadPath] = pool;
-
-        return pool;
-    }
-
-    /// <summary>
-    /// 返回当前 Active Scene 的 <see cref="RuntimeRootName"/>（API 兼容）。
-    /// </summary>
-    public Transform GetOrCreateActivePoolRoot(string logicalName)
-    {
-        return PoolSceneRootsUtil.GetOrCreateRuntimeRoot(ResolvePoolScene());
-    }
-
-    /// <summary>查询当前 Active Scene 已注册池，不增加 refCount。</summary>
-    public bool TryGetPool(string loadPath, out PrefabPool pool)
-    {
-        if (string.IsNullOrEmpty(loadPath))
-        {
-            pool = null;
-            return false;
-        }
-
-        Scene scene = ResolvePoolScene();
-        if (!poolsBySceneAndPath.TryGetValue(scene.handle, out Dictionary<string, PrefabPool> map))
-        {
-            pool = null;
-            return false;
-        }
-
-        return map.TryGetValue(loadPath, out pool) && pool != null && pool.IsPoolCreated;
-    }
-    #endregion
-    
-    #region 销毁池
-
-    /// <summary>释放当前 Active Scene 下一次池引用（refCount--）；归零时销毁并从表移除。</summary>
-    public bool DestroyPoolByLoadPath(string loadPath)
-    {
-        if (string.IsNullOrEmpty(loadPath))
-            return false;
-
-        Scene scene = ResolvePoolScene();
-        if (!poolsBySceneAndPath.TryGetValue(scene.handle, out Dictionary<string, PrefabPool> map))
-            return false;
-
-        if (!map.TryGetValue(loadPath, out PrefabPool pool) || pool == null)
-            return false;
-
-        pool.DestroyPool();
-        if (!pool.IsPoolCreated)
-            map.Remove(loadPath);
-
-        return true;
-    }
-
-    /// <summary>UnloadAll 前调用：强制销毁全部场景下全部池并清缓存。</summary>
-    public void DestroyAllPools()
-    {
-        foreach (Dictionary<string, PrefabPool> map in poolsBySceneAndPath.Values)
-        {
-            foreach (PrefabPool pool in map.Values)
-            {
-                if (pool != null)
-                    pool.ForceDestroyPool();
-            }
-        }
-
-        poolsBySceneAndPath.Clear();
-        PoolSceneRootsUtil.ClearCache();
-    }
-
-    #endregion
 
     #endregion
 

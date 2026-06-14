@@ -48,7 +48,7 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
             return;
 
         LogBulletPoolReleaseBefore();
-        BundleResLoader.Instance.DestroyPoolByLoadPath(BulletPath);
+        PrefabPoolManager.Instance.ReleasePoolShare(BulletPath);
         ownsBulletPoolShare = false;
         bulletPool = null;
         TrackBulletPoolShareReleased();
@@ -66,7 +66,7 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
             return;
         }
 
-        bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: BulletMaxInactive);
+        bulletPool = PrefabPoolManager.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: BulletMaxInactive);
         if (bulletPool == null)
             return;
 
@@ -111,7 +111,7 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
         if (bulletGo == null)
             return;
 
-        bulletGo.GetComponent<Bullet>()?.Init(bulletPool, BulletOwner.Player);
+        bulletGo.GetComponent<Bullet>()?.SetOwner(BulletOwner.Player);
         EmitPlayerShotEvent(firePos, fireRot);
     }
 

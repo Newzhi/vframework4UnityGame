@@ -13,6 +13,7 @@
 | [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md) | 设计基线（禁止区）+ 模块实现进度 |
 | [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步扩展设计细节 |
 | [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) | 业务侧加载/卸载范式 |
+| [RefCountAppendix.md](./RefCountAppendix.md) | **引用计数附件**：API 逐步追踪、三层计数、代码链路 |
 | **本文 § 业务场景总结** | 模块/Prefab/Ref/依赖/路由 **场景速查** |
 | [CatalogueReference.md](./CatalogueReference.md) | 清单 `entries` / `bundles` |
 | [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md) | **依赖拓扑排序 + 构建优化** 实现计划 |
@@ -29,7 +30,7 @@
 | `ResLoader/` | [README.md](../ResLoader/README.md)（**含加载侧架构 Mermaid 图**）、[LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md) | `Business/` `Bundle/` `Catalogue/` `Router/` |
 | `BundleRuleConfig/` | [README.md](../BundleRuleConfig/README.md) | `BuildSetting`、`AssetCatalog` |
 | `Editor/` | [README.md](../Editor/README.md) | `BundlePacker`、`BundleBuilder`、`BundleReporter` |
-| `AssetPool/` | `PrefabPool.cs`、`PoolSceneRootsUtil.cs` | `CreatPool` / `GetOrCreatPool` / `GetObj` / `ReleaseObj` / `DestroyPool`；按 Active Scene 分池见 [业务API §5.4](./BusinessApiUsageGuide.md) |
+| `AssetPool/` | `PrefabPool.cs`、`PrefabPoolManager.cs`、`PoolSceneRootsUtil.cs` | `GetOrCreatPool` / `GetObj` / `RecycleObj` / `ReleasePoolShare` / `DeletePool`；按 Active Scene 分池见 [业务API §5.4](./BusinessApiUsageGuide.md) |
 | `ABSystemTester/` | [ABSystem_BetaTestCases.md](../../../../BaseLayer/AssetLayer/ABSystemTester/ABSystem_BetaTestCases.md) | `ABLoadSmokeTest.cs` |
 | `Assets/Test/AB_Test/` | [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md)、[测试说明.md](../../../../Test/AB_Test/测试说明.md) | `Myloadtest`、`MyRouterTest`、`LoadApiTestLogCollector` |
 
@@ -49,7 +50,7 @@
 1. **[MainRoadmap.md](./MainRoadmap.md)** → 知道做什么、不做什么  
 2. **设计目标与实现细节** → 禁止区 + 当前进度  
 3. **业务API与CDN规划** + **加载器设计说明** → 加载链路细节  
-4. **业务API调用指南** → 业务抄代码  
+4. **业务API调用指南** → 业务抄代码；**引用计数附件** → 计数追踪  
 5. **集成测试归档** → 验收 JSON
 
 ---

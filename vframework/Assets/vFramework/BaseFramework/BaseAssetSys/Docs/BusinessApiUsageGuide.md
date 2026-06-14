@@ -2,7 +2,8 @@
 
 > 入口：`BundleResLoader.Instance`  
 > 句柄：`IAssetHandle`  
-> 详细排期与能力边界：[BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)、[MainRoadmap.md](./MainRoadmap.md)
+> 详细排期与能力边界：[BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)、[MainRoadmap.md](./MainRoadmap.md)  
+> **引用计数附件**（逐步追踪三层计数与代码链路）：[RefCountAppendix.md](./RefCountAppendix.md)
 
 ---
 
@@ -146,68 +147,68 @@ BundleResLoader.Instance.UnloadAll();
 
 - 进程级收尾（切场景 / 关游戏）；清空全部 Resource 缓存并 `BundleManager.UnloadAll()`。  
 - 与单资源 `Release` 分开使用，避免混用。
-- **会先** `DestroyAllPools()`（销毁池内全部实例并对每个池 `Release` 句柄一次），再清 `resourceDic` 与 Bundle。
+- **会先** `PrefabPoolManager.DeleteAllPools()`（销毁池内全部实例并对每个池 `Release` 句柄一次），再清 `resourceDic` 与 Bundle。
 
-### 5.4 对象池卸载（`PrefabPool` / `BundleResLoader`）
+### 5.4 对象池（`PrefabPool` / `PrefabPoolManager`）
 
-实现：`AssetPool/PrefabPool.cs`、`AssetPool/PoolSceneRootsUtil.cs`。
+实现：`AssetPool/PrefabPool.cs`、`AssetPool/PrefabPoolManager.cs`、`AssetPool/PoolSceneRootsUtil.cs`。
 
 | API | 说明 |
 |-----|------|
-| `CreatPool(loadPath, poolRoot?, maxInactiveCapacity?)` | `Load` 一次并创建池；句柄所有权移交池 |
 | `GetOrCreatPool(loadPath, poolRoot?, maxInactiveCapacity?)` | **当前 Active Scene** 内按 `loadPath` 去重共享；跨场景各一套池 |
-| `TryGetPool(loadPath, out pool)` | 查询**当前 Active Scene** 已注册池 |
-| `GetOrCreateActivePoolRoot(logicalName)` | 返回当前 Active Scene 的 `PoolRuntime`（API 兼容） |
-| `DestroyPoolByLoadPath(loadPath)` | 释放当前 Active Scene 下一次引用（refCount--） |
-| `DestroyAllPools()` | 销毁全部场景下已注册池 |
-| `PrefabPool.GetObj` / `ReleaseObj` | 借出 / 归还实例；**不改变**句柄 Ref |
-| `PrefabPool.DestroyPool()` | `refCount--`；归零时 TearDown（Destroy 全部实例 + `Release` 句柄 **一次**） |
+| `TryGetPool(loadPath, out pool)` / `TryGetPool(loadPath, scene, out pool)` | 查询已注册池，不增加 refCount |
+| `GetObj(loadPath)` / `GetObj(loadPath, pos, rot, parent?)` | PoolTemp 风格：从当前 Active Scene 池借出 |
+| `RecycleObj(instance, loadPath)` | PoolTemp 风格：回收到当前 Active Scene 池 |
+| `ReleasePoolShare(loadPath)` | 释放当前 Active Scene 下一次份额（refCount--） |
+| `DeletePool(loadPath)` / `DeletePool(loadPath, scene)` | **强制删除**池（无视 refCount / 借出状态） |
+| `DeleteAllPools()` | 销毁全部场景下已注册池 |
+| `PrefabPool.GetObj` / `RecycleObj` | 借出 / 归还实例；**不改变**句柄 Ref |
 
 **引用计数（池专用）**
 
 | 阶段 | Resource Ref |
 |------|----------------|
-| `CreatPool` / 首次 `GetOrCreatPool` | `Load` +1，由池持有 |
-| `GetObj` / `ReleaseObj` 循环 | **不变** |
-| `DestroyPool` / `DestroyAllPools` | `Release` -1（每池一次） |
-| `UnloadAll()` | 先 `DestroyAllPools`，再清其余 Resource |
+| 首次 `GetOrCreatPool` | `Load` +1，由池持有 |
+| `GetObj` / `RecycleObj` 循环 | **不变** |
+| `ReleasePoolShare` / `DeletePool` / `DeleteAllPools` | `Release` -1（每池一次，Delete 为强制） |
+| `UnloadAll()` | 先 `DeleteAllPools`，再清其余 Resource |
 
 **何时销毁池、释放引用**
 
 | 时机 | 行为 |
 |------|------|
-| 业务调用 `pool.DestroyPool()` | `refCount--`；未归零仅收缩闲置上限；归零时 `TearDown`（**强制 Destroy** 借出 + 闲置实例并 `Release` 句柄） |
-| `DestroyPoolByLoadPath` | 当前 Active Scene 对应池调用一次 `DestroyPool()`（`refCount--`）；**不**检查 `CanDestroyPool` |
-| `DestroyAllPools()` | 全部场景池 `ForceDestroyPool`（无视 `refCount` / 借出状态） |
+| `ReleasePoolShare` | 当前 Active Scene 对应池 `refCount--`；归零时 TearDown |
+| `DeletePool` | 强制 TearDown（无视 refCount / 借出） |
+| `DeleteAllPools()` | 全部场景池强制 TearDown |
 | `UnloadAll()` | 切场景 / 关游戏；池 + 全部 Resource + Bundle |
-| 对局中 `GetObj`/`ReleaseObj` | **不** 卸包、**不** Release 句柄 |
+| 对局中 `GetObj`/`RecycleObj` | **不** 卸包、**不** Release 句柄 |
 
 `UnloadAll` 之后勿再使用旧池或旧句柄；重新进场景需重新 `GetOrCreatPool`。
 
 **场景隔离（同场景共享、跨场景分池）**
 
-- 注册键：`Scene.handle` + `loadPath`；`GetOrCreatPool` / `TryGetPool` / `DestroyPoolByLoadPath` 均针对 **调用时 `SceneManager.GetActiveScene()`**。
+- 注册键：`Scene.handle` + `loadPath`；建池/卸池 API 默认针对 **调用时 `SceneManager.GetActiveScene()`**。
 - 同场景多次 `GetOrCreatPool` 同一路径 → 同一 `PrefabPool`，`refCount++`。
 - 不同场景同一 `loadPath` → 两套池、两棵 `PoolRuntime`（各场景内 `MoveGameObjectToScene`）。
-- 场景卸载：`sceneUnloaded` 自动 `ForceDestroy` 该场景全部池并清节点缓存；仍建议在切场景前 `UnloadAll()`。
+- 场景卸载：`sceneUnloaded` 自动删除该场景全部池并清节点缓存；仍建议在切场景前 `UnloadAll()`。
 
 约定：在**所属场景为 Active** 时调用建池/卸池（Single 切场景、Start 中建池均满足）。Additive 多场景若 Active 非所属场景，池会建到 Active 场景。
 
 ### 5.5 谁创建谁销毁（池所有权）
 
-与 §6.3「生成方与卸载方一致」同理：**谁调用 `CreatPool` / `GetOrCreatPool`，谁负责对称销毁**。
+与 §6.3「生成方与卸载方一致」同理：**谁调用 `GetOrCreatPool`，谁负责对称 `ReleasePoolShare`**。
 
 | 角色 | 允许 | 禁止 |
 |------|------|------|
-| **池所有者** | 谁 `GetOrCreatPool` / `CreatPool` 谁记 `refCount++`；`OnDestroy` 对称 `DestroyPoolByLoadPath` **一次**（`refCount--`） | 全局 PoolHost 集中建所有池；建池后无人对称销毁 |
-| **共享借用人** | `TryGetPool` 借用（**不**增 `refCount`）；只 `GetObj` / `ReleaseObj` | 在池化实例 `OnDestroy` 卸共享池；误用 `GetOrCreatPool` 会多占一次 `refCount` |
+| **池所有者** | 谁 `GetOrCreatPool` 谁记 `refCount++`；`OnDestroy` 对称 `ReleasePoolShare` **一次** | 全局 PoolHost 集中建所有池；建池后无人对称释放 |
+| **共享借用人** | `TryGetPool` 借用（**不**增 `refCount`）；只 `GetObj` / `RecycleObj` | 在池化实例 `OnDestroy` 卸共享池；误用 `GetOrCreatPool` 会多占一次 `refCount` |
 | **场景流** | 切场景 / ExitGame **前** `UnloadAll()` + 销毁 `PoolRuntime` | 只 `LoadScene` 不卸池 → AB / 句柄泄漏 |
 
 **推荐落地**
 
 1. **不要**用全局 PoolHost 集中建池；谁要生成实例谁 `GetOrCreatPool`（或首次射击时懒加载）。  
-2. 同一 Active Scene 同 `loadPath`：`GetOrCreatPool` 去重共享；额外借用方用 `TryGetPool`；每个曾 `GetOrCreatPool` 的组件 `OnDestroy` 各 `DestroyPoolByLoadPath` 一次。  
-3. **池化实例**（如 `enemyTest`）可懒加载共享子弹池并借还，**不在实例 `OnDestroy` 卸池**（`ReleaseObj` 不会触发 `OnDestroy`）。  
+2. 同一 Active Scene 同 `loadPath`：`GetOrCreatPool` 去重共享；额外借用方用 `TryGetPool`；每个曾 `GetOrCreatPool` 的组件 `OnDestroy` 各 `ReleasePoolShare` 一次。  
+3. **池化实例**（如 `enemyTest`）可懒加载共享子弹池并借还，**不在实例 `OnDestroy` 卸池**（`RecycleObj` 不会触发 `OnDestroy`）。  
 4. 切场景 / ExitGame：`UnloadAll()`；`sceneUnloaded` 会兜底清理该场景池。
 
 综合测试：`PlayerTest` + 各 `enemyTest` 各自 `GetOrCreatPool` 子弹池（共享 `refCount`）；`enemyManager` 仅敌人池；`ComprehensiveTestSceneFlow` 切场景收尾。
@@ -215,6 +216,8 @@ BundleResLoader.Instance.UnloadAll();
 ---
 
 ## 6. 引用计数与规范用法
+
+> **引用计数附件**：常见写法逐步模拟、三层计数变化表、Mermaid 链路与代码索引见 **[RefCountAppendix.md](./RefCountAppendix.md)**（本文 §6–§7 的规则与范例的补充追踪文档）。
 
 ### 6.1 规则速查
 
@@ -361,9 +364,9 @@ UnloadAll();  // 其它模块仍持有的句柄已失效
 | 同一 Prefab 多实例（低频） | 1 次 | 模块 `OnDestroy` **1 次** |
 | 每实例 Destroy 里收尾 | 每 spawn `Load` 1 次 | 实例 `OnDestroy` 各 `Release` 1 次 |
 | Load 1 次 + 提前卸 AB | 1 次 + 活实例计数 | 计数为 0 时 **Release 1 次** |
-| 对象池 | 建池方 `GetOrCreatPool`（共享时 `refCount++`）；借方 `TryGetPool` + `GetObj` | 每个建池方 `OnDestroy` `DestroyPoolByLoadPath` 一次；`refCount` 归零才 `Release`；切场景 `UnloadAll` 强制收尾；`ReleaseObj` **不** Release |
+| 对象池 | 建池方 `GetOrCreatPool`（共享时 `refCount++`）；借方 `TryGetPool` + `GetObj` | 每个建池方 `OnDestroy` `ReleasePoolShare` 一次；`refCount` 归零才 `Release`；切场景 `UnloadAll` 强制收尾；`RecycleObj` **不** Release |
 
-选定一种后，**生成方与卸载方一致**：模块持句柄就由模块 Release；每实例 Bind 就由实例 Release；**池由谁 `GetOrCreatPool` 就由谁在退场时 `DestroyPoolByLoadPath` 一次**（见 §5.5）。
+选定一种后，**生成方与卸载方一致**：模块持句柄就由模块 Release；每实例 Bind 就由实例 Release；**池由谁 `GetOrCreatPool` 就由谁在退场时 `ReleasePoolShare` 一次**（见 §5.5）。
 
 ### 6.4 子脚本自控 Destroy 时
 
@@ -512,24 +515,24 @@ internal void OnInstanceDestroyed()
 }
 ```
 
-### 7.7 对象池（`PrefabPool`）
+### 7.7 对象池（`PrefabPool` / `PrefabPoolManager`）
 
 高频 Prefab（子弹、小怪等）用对象池：**Load 一次**，`Instantiate` 复用，**归还时不 Release**，池销毁时 **Release 一次**。API 总表见 §5.4。
 
-#### 7.7.1 推荐入口：`GetOrCreatPool`（同场景共享）
+#### 7.7.1 推荐入口：`PrefabPoolManager.Instance.GetOrCreatPool`（同场景共享）
 
 同一 **Active Scene** 内同一 `loadPath` 只建一个池；跨场景自动分池：
 
 ```csharp
 const string BulletPath = "Model/Prefabs/Bullet";
 
-PrefabPool bulletPool = BundleResLoader.Instance.GetOrCreatPool(
+PrefabPool bulletPool = PrefabPoolManager.Instance.GetOrCreatPool(
     BulletPath,
     maxInactiveCapacity: 48);
 ```
 
 - `poolRoot`：仅在**首次创建**时生效；默认 `PoolSceneRootsUtil.GetOrCreatePoolRoot(loadPath, activeScene)`。  
-- `maxInactiveCapacity`：单份持有者闲置上限；共享时按 `refCount` 倍增；超出时 `ReleaseObj` **直接 Destroy** 实例。  
+- `maxInactiveCapacity`：单份持有者闲置上限；共享时按 `refCount` 倍增；超出时 `RecycleObj` **直接 Destroy** 实例。  
 - **懒增长**：`refCount++` 只抬闲置上限，**不**预 `Instantiate`；实例仅在 `GetObj` 且闲置队列为空时创建。
 
 #### 7.7.2 生命周期
@@ -537,18 +540,19 @@ PrefabPool bulletPool = BundleResLoader.Instance.GetOrCreatPool(
 ```
 GetOrCreatPool（Active Scene） →  Load 一次，句柄归池；同场景 refCount++（不预建实例）
 GetObj(pos, rot)               →  闲置复用或懒 Instantiate；SetActive(true)；parent 已忽略
-ReleaseObj(go)                 →  SetActive(false) + 回闲置队列，不 Release 句柄
-DestroyPoolByLoadPath          →  当前 Active Scene refCount--
-UnloadAll                      →  全部场景池 ForceDestroy + Release 句柄
+RecycleObj(go)                 →  SetActive(false) + 回闲置队列，不 Release 句柄
+ReleasePoolShare               →  当前 Active Scene refCount--
+DeletePool                     →  强制删池（无视 refCount）
+UnloadAll                      →  DeleteAllPools + Release 句柄
 ```
 
 | 属性 / 方法 | 含义 |
 |-------------|------|
 | `ActiveCount` / `InactiveCount` | 已借出 / 闲置数量 |
-| `CanDestroyPool` | 无未归还实例时可安全 `DestroyPool` |
+| `CanReleaseShare` | 无未归还实例时可安全释放份额 |
 | `MaxInactiveCapacity` | 闲置上限（0 不限） |
 
-**安全约定**：`CreatPool` 后勿再对同一句柄 `Release`；退场前尽量 `ReleaseObj` 全部借出实例（`refCount` 归零时 `TearDown` 仍会强制 Destroy 借出）；`UnloadAll` 强制销毁全部池。
+**安全约定**：池持有句柄后勿再对同一句柄 `Release`；退场前尽量 `RecycleObj` 全部借出实例；`UnloadAll` 强制销毁全部池。
 
 #### 7.7.3 场景 Hierarchy（`PoolSceneRootsUtil`）
 
@@ -573,25 +577,25 @@ GameObject bullet = bulletPool.GetObj(firePoint.position, firePoint.rotation);
 #### 7.7.5 谁创建谁销毁（范例：发射方建池，无全局管理者）
 
 ```csharp
-// —— PlayerTest：当前 Active Scene 内 GetOrCreatPool，OnDestroy DestroyPoolByLoadPath ——
+// —— PlayerTest：当前 Active Scene 内 GetOrCreatPool，OnDestroy ReleasePoolShare ——
 void EnsureBulletPool()
 {
     if (bulletPool != null) return;
-    bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
+    bulletPool = PrefabPoolManager.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
 }
 
-void OnDestroy() => BundleResLoader.Instance.DestroyPoolByLoadPath(BulletPath);
+void OnDestroy() => PrefabPoolManager.Instance.ReleasePoolShare(BulletPath);
 
 // —— enemyManager：仅敌人池 ——
-enemyPool = BundleResLoader.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: 12);
+enemyPool = PrefabPoolManager.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: 12);
 
 // —— enemyTest：无控制器时敌人自建子弹池份额 ——
 void EnsureBulletPool()
 {
-    bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
+    bulletPool = PrefabPoolManager.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
     ownsBulletPoolShare = true;
 }
-void OnDestroy() { if (ownsBulletPoolShare) DestroyPoolByLoadPath(BulletPath); }
+void OnDestroy() { if (ownsBulletPoolShare) PrefabPoolManager.Instance.ReleasePoolShare(BulletPath); }
 
 // —— 场景流：切场景 / ExitGame 前 ——
 BundleResLoader.Instance.UnloadAll();
@@ -633,4 +637,4 @@ GameObject uiGo = ui?.Instantiate();
 - 仅在主线程调用 `Load` / `Unload`。  
 - `LoadUniTaskAsync` 当前为 Yield 一帧 + 同步 `Load`；加载失败时 `onFailed` / 判空后再决定是否重试。  
 - Editor Play + 清单 `buildMode=EditorTest` 时在 Editor 内走 AssetDatabase；Player 走 AB，见 [ResLoader/README.md](../ResLoader/README.md)。  
-- Ref 与范例细则见 **§6**；抄代码见 **§7**。
+- Ref 与范例细则见 **§6**；抄代码见 **§7**；逐步追踪见 **[引用计数附件 RefCountAppendix.md](./RefCountAppendix.md)**。

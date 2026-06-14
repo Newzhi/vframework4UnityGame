@@ -55,7 +55,7 @@ public class enemyTest : MonoBehaviour
         if (pooledEnemyLife)
         {
             ownerPool = null;
-            if (BundleResLoader.Instance.TryGetPool(EnemyPath, out PrefabPool pool))
+            if (PrefabPoolManager.Instance.TryGetPool(EnemyPath, out PrefabPool pool))
                 ownerPool = pool;
             else
                 Debug.LogError("enemyTest: enemy pool not found, path=" + EnemyPath);
@@ -79,7 +79,7 @@ public class enemyTest : MonoBehaviour
             return;
         }
 
-        bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: BulletMaxInactive);
+        bulletPool = PrefabPoolManager.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: BulletMaxInactive);
         if (bulletPool == null)
             return;
 
@@ -93,7 +93,7 @@ public class enemyTest : MonoBehaviour
             return;
 
         LogBulletPoolReleaseBefore();
-        BundleResLoader.Instance.DestroyPoolByLoadPath(BulletPath);
+        PrefabPoolManager.Instance.ReleasePoolShare(BulletPath);
         ownsBulletPoolShare = false;
         bulletPool = null;
         TrackBulletPoolShareReleased();
@@ -156,7 +156,7 @@ public class enemyTest : MonoBehaviour
         if (bulletGo == null)
             return;
 
-        bulletGo.GetComponent<Bullet>()?.Init(bulletPool, BulletOwner.Enemy);
+        bulletGo.GetComponent<Bullet>()?.SetOwner(BulletOwner.Enemy);
         EmitEnemyShotEvent(firePos, fireRot);
     }
 
@@ -178,7 +178,7 @@ public class enemyTest : MonoBehaviour
 
         if (pooledEnemyLife && ownerPool != null)
         {
-            ownerPool.ReleaseObj(gameObject);
+            ownerPool.RecycleObj(gameObject);
             return;
         }
 
