@@ -105,6 +105,10 @@ public class BundleManager
         return bundle;
     }
 
+    /// <summary>
+    /// 释放包
+    /// </summary>
+    /// <param name="bundleName"></param>
     public static void ReleaseBundle(string bundleName)
     {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
@@ -129,6 +133,9 @@ public class BundleManager
         }
     }
 
+    /// <summary>
+    /// 关闭游戏之前或者调试的方法
+    /// </summary>
     public static void UnloadAll()
     {
         foreach (BundleEntry entry in loadedBundles.Values)

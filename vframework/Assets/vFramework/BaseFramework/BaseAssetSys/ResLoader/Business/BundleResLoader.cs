@@ -135,9 +135,9 @@ public class BundleResLoader
     #region 加载/卸载
 
     //TODO 用于业务侧预先加载对应模块；见 Docs/BusinessApiAndCdnPlanning.md §1 需求4
-    T PreLoad<T>()
+    public IAssetHandle PreLoad<T>()
     {
-        return default(T);
+        return null;
     }
 
     /// <summary>
@@ -170,6 +170,12 @@ public class BundleResLoader
         return LoadByBundle<T>(entry.bundleName, entry.assetName, entry.assetPath, loadPath);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="loadPath"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
     IAssetHandle LoadResources<T>(string loadPath) where T : Object
     {
         if (resourceDic.TryGetValue(loadPath, out AbstractResource res))
@@ -197,6 +203,30 @@ public class BundleResLoader
         }
 
         return res;
+    }
+    
+    /// <summary>
+    /// 业务侧需要加载三四个但是用池会比较浪费的情况实用这个方法将句柄交给创建的对象来管理
+    /// </summary>
+    /// <param name="loadPath"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public IAssetHandle LoadWithAutoUnLoad<T>(string loadPath) where T : Object
+    {
+        //TODO 待实现
+       return Load<T>(loadPath);
+    }
+    
+    /// <summary>
+    /// 业务侧需要加载三四个但是用池会比较浪费的情况实用这个方法将句柄交给创建的对象来管理（异步版本）
+    /// </summary>
+    /// <param name="loadPath"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public IAssetHandle LoadUniTaskAsynWithAutoUnLoad<T>(string loadPath) where T : Object
+    {
+        //TODO 待实现
+        return Load<T>(loadPath);
     }
 
     /// <summary>
