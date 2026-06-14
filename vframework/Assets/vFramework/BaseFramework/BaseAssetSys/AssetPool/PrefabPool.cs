@@ -36,12 +36,17 @@ public sealed class PrefabPool
         this.maxInactiveCapacity = maxInactiveCapacity;
     }
     
-    #region 业务接口（创建池/销毁池）
+    #region 业务接口
+    
+    #region 创建池/销毁池
     
     public void CreatPool()
     {
         if (isPoolCreated)
+        {
+            refCount++;
             return;
+        }
 
         if (prefabHandle == null)
         {
@@ -63,17 +68,27 @@ public sealed class PrefabPool
         if (!isPoolCreated && prefabHandle == null)
             return;
 
+        //清除创建的所有实例
         DestroyAllInstances();
-
-        if (prefabHandle != null)
+        
+        //引用计数--
+        refCount--;
+        if (refCount == 0)
         {
-            prefabHandle.Release();
-            prefabHandle = null;
+            isPoolCreated =  false;
+            //回收句柄
+            if (prefabHandle != null)
+            {
+                prefabHandle.Release();
+                prefabHandle = null;
+            }
         }
-
-        isPoolCreated = false;
     }
-
+    
+    #endregion
+   
+    #region 取或者创建对象/回收对象
+    
     public GameObject GetObj()
     {
         return GetObj(Vector3.zero, Quaternion.identity, null);
@@ -128,6 +143,9 @@ public sealed class PrefabPool
         DeactivateInstance(instance);
         inactiveInstances.Push(instance);
     }
+    
+    #endregion
+  
 
     GameObject PopInactiveInstance()
     {
