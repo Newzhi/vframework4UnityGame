@@ -1,8 +1,13 @@
 using BaseFramework.BaseEventSys;
 using UnityEngine;
 
+/// <summary>
+/// 玩家射击：首次射击建子弹池，OnDestroy 对称卸池。
+/// </summary>
 public class PlayerTest : MonoBehaviour, IPlayerGameplay
 {
+    #region 游戏逻辑
+
     const string BulletPath = "Model/Prefabs/Bullet";
     const int BulletMaxInactive = 48;
     const float MoveSpeed = 14f;
@@ -12,8 +17,7 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
 
     float nextFireTime;
     PrefabPool bulletPool;
-    Transform bulletsRoot;
-    bool ownsBulletPool;
+    bool ownsBulletPoolShare;
     Camera mainCamera;
     bool gameplayEnabled = true;
 
@@ -40,8 +44,15 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
 
     void OnDestroy()
     {
-        if (ownsBulletPool)
-            ReleaseOwnedPool(BulletPath, bulletPool);
+        if (!ownsBulletPoolShare)
+            return;
+
+        LogBulletPoolReleaseBefore();
+        BundleResLoader.Instance.DestroyPoolByLoadPath(BulletPath);
+        ownsBulletPoolShare = false;
+        bulletPool = null;
+        TrackBulletPoolShareReleased();
+        LogBulletPoolReleaseAfter();
     }
 
     void EnsureBulletPool()
@@ -55,23 +66,12 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
             return;
         }
 
-        if (BundleResLoader.Instance.TryGetPool(BulletPath, out bulletPool))
-            ownsBulletPool = false;
-        else
-        {
-            bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: BulletMaxInactive);
-            ownsBulletPool = true;
-        }
+        bulletPool = BundleResLoader.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: BulletMaxInactive);
+        if (bulletPool == null)
+            return;
 
-        bulletsRoot = BundleResLoader.Instance.GetOrCreateActivePoolRoot("Bullets");
-    }
-
-    static void ReleaseOwnedPool(string loadPath, PrefabPool pool)
-    {
-        if (pool != null && pool.IsPoolCreated)
-            pool.DestroyPool();
-
-        BundleResLoader.Instance.DestroyPoolByLoadPath(loadPath);
+        ownsBulletPoolShare = true;
+        TrackBulletPoolShareAcquired();
     }
 
     void UpdateAimRotation()
@@ -107,12 +107,12 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
         Quaternion fireRot = Quaternion.LookRotation(aimDir);
         Vector3 firePos = transform.position + aimDir * FireForwardOffset + Vector3.up * AimHeight;
 
-        GameObject bulletGo = bulletPool.GetObj(firePos, fireRot, bulletsRoot);
+        GameObject bulletGo = bulletPool.GetObj(firePos, fireRot);
         if (bulletGo == null)
             return;
 
         bulletGo.GetComponent<Bullet>()?.Init(bulletPool, BulletOwner.Player);
-        GameEventBus.SentEvent(new PlayerShotEvent { Position = firePos, Rotation = fireRot });
+        EmitPlayerShotEvent(firePos, fireRot);
     }
 
     Vector3 GetAimDirection()
@@ -136,6 +136,46 @@ public class PlayerTest : MonoBehaviour, IPlayerGameplay
 
     public void GetDamage(float amount)
     {
+        EmitPlayerDamageEvent(amount);
+    }
+
+    #endregion
+
+    #region 综合测试
+
+    /// <summary>当前持有子弹池份额数（供 Logger 校验 refCount）。</summary>
+    public static int BulletPoolShareCount { get; private set; }
+
+    void TrackBulletPoolShareAcquired()
+    {
+        BulletPoolShareCount++;
+        ComprehensiveTestLogger.LogBulletPoolRef("玩家GetOrCreatPool");
+    }
+
+    void TrackBulletPoolShareReleased()
+    {
+        BulletPoolShareCount--;
+    }
+
+    void LogBulletPoolReleaseBefore()
+    {
+        ComprehensiveTestLogger.LogBulletPoolRef("玩家OnDestroy释池前");
+    }
+
+    void LogBulletPoolReleaseAfter()
+    {
+        ComprehensiveTestLogger.LogBulletPoolRef("玩家OnDestroy释池后");
+    }
+
+    void EmitPlayerShotEvent(Vector3 firePos, Quaternion fireRot)
+    {
+        GameEventBus.SentEvent(new PlayerShotEvent { Position = firePos, Rotation = fireRot });
+    }
+
+    void EmitPlayerDamageEvent(float amount)
+    {
         GameEventBus.SentEvent(new PlayerDamageEvent { Amount = amount });
     }
+
+    #endregion
 }

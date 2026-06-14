@@ -4,21 +4,41 @@ using System.Text;
 using BaseFramework.BaseEventSys;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// 综合测试专用日志：事件总线、对象池快照、内存趋势；绑定 UI Text 与退出按钮。
+/// 综合测试专用日志：事件总线、对象池快照（b/p/ref/max + Hierarchy 交叉校验）、内存趋势。
 /// 重要事件（死亡/复活/系统/池快照）优先保留，支持长时间对局导出。
 /// </summary>
 public class ComprehensiveTestLogger : MonoBehaviour
 {
     const string BulletPath = "Model/Prefabs/Bullet";
-    const string EnemyPath = "Model/Prefabs/tester";
+    const string EnemyPath = "Model/Prefabs/enemy";
+    const int EnemyExpectedRefCount = 1;
+    const int BulletBaseMaxInactive = 48;
+    const int EnemyBaseMaxInactive = 12;
     const float DamageLogInterval = 1f;
     const float SnapshotInterval = 5f;
     const int LeakTrendSamples = 6;
     const long LeakMonoGrowthThreshold = 5 * 1024 * 1024;
     const int DefaultMaxStoredLines = 12000;
+    const string LoggerSchemaVersion = "v2-ref-holders-max";
+
+    public static ComprehensiveTestLogger Instance { get; private set; }
+
+    /// <summary>子弹池 ref 变化时由 gameplay 或事件回调打点（Pin，不被截断）。</summary>
+    public static void LogBulletPoolRef(string reason)
+    {
+        if (Instance != null)
+            Instance.WriteBulletPoolRef(reason);
+    }
+
+    public static void LogEnemySpawnMode(ComprehensiveTestDebugConfig.EnemySpawnMode mode)
+    {
+        if (Instance != null)
+            Instance.Write("敌人生成模式=" + mode, pin: true);
+    }
 
     [SerializeField] Text logText;
     [SerializeField] Button exitButton;
@@ -45,6 +65,8 @@ public class ComprehensiveTestLogger : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
+
         if (logText == null)
             logText = GameObject.Find("Log")?.GetComponent<Text>();
 
@@ -57,6 +79,9 @@ public class ComprehensiveTestLogger : MonoBehaviour
 
     void OnDestroy()
     {
+        if (Instance == this)
+            Instance = null;
+
         if (exitButton != null)
             exitButton.onClick.RemoveListener(OnExitGame);
     }
@@ -92,7 +117,7 @@ public class ComprehensiveTestLogger : MonoBehaviour
             logText.verticalOverflow = VerticalWrapMode.Overflow;
         }
 
-        Write("Logger启动", pin: true);
+        Write("Logger启动 schema=" + LoggerSchemaVersion, pin: true);
         Write("导出:" + ComprehensiveTestLogExporter.GetExportDirectory(), pin: true);
         Write("真机:" + ComprehensiveTestLogExporter.GetPersistentLogDirectory(), pin: true);
         Write(ComprehensiveTestLogExporter.GetLocationHint(), pin: true);
@@ -154,6 +179,11 @@ public class ComprehensiveTestLogger : MonoBehaviour
         }
 
         Write("敌人死亡", pin: true);
+        if (ComprehensiveTestDebugConfig.ResolveEnemySpawnMode()
+            == ComprehensiveTestDebugConfig.EnemySpawnMode.DirectInstantiate)
+            WriteBulletPoolRef("敌人死亡将Destroy卸子弹份额");
+        else
+            WriteBulletPoolRef("敌人死亡(池化回敌人池,子弹ref不降)");
     }
 
     void OnPlayerRespawned(PlayerRespawnedEvent e)
@@ -164,6 +194,28 @@ public class ComprehensiveTestLogger : MonoBehaviour
     void OnEnemySpawned(EnemySpawnedEvent e)
     {
         Write("敌人生成", pin: true);
+        WriteBulletPoolRef("敌人生成后");
+    }
+
+    void WriteBulletPoolRef(string reason)
+    {
+        int holders = PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount;
+        if (!BundleResLoader.Instance.TryGetPool(BulletPath, out PrefabPool pool))
+        {
+            Write("池ref[" + reason + "] 未注册 holders=" + holders, pin: true);
+            return;
+        }
+
+        Write(
+            "池ref[" + reason + "] ref=" + pool.RefCount + " max=" + pool.MaxInactiveCapacity +
+            " holders=" + holders + " b=" + pool.ActiveCount + " p=" + pool.InactiveCount,
+            pin: true);
+
+        if (pool.RefCount != holders)
+            Write(
+                "池ref[" + reason + "] 持有者不符 holders=" + holders + " ref=" + pool.RefCount,
+                pin: true,
+                isError: true);
     }
 
     public void OnExitGame()
@@ -188,31 +240,65 @@ public class ComprehensiveTestLogger : MonoBehaviour
 
     void LogPoolSnapshot()
     {
-        LogPoolStats(BulletPath, "Bullet");
-        LogPoolStats(EnemyPath, "Enemy");
+        Scene active = SceneManager.GetActiveScene();
+        int expectedBulletRef = PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount;
+        LogPoolStats(BulletPath, "Bullet", expectedBulletRef, BulletBaseMaxInactive);
 
-        Transform poolRuntime = GameObject.Find(PoolSceneRoots.RuntimeRootName)?.transform;
-        if (poolRuntime == null)
+        if (ComprehensiveTestDebugConfig.ResolveEnemySpawnMode()
+            == ComprehensiveTestDebugConfig.EnemySpawnMode.Pooled)
+            LogPoolStats(EnemyPath, "Enemy", EnemyExpectedRefCount, EnemyBaseMaxInactive);
+
+        if (!PoolSceneRootsUtil.TryGetRuntimeRoot(active, out Transform poolRuntime))
         {
-            Write("池根未创建", pin: true);
+            Write("池根未创建 scene=" + active.name, pin: true);
             return;
         }
 
-        int activeBullets = 0;
-        int activeEnemies = 0;
-        for (int i = 0; i < poolRuntime.childCount; i++)
-        {
-            Transform child = poolRuntime.GetChild(i);
-            if (child.name.StartsWith("Active_Bullets", StringComparison.Ordinal))
-                activeBullets = CountActiveChildren(child);
-            else if (child.name.StartsWith("Active_Enemies", StringComparison.Ordinal))
-                activeEnemies = CountActiveChildren(child);
-        }
-
-        Write("池层级 ch=" + poolRuntime.childCount + " actB=" + activeBullets + " actE=" + activeEnemies, pin: true);
+        bool sameScene = poolRuntime.gameObject.scene == active;
+        Write("池 scene=" + active.name + " ch=" + poolRuntime.childCount + " rootInActive=" + sameScene, pin: true);
+        LogHierarchyCrossCheck(active, BulletPath, "Bullet");
+        LogHierarchyCrossCheck(active, EnemyPath, "Enemy");
     }
 
-    void LogPoolStats(string loadPath, string shortName)
+    /// <summary>
+    /// 对比 PrefabPool 计数与 Hierarchy 下 Pool_* 子节点 activeSelf 数量（单父节点方案）。
+    /// </summary>
+    void LogHierarchyCrossCheck(Scene scene, string loadPath, string shortName)
+    {
+        if (!BundleResLoader.Instance.TryGetPool(loadPath, out PrefabPool pool))
+            return;
+
+        if (!PoolSceneRootsUtil.TryGetPoolRoot(loadPath, scene, out Transform poolRoot))
+            return;
+
+        int activeInHierarchy = CountActiveChildren(poolRoot);
+        int totalInHierarchy = poolRoot.childCount;
+        int pooledInHierarchy = totalInHierarchy - activeInHierarchy;
+
+        if (activeInHierarchy != pool.ActiveCount || pooledInHierarchy != pool.InactiveCount)
+            Write(
+                "池校验 " + shortName + " hierA=" + activeInHierarchy + " hierP=" + pooledInHierarchy +
+                " poolB=" + pool.ActiveCount + " poolP=" + pool.InactiveCount,
+                pin: true,
+                isError: true);
+    }
+
+    static int CountActiveChildren(Transform root)
+    {
+        int count = 0;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            if (root.GetChild(i).gameObject.activeSelf)
+                count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// 读取 PrefabPool.ActiveCount / InactiveCount / RefCount / MaxInactiveCapacity；校验本场景预期 ref 与闲置上限。
+    /// </summary>
+    void LogPoolStats(string loadPath, string shortName, int expectedRefCount, int baseMaxInactive)
     {
         if (!BundleResLoader.Instance.TryGetPool(loadPath, out PrefabPool pool))
         {
@@ -220,7 +306,42 @@ public class ComprehensiveTestLogger : MonoBehaviour
             return;
         }
 
-        Write("池 " + shortName + " b=" + pool.ActiveCount + " p=" + pool.InactiveCount, pin: true);
+        // ActiveCount = 已 GetObj 未 ReleaseObj；InactiveCount = 闲置队列深度；RefCount = GetOrCreatPool 次数
+        Write(
+            "池 " + shortName + " b=" + pool.ActiveCount + " p=" + pool.InactiveCount +
+            " ref=" + pool.RefCount + " max=" + pool.MaxInactiveCapacity +
+            (shortName == "Bullet"
+                ? " holders=" + (PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount)
+                : ""),
+            pin: true);
+
+        if (pool.RefCount != expectedRefCount)
+            Write(
+                "池 " + shortName + " ref异常 exp=" + expectedRefCount + " act=" + pool.RefCount,
+                pin: true,
+                isError: true);
+
+        if (shortName == "Bullet")
+        {
+            int holderCount = PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount;
+            if (pool.RefCount != holderCount)
+                Write(
+                    "池 Bullet 持有者不符 holders=" + holderCount + " ref=" + pool.RefCount,
+                    pin: true,
+                    isError: true);
+        }
+
+        int expectedMaxForRef = baseMaxInactive > 0 && pool.RefCount > 0
+            ? baseMaxInactive * pool.RefCount
+            : 0;
+        if (expectedMaxForRef > 0 && pool.MaxInactiveCapacity != expectedMaxForRef)
+            Write(
+                "池 " + shortName + " max异常 exp=" + expectedMaxForRef + " act=" + pool.MaxInactiveCapacity,
+                pin: true,
+                isError: true);
+
+        if (pool.MaxInactiveCapacity > 0 && pool.InactiveCount > pool.MaxInactiveCapacity)
+            Write("池 " + shortName + " 闲置超max", pin: true, isError: true);
     }
 
     void CaptureMemoryBaseline()
@@ -281,18 +402,6 @@ public class ComprehensiveTestLogger : MonoBehaviour
             lines.Add(entries[i].Line);
 
         return ComprehensiveTestLogExporter.ExportLog(lines, "PoolTest退出");
-    }
-
-    static int CountActiveChildren(Transform root)
-    {
-        int count = 0;
-        for (int i = 0; i < root.childCount; i++)
-        {
-            if (root.GetChild(i).gameObject.activeSelf)
-                count++;
-        }
-
-        return count;
     }
 
     void Write(string message, bool pin = false, bool isError = false)

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 综合测试场景切换：离开战斗场景时 UnloadAll 并销毁 PoolRuntime。
+/// 综合测试场景切换：离开战斗场景时 UnloadAll（内部 DestroyAllPools → 各 PrefabPool.DestroyPool）并销毁 PoolRuntime。
 /// </summary>
 public static class ComprehensiveTestSceneFlow
 {
@@ -21,17 +21,19 @@ public static class ComprehensiveTestSceneFlow
 
     public static void CleanupBeforeSceneChange()
     {
+        // UnloadAll：DestroyAllPools（强制 DestroyPool 全部实例 + Release 句柄）→ 清 Resource / Bundle
         BundleResLoader.Instance.UnloadAll();
         DestroyPoolRuntimeIfExists();
         GameEventBus.ClearAll();
     }
 
+    /// <summary>销毁 PoolSceneRoots 运行时根；与 PrefabPool 闲置/活跃父节点生命周期一致。</summary>
     static void DestroyPoolRuntimeIfExists()
     {
-        GameObject poolRuntime = GameObject.Find(PoolSceneRoots.RuntimeRootName);
+        GameObject poolRuntime = GameObject.Find(PoolSceneRootsUtil.RuntimeRootName);
         if (poolRuntime != null)
             Object.Destroy(poolRuntime);
 
-        PoolSceneRoots.ClearCache();
+        PoolSceneRootsUtil.ClearCache();
     }
 }

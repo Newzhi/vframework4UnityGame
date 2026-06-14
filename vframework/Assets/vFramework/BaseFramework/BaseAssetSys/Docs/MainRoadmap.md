@@ -67,7 +67,8 @@
 
 | 子项 | 内容 | 状态 |
 |------|------|------|
-| **范式** | `CreatPool` + `GetObj(pos,rot,parent)`（与 `InstantiateAt` 对齐）；`ReleaseObj` 不 Release | ✅ `PrefabPool` + §7.7 |
+| **范式** | `CreatPool` + `GetObj(pos,rot)`（`parent` 已忽略；单父节点 + `SetActive`）；`ReleaseObj` 不 Release | ✅ `PrefabPool` + §7.7 |
+| **场景隔离** | `poolsBySceneAndPath` + `PoolSceneRootsUtil`；同场景 `refCount` 共享、跨场景分池 | ✅ §5.4 |
 | **集成 Case** | AB_Test 自动化套系 | ⏸ 已移除，业务侧按 §7.7 手测 |
 | **框架封装** | `PrefabPool` | ✅ |
 | **与 B/C 关系** | **依赖 B-1**：异步 Load 路径稳定后再跑池 Case；**先于 C**：CDN 下载与池化正交，避免并发改 Ref 语义 |
@@ -83,7 +84,7 @@
 | 同步 `Load<T>` + Release / UnloadAll | ✅ 三端双 Runner 19/19 |
 | 打包三种模式 + Player 平台过滤 | ✅ |
 | `LoadUniTaskAsync` / 回调 API | ✅ **三端异步双 Runner 19/19**（`225805` / `230136` / `231720`） |
-| `BundleResLoader.CreatPool` / `PrefabPool` | ✅ |
+| `BundleResLoader` 对象池（`GetOrCreatPool` / 按 Active Scene 分池） | ✅ |
 | CDN 打包产出 | ✅ `cdnOutputPath` |
 | CDN 运行时下载 | 🟡 `AssetRouter` + `CdnBundleAssetProvider` 路由已接；真实 HTTP 仍 Stub |
 | `AssetRouter` 四源路由 | ✅ ABUNDLE / RESOURCES / EDITORRESOURCES / NETCDN |
@@ -117,7 +118,7 @@
 
 | # | 项 | 完成标准 |
 |---|-----|----------|
-| 1 | 对象池范式 + `CreatPool` + **谁创建谁销毁** | ✅ [业务API §5.5 / §7.7](./BusinessApiUsageGuide.md)；手测 `comprehensiveTest` 发射方建池 |
+| 1 | 对象池范式 + **谁创建谁销毁** + **按 Active Scene 分池** | ✅ [业务API §5.4–5.5 / §7.7](./BusinessApiUsageGuide.md)；`PoolSceneRootsUtil`；手测 `comprehensiveTest` |
 | 2 | （可选）业务模块手测 GetObj/DestroyPool | 不纳入 AB_Test JSON 门禁 |
 | 3 | （可选）`PrefabPool` 扩展 | Clear 时单次 Release |
 
@@ -226,5 +227,5 @@ BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
 | 2026-06-08 | 落地 `AssetRouter` 四源（EditorTest→AssetDatabase、Resources、AB、CDN Stub）；业务 API 不变 |
 | 2026-06-08 | 阶段 B 明确在 **TestABScene** 切换异步双 Runner；新增 **阶段 B-Pool**（对象池，介于 B 与 C）；P2 拆为 B-2 与 C |
 | 2026-06-13 | 集成归档：Android 同步 19/19 复测；异步 Editor/Player **19/19**（`225805`/`230136`）；场景 Collector 默认异步套系 |
-| 2026-06-13 | **B-Pool**：`PrefabPool` + `BundleResLoader.CreatPool` |
+| 2026-06-13 | **B-Pool**：`PrefabPool` + 按 Active Scene 分池（`PoolSceneRootsUtil`、`poolsBySceneAndPath`） |
 | 2026-06-13 | 异步 **Android 19/19**（`231720`）；**阶段 B-1 三端完成** |

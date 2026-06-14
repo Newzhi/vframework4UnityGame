@@ -3,97 +3,115 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 /// <summary>
-/// Prefab 对象池：持有一个 <see cref="IAssetHandle"/>（一次 Load），复用 Instantiate 实例。
-/// 通过 <see cref="BundleResLoader.CreatPool"/> 创建；句柄在 <see cref="DestroyPool"/> 时 Release。
+/// Prefab 对象池：一次 Load，实例队列复用；单父节点 + SetActive，借还不 SetParent。
+/// 懒增长：仅在 GetObj 缺实例时 Instantiate；refCount++ 只抬闲置上限，不预创建。
 /// </summary>
 public sealed class PrefabPool
 {
     #region 变量定义
-    
-    IAssetHandle prefabHandle; //句柄
-    readonly Transform inactiveRoot;
-    readonly Stack<GameObject> inactiveInstances = new Stack<GameObject>(32);
-    readonly HashSet<GameObject> activeInstances = new HashSet<GameObject>();
-    int maxInactiveCapacity;
-    int refCount;//如果是别人也需要创建则引用计数+1，然后扩容
-    bool isPoolCreated;
 
+    IAssetHandle prefabHandle; //句柄：CreatPool 时 Load 一次，TearDown 时 Release 一次
+    readonly Transform poolRoot; //池统一父节点（Pool_*），实例创建时挂一次，借还仅 SetActive
+    readonly Queue<GameObject> inactiveInstances = new Queue<GameObject>(32); //闲置队列：ReleaseObj Enqueue，GetObj Dequeue
+    readonly HashSet<GameObject> activeInstances = new HashSet<GameObject>(); //已借出实例，用于校验 ReleaseObj 与统计 ActiveCount
+    readonly int baseInactiveCapacity; //单份持有者闲置上限（构造传入），共享时按 refCount 倍增
+    int maxInactiveCapacity; //当前闲置上限 = baseInactiveCapacity × refCount（0 不限）
+    int refCount; // GetOrCreatPool 次数；++ 时只更新闲置上限，不预 Instantiate
+    bool isPoolCreated; //是否已完成 CreatPool，GetObj 前必须为 true
+
+    /// <summary>池是否已创建（CreatPool 成功）。</summary>
     public bool IsPoolCreated => isPoolCreated;
+
+    /// <summary>无借出实例时可安全 DestroyPool（不强制，TearDown 仍会销毁借出实例）。</summary>
     public bool CanDestroyPool => isPoolCreated && activeInstances.Count == 0;
+
+    /// <summary>当前借出（GetObj 后未 ReleaseObj）数量。</summary>
     public int ActiveCount => activeInstances.Count;
+
+    /// <summary>闲置队列中实例数量。</summary>
     public int InactiveCount => inactiveInstances.Count;
 
-    /// <summary>闲置上限；0 表示不限制。超出时 Release 直接 Destroy 实例。</summary>
-    public int MaxInactiveCapacity => maxInactiveCapacity;
-    
-    #endregion
-   
+    /// <summary>共享池引用计数，与 CreatPool / DestroyPool 成对。</summary>
+    public int RefCount => refCount;
 
-    internal PrefabPool(IAssetHandle prefabHandle, Transform inactiveRoot = null, int maxInactiveCapacity = 0)
+    /// <summary>当前闲置上限；0 表示不限制。超出时 ReleaseObj 直接 Destroy 实例。</summary>
+    public int MaxInactiveCapacity => maxInactiveCapacity;
+
+    #endregion
+
+    /// <summary>由 BundleResLoader.CreatPool 构造；句柄所有权移交本池。</summary>
+    internal PrefabPool(IAssetHandle prefabHandle, Transform poolRoot = null, int maxInactiveCapacity = 0)
     {
         this.prefabHandle = prefabHandle;
-        this.inactiveRoot = inactiveRoot;
+        this.poolRoot = poolRoot;
+        this.baseInactiveCapacity = maxInactiveCapacity;
         this.maxInactiveCapacity = maxInactiveCapacity;
     }
-    
+
     #region 业务接口
-    
+
     #region 创建池/销毁池
-    
+
+    /// <summary>首次 refCount=1；已创建则 refCount++ 并更新闲置上限（懒增长，不预创建实例）。</summary>
     public void CreatPool()
     {
         if (isPoolCreated)
         {
             refCount++;
+            ApplyCapacityForRefCount();
             return;
         }
 
-        if (prefabHandle == null)
+        if (prefabHandle == null || prefabHandle.GetAsset<GameObject>() == null)
         {
-            Debug.LogError("PrefabPool.CreatPool: prefabHandle is null.");
-            return;
-        }
-
-        if (prefabHandle.GetAsset<GameObject>() == null)
-        {
-            Debug.LogError("PrefabPool.CreatPool: handle is not a GameObject prefab.");
+            Debug.LogError("PrefabPool.CreatPool: invalid prefab handle.");
             return;
         }
 
         isPoolCreated = true;
+        refCount = 1;
+        ApplyCapacityForRefCount();
     }
 
+    /// <summary>refCount--；未归零则收缩上限；归零则 TearDown。</summary>
     public void DestroyPool()
     {
-        if (!isPoolCreated && prefabHandle == null)
+        if (!isPoolCreated)
             return;
 
-        //清除创建的所有实例
-        DestroyAllInstances();
-        
-        //引用计数--
         refCount--;
-        if (refCount == 0)
+        if (refCount > 0)
         {
-            isPoolCreated =  false;
-            //回收句柄
-            if (prefabHandle != null)
-            {
-                prefabHandle.Release();
-                prefabHandle = null;
-            }
+            ApplyCapacityForRefCount();
+            TrimInactiveExcess();
+            return;
         }
+
+        TearDown();
     }
-    
+
+    /// <summary>UnloadAll 强制销毁，无视 refCount。</summary>
+    internal void ForceDestroyPool()
+    {
+        if (!isPoolCreated)
+            return;
+
+        TearDown();
+    }
+
     #endregion
-   
+
     #region 取或者创建对象/回收对象
-    
+
+    /// <summary>借出实例，默认位姿与世界根。</summary>
     public GameObject GetObj()
     {
         return GetObj(Vector3.zero, Quaternion.identity, null);
     }
 
+    /// <summary>
+    /// 借出实例：Dequeue 复用或 InstantiateAt；设定位姿后 SetActive(true)。parent 参数已忽略（单父节点方案）。
+    /// </summary>
     public GameObject GetObj(Vector3 worldPosition, Quaternion worldRotation, Transform parent = null)
     {
         if (!isPoolCreated)
@@ -102,11 +120,19 @@ public sealed class PrefabPool
             return null;
         }
 
-        GameObject instance = PopInactiveInstance();
+        GameObject instance = null;
+        while (inactiveInstances.Count > 0 && instance == null)
+            instance = inactiveInstances.Dequeue();
+
         if (instance == null)
-            instance = prefabHandle.InstantiateAt(worldPosition, worldRotation, parent);
+            instance = prefabHandle.InstantiateAt(worldPosition, worldRotation, poolRoot);
         else
-            ActivateInstance(instance, worldPosition, worldRotation, parent);
+        {
+            Transform t = instance.transform;
+            t.SetPositionAndRotation(worldPosition, worldRotation);
+            if (!instance.activeSelf)
+                instance.SetActive(true);
+        }
 
         if (instance == null)
             return null;
@@ -115,6 +141,7 @@ public sealed class PrefabPool
         return instance;
     }
 
+    /// <summary>归还实例：SetActive(false) 后 Enqueue；超上限则 Destroy。不 Release 句柄。</summary>
     public void ReleaseObj(GameObject instance)
     {
         if (instance == null)
@@ -127,12 +154,7 @@ public sealed class PrefabPool
         }
 
         if (!activeInstances.Remove(instance))
-        {
-#if UNITY_EDITOR
-            Debug.LogWarning("PrefabPool.ReleaseObj: instance not from this pool.");
-#endif
             return;
-        }
 
         if (maxInactiveCapacity > 0 && inactiveInstances.Count >= maxInactiveCapacity)
         {
@@ -141,66 +163,66 @@ public sealed class PrefabPool
         }
 
         DeactivateInstance(instance);
-        inactiveInstances.Push(instance);
+        inactiveInstances.Enqueue(instance);
     }
-    
+
     #endregion
-  
 
-    GameObject PopInactiveInstance()
+    #endregion
+
+    #region 辅助方法
+
+    void ApplyCapacityForRefCount()
     {
-        while (inactiveInstances.Count > 0)
+        maxInactiveCapacity = baseInactiveCapacity > 0
+            ? baseInactiveCapacity * refCount
+            : 0;
+    }
+
+    void TrimInactiveExcess()
+    {
+        if (maxInactiveCapacity <= 0)
+            return;
+
+        while (inactiveInstances.Count > maxInactiveCapacity)
         {
-            GameObject instance = inactiveInstances.Pop();
-            if (instance != null)
-                return instance;
+            GameObject go = inactiveInstances.Dequeue();
+            if (go != null)
+                Object.Destroy(go);
         }
-
-        return null;
     }
 
-    static void ActivateInstance(GameObject instance, Vector3 worldPosition, Quaternion worldRotation, Transform parent)
-    {
-        Transform t = instance.transform;
-        t.SetPositionAndRotation(worldPosition, worldRotation);
-        if (parent != null)
-            t.SetParent(parent, true);
-
-        if (!instance.activeSelf)
-            instance.SetActive(true);
-    }
-
+    /// <summary>仅 SetActive(false)，不换父节点。</summary>
     void DeactivateInstance(GameObject instance)
     {
-        if (inactiveRoot != null)
-            instance.transform.SetParent(inactiveRoot, true);
-
         if (instance.activeSelf)
             instance.SetActive(false);
     }
 
-    void DestroyAllInstances()
+    void TearDown()
     {
-        if (activeInstances.Count > 0)
-        {
-            foreach (GameObject instance in activeInstances)
-            {
-                if (instance != null)
-                    Object.Destroy(instance);
-            }
+        isPoolCreated = false;
+        refCount = 0;
+        maxInactiveCapacity = baseInactiveCapacity;
 
-            activeInstances.Clear();
-        }
+        foreach (GameObject go in activeInstances)
+            if (go != null)
+                Object.Destroy(go);
+        activeInstances.Clear();
 
         while (inactiveInstances.Count > 0)
         {
-            GameObject instance = inactiveInstances.Pop();
-            if (instance != null)
-                Object.Destroy(instance);
+            GameObject go = inactiveInstances.Dequeue();
+            if (go != null)
+                Object.Destroy(go);
+        }
+
+        if (prefabHandle != null)
+        {
+            prefabHandle.Release();
+            prefabHandle = null;
         }
     }
-    
-    #endregion
 
-    
+    #endregion
 }

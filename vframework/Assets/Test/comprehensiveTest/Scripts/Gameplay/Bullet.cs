@@ -6,8 +6,13 @@ public enum BulletOwner
     Enemy
 }
 
+/// <summary>
+/// 池化弹丸：寿命或碰撞后通过 <see cref="PrefabPool.ReleaseObj"/> 归还，不调用 DestroyPool。
+/// </summary>
 public class Bullet : MonoBehaviour
 {
+    #region 游戏逻辑
+
     const float Speed = 28f;
     const float MaxLife = 4f;
 
@@ -83,4 +88,6 @@ public class Bullet : MonoBehaviour
         else
             Destroy(gameObject);
     }
+
+    #endregion
 }

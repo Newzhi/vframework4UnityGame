@@ -7,14 +7,15 @@ using UnityEngine.UI;
 /// </summary>
 public class PlayerManager : MonoBehaviour
 {
+    #region 游戏逻辑
+
     const int MaxLives = 3;
     const float MaxHp = 500f;
     const float RespawnLockDuration = 1.2f;
 
     public static PlayerManager Instance { get; private set; }
 
-    [SerializeField] Text statusText;
-    [SerializeField] Transform player;
+    Transform player;
 
     int lives;
     float hp;
@@ -30,28 +31,14 @@ public class PlayerManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
-
-        if (statusText == null)
-            statusText = FindPlayerStatusText();
-
-        if (player == null)
-            player = GameObject.Find("Player")?.transform;
+        BindTestStatusText();
+        BindPlayerTransform();
     }
 
     void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
-    }
-
-    void OnEnable()
-    {
-        GameEventBus.RegisterEvent<PlayerDamageEvent>(OnPlayerDamage);
-    }
-
-    void OnDisable()
-    {
-        GameEventBus.DeRegisterEvent<PlayerDamageEvent>(OnPlayerDamage);
     }
 
     void Start()
@@ -69,24 +56,13 @@ public class PlayerManager : MonoBehaviour
         RefreshStatusText();
     }
 
-    void OnPlayerDamage(PlayerDamageEvent e)
-    {
-        ApplyDamage(e.Amount);
-    }
-
     public void ApplyDamage(float amount)
     {
         if (player == null || Time.time < respawnLockUntil || hp <= 0f)
             return;
 
         hp -= amount;
-        GameEventBus.SentEvent(new DamageTakenEvent
-        {
-            Target = player.gameObject,
-            Amount = amount,
-            IsPlayer = true
-        });
-
+        EmitDamageTakenEvent(amount);
         RefreshStatusText();
 
         if (hp <= 0f)
@@ -102,16 +78,11 @@ public class PlayerManager : MonoBehaviour
             playerGameplay.SetGameplayEnabled(false);
 
         lives--;
-        GameEventBus.SentEvent(new EntityDeadEvent
-        {
-            Entity = player.gameObject,
-            IsPlayer = true,
-            RemainingLives = lives
-        });
+        EmitPlayerDeadEvent();
 
         if (lives <= 0)
         {
-            ComprehensiveTestSceneFlow.ReturnToStartScene();
+            ReturnToStartSceneForTest();
             return;
         }
 
@@ -128,11 +99,40 @@ public class PlayerManager : MonoBehaviour
             playerGameplay.SetGameplayEnabled(true);
 
         RefreshStatusText();
-        GameEventBus.SentEvent(new PlayerRespawnedEvent
-        {
-            Position = lastDeathPosition,
-            RemainingLives = lives
-        });
+        EmitPlayerRespawnedEvent();
+    }
+
+    void BindPlayerTransform()
+    {
+        if (player == null)
+            player = GameObject.Find("Player")?.transform;
+    }
+
+    #endregion
+
+    #region 综合测试
+
+    [SerializeField] Text statusText;
+
+    void OnEnable()
+    {
+        GameEventBus.RegisterEvent<PlayerDamageEvent>(OnPlayerDamage);
+    }
+
+    void OnDisable()
+    {
+        GameEventBus.DeRegisterEvent<PlayerDamageEvent>(OnPlayerDamage);
+    }
+
+    void OnPlayerDamage(PlayerDamageEvent e)
+    {
+        ApplyDamage(e.Amount);
+    }
+
+    void BindTestStatusText()
+    {
+        if (statusText == null)
+            statusText = FindPlayerStatusText();
     }
 
     public void RefreshStatusText()
@@ -141,6 +141,40 @@ public class PlayerManager : MonoBehaviour
             return;
 
         statusText.text = $"HP {Mathf.CeilToInt(hp)}/{MaxHp:F0}  Lives {lives}/{MaxLives}";
+    }
+
+    void EmitDamageTakenEvent(float amount)
+    {
+        GameEventBus.SentEvent(new DamageTakenEvent
+        {
+            Target = player.gameObject,
+            Amount = amount,
+            IsPlayer = true
+        });
+    }
+
+    void EmitPlayerDeadEvent()
+    {
+        GameEventBus.SentEvent(new EntityDeadEvent
+        {
+            Entity = player.gameObject,
+            IsPlayer = true,
+            RemainingLives = lives
+        });
+    }
+
+    void EmitPlayerRespawnedEvent()
+    {
+        GameEventBus.SentEvent(new PlayerRespawnedEvent
+        {
+            Position = lastDeathPosition,
+            RemainingLives = lives
+        });
+    }
+
+    void ReturnToStartSceneForTest()
+    {
+        ComprehensiveTestSceneFlow.ReturnToStartScene();
     }
 
     static Text FindPlayerStatusText()
@@ -161,4 +195,6 @@ public class PlayerManager : MonoBehaviour
 
         return null;
     }
+
+    #endregion
 }

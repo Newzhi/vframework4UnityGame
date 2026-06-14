@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 //从AssetBundle加载抽象资源，管理Resource层缓存与引用
@@ -39,9 +40,20 @@ public class BundleResLoader
 
     readonly CatalogueReader catalogue = new CatalogueReader();
     Dictionary<string, AbstractResource> resourceDic = new Dictionary<string, AbstractResource>();
-    readonly Dictionary<string, PrefabPool> poolsByLoadPath = new Dictionary<string, PrefabPool>();
+    readonly Dictionary<int, Dictionary<string, PrefabPool>> poolsBySceneAndPath =
+        new Dictionary<int, Dictionary<string, PrefabPool>>(); //scene.handle + loadPath 去重；同场景共享，跨场景分池
 
     #endregion
+
+    static BundleResLoader()
+    {
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+    }
+
+    static void OnSceneUnloaded(Scene scene)
+    {
+        Instance.DestroyPoolsForScene(scene);
+    }
 
     #region 初始化
 
@@ -367,24 +379,47 @@ public class BundleResLoader
 
     #endregion
 
-    #region 对象池
-    
-    /* ------------------------------------------------------------------------
-     * 对象池用来解决一个业务需要大量加载某个预制体的情况
-     * 创建池的时候会移交Handle处理权，由池来负责最后句柄的回收，保证引用计数安全
-     * 创建池子的时候会检查是否已经有对应池子了，如果有的话则扩容复用已有的池子，池子会变成共享池
-     * 理论上是谁创建的池子谁负责回收池子，保证引用计数安全，符合RAII原则
-     * 业务场景举例：
-     * 比如一个敌人创建的池子，那么在他死亡的时候就需要销毁
-     * 如果这个池子是个共享池，那么池可能也需要维护一个引用计数，计数到0的时候才能被销毁
-     ------------------------------------------------------------------------- */
-    
+    #region 对象池（同 Active Scene + loadPath 共享 refCount；跨场景分池）
+
     #region CreatPool
 
+    static Scene ResolvePoolScene() => SceneManager.GetActiveScene();
+
+    Dictionary<string, PrefabPool> GetOrCreatePoolMapForScene(Scene scene)
+    {
+        int handle = scene.handle;
+        if (!poolsBySceneAndPath.TryGetValue(handle, out Dictionary<string, PrefabPool> map))
+        {
+            map = new Dictionary<string, PrefabPool>(4);
+            poolsBySceneAndPath[handle] = map;
+        }
+
+        return map;
+    }
+
+    void DestroyPoolsForScene(Scene scene)
+    {
+        int handle = scene.handle;
+        if (!poolsBySceneAndPath.TryGetValue(handle, out Dictionary<string, PrefabPool> map))
+        {
+            PoolSceneRootsUtil.ClearCacheForScene(scene);
+            return;
+        }
+
+        foreach (PrefabPool pool in map.Values)
+        {
+            if (pool != null)
+                pool.ForceDestroyPool();
+        }
+
+        poolsBySceneAndPath.Remove(handle);
+        PoolSceneRootsUtil.ClearCacheForScene(scene);
+    }
+
     /// <summary>
-    /// Load Prefab 并创建 <see cref="PrefabPool"/>；句柄所有权移交池，业务勿再 Release，由 <see cref="PrefabPool.DestroyPool"/> 统一回收。
+    /// Load 并创建池；内部 <see cref="PrefabPool.CreatPool"/>，refCount=1。
     /// </summary>
-    public PrefabPool CreatPool(string loadPath, Transform inactiveRoot = null, int maxInactiveCapacity = 0)
+    public PrefabPool CreatPool(string loadPath, Transform poolRoot = null, int maxInactiveCapacity = 0)
     {
         if (string.IsNullOrEmpty(loadPath))
         {
@@ -399,7 +434,7 @@ public class BundleResLoader
             return null;
         }
 
-        PrefabPool pool = new PrefabPool(handle, inactiveRoot, maxInactiveCapacity);
+        PrefabPool pool = new PrefabPool(handle, poolRoot, maxInactiveCapacity);
         pool.CreatPool();
         if (!pool.IsPoolCreated)
         {
@@ -412,10 +447,9 @@ public class BundleResLoader
     }
 
     /// <summary>
-    /// 按 loadPath 去重创建池：多脚本调用同一路径时共享同一 <see cref="PrefabPool"/> 与闲置根节点。
-    /// inactiveRoot 仅在首次创建时生效；已存在池时忽略该参数。
+    /// 当前 Active Scene 内同路径共享池：已存在则 refCount++，否则新建并注册。
     /// </summary>
-    public PrefabPool GetOrCreatPool(string loadPath, Transform inactiveRoot = null, int maxInactiveCapacity = 0)
+    public PrefabPool GetOrCreatPool(string loadPath, Transform poolRoot = null, int maxInactiveCapacity = 0)
     {
         if (string.IsNullOrEmpty(loadPath))
         {
@@ -423,23 +457,32 @@ public class BundleResLoader
             return null;
         }
 
-        if (poolsByLoadPath.TryGetValue(loadPath, out PrefabPool existing) && existing != null && existing.IsPoolCreated)
-            return existing;
+        Scene scene = ResolvePoolScene();
+        Dictionary<string, PrefabPool> map = GetOrCreatePoolMapForScene(scene);
 
-        Transform root = inactiveRoot ?? PoolSceneRoots.GetOrCreateInactiveRoot(loadPath);
+        if (map.TryGetValue(loadPath, out PrefabPool existing) && existing != null && existing.IsPoolCreated)
+        {
+            existing.CreatPool();
+            return existing;
+        }
+
+        Transform root = poolRoot ?? PoolSceneRootsUtil.GetOrCreatePoolRoot(loadPath, scene);
         PrefabPool pool = CreatPool(loadPath, root, maxInactiveCapacity);
         if (pool != null && pool.IsPoolCreated)
-            poolsByLoadPath[loadPath] = pool;
+            map[loadPath] = pool;
 
         return pool;
     }
 
-    /// <summary>活跃实例逻辑父节点，命名 Active_{logicalName}，挂在 <see cref="PoolSceneRoots.RuntimeRootName"/> 下。</summary>
+    /// <summary>
+    /// 返回当前 Active Scene 的 <see cref="RuntimeRootName"/>（API 兼容）。
+    /// </summary>
     public Transform GetOrCreateActivePoolRoot(string logicalName)
     {
-        return PoolSceneRoots.GetOrCreateActiveRoot(logicalName);
+        return PoolSceneRootsUtil.GetOrCreateRuntimeRoot(ResolvePoolScene());
     }
 
+    /// <summary>查询当前 Active Scene 已注册池，不增加 refCount。</summary>
     public bool TryGetPool(string loadPath, out PrefabPool pool)
     {
         if (string.IsNullOrEmpty(loadPath))
@@ -448,47 +491,53 @@ public class BundleResLoader
             return false;
         }
 
-        return poolsByLoadPath.TryGetValue(loadPath, out pool) && pool != null && pool.IsPoolCreated;
+        Scene scene = ResolvePoolScene();
+        if (!poolsBySceneAndPath.TryGetValue(scene.handle, out Dictionary<string, PrefabPool> map))
+        {
+            pool = null;
+            return false;
+        }
+
+        return map.TryGetValue(loadPath, out pool) && pool != null && pool.IsPoolCreated;
     }
     #endregion
     
     #region 销毁池
 
-    /// <summary>销毁已注册池并移除去重表项；活跃实例须已全部 Release。</summary>
+    /// <summary>释放当前 Active Scene 下一次池引用（refCount--）；归零时销毁并从表移除。</summary>
     public bool DestroyPoolByLoadPath(string loadPath)
     {
         if (string.IsNullOrEmpty(loadPath))
             return false;
 
-        if (!poolsByLoadPath.TryGetValue(loadPath, out PrefabPool pool) || pool == null)
+        Scene scene = ResolvePoolScene();
+        if (!poolsBySceneAndPath.TryGetValue(scene.handle, out Dictionary<string, PrefabPool> map))
             return false;
 
-        if (!pool.CanDestroyPool)
-        {
-            Debug.LogWarning("DestroyPoolByLoadPath: pool still has active instances, path=" + loadPath);
+        if (!map.TryGetValue(loadPath, out PrefabPool pool) || pool == null)
             return false;
-        }
 
         pool.DestroyPool();
-        poolsByLoadPath.Remove(loadPath);
+        if (!pool.IsPoolCreated)
+            map.Remove(loadPath);
+
         return true;
     }
 
+    /// <summary>UnloadAll 前调用：强制销毁全部场景下全部池并清缓存。</summary>
     public void DestroyAllPools()
     {
-        foreach (KeyValuePair<string, PrefabPool> pair in poolsByLoadPath)
+        foreach (Dictionary<string, PrefabPool> map in poolsBySceneAndPath.Values)
         {
-            if (pair.Value == null)
-                continue;
-
-            if (!pair.Value.CanDestroyPool)
-                Debug.LogWarning("DestroyAllPools: skipping pool with active instances, path=" + pair.Key);
-
-            pair.Value.DestroyPool();
+            foreach (PrefabPool pool in map.Values)
+            {
+                if (pool != null)
+                    pool.ForceDestroyPool();
+            }
         }
 
-        poolsByLoadPath.Clear();
-        PoolSceneRoots.ClearCache();
+        poolsBySceneAndPath.Clear();
+        PoolSceneRootsUtil.ClearCache();
     }
 
     #endregion

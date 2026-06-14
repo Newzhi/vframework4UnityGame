@@ -383,6 +383,11 @@
             "assetName": "Bullet"
         },
         {
+            "assetPath": "Assets/AssetBundle/Model/Prefabs/enemy.prefab",
+            "bundleName": "model.bundle",
+            "assetName": "enemy"
+        },
+        {
             "assetPath": "Assets/AssetBundle/Model/Prefabs/Ji.prefab",
             "bundleName": "model.bundle",
             "assetName": "Ji"
