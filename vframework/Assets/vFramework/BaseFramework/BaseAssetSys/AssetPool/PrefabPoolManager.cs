@@ -125,7 +125,7 @@ public sealed class PrefabPoolManager
             return null;
         }
 
-        PrefabPool pool = new PrefabPool(handle, poolRoot, maxInactiveCapacity);
+        PrefabPool pool = new PrefabPool(handle, poolRoot, maxInactiveCapacity, loadPath);
         pool.Initialize();
         if (!pool.IsPoolCreated)
         {
@@ -233,6 +233,7 @@ public sealed class PrefabPoolManager
     /// <summary>强制销毁全部场景下全部池。</summary>
     public void DeleteAllPools()
     {
+        AssetRefTraceLogger.TraceEvent("PrefabPoolManager.DeleteAllPools");
         foreach (Dictionary<string, PrefabPool> map in poolsBySceneAndPath.Values)
         {
             foreach (PrefabPool pool in map.Values)

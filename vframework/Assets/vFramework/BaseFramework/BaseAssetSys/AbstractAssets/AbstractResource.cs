@@ -39,6 +39,7 @@ internal class AbstractResource : IAssetHandle
     internal void AddReference()
     {
         Ref++;
+        AssetRefTraceLogger.TraceResource(GetTraceKey(), Ref, +1, "AddReference");
     }
 
     internal void ReduceReference()
@@ -49,6 +50,8 @@ internal class AbstractResource : IAssetHandle
             Debug.LogError("AbstractResource ReduceReference less than 0, key:" + assetKey);
             Ref = 0;
         }
+
+        AssetRefTraceLogger.TraceResource(GetTraceKey(), Ref, -1, "ReduceReference");
     }
 
     #endregion
@@ -81,11 +84,15 @@ internal class AbstractResource : IAssetHandle
         {
             ReleaseLoadedAsset();
             Debug.LogError("Asset load failed: " + assetName + " in " + bundleName + ", loadPath=" + resolvedLoadPath);
+            return;
         }
+
+        AssetRefTraceLogger.TraceResourceLoad(GetTraceKey(), Ref, resolvedLoadPath);
     }
 
     internal void UnLoad()
     {
+        AssetRefTraceLogger.TraceResourceUnload(GetTraceKey(), "UnLoad");
         ReleaseLoadedAsset();
         onUnLoad?.Invoke();
         onUnLoad = null;
@@ -149,6 +156,11 @@ internal class AbstractResource : IAssetHandle
         asset = null;
         acquiredBundleNames.Clear();
         loadedSource = AssetSource.ABUNDLE;
+    }
+
+    string GetTraceKey()
+    {
+        return !string.IsNullOrEmpty(loadPath) ? loadPath : assetKey;
     }
 
     #endregion

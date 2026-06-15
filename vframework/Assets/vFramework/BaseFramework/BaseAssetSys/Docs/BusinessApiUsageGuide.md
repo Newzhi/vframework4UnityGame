@@ -3,7 +3,8 @@
 > 入口：`BundleResLoader.Instance`  
 > 句柄：`IAssetHandle`  
 > 详细排期与能力边界：[BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)、[MainRoadmap.md](./MainRoadmap.md)  
-> **引用计数附件**（逐步追踪三层计数与代码链路）：[RefCountAppendix.md](./RefCountAppendix.md)
+> **引用计数附件**：常见写法逐步模拟见 **[RefCountAppendix.md](./RefCountAppendix.md)**。  
+> **加载侧优化（计划）**：自动 Handle / 统一池 / 运行时 Trace 见 **[LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)**。
 
 ---
 

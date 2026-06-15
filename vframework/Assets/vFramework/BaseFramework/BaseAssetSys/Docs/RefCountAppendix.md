@@ -354,7 +354,24 @@ Logger `holders`（`PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareC
 | `AssetPool/PrefabPool.cs` | ③ refCount、`GetObj`、`RecycleObj`、`TearDown` |
 | `AssetPool/PrefabPoolManager.cs` | 池注册表、场景分池、`GetOrCreatPool`、`ReleasePoolShare`、`DeletePool` |
 | `AssetPool/PoolSceneRootsUtil.cs` | 场景 `PoolRuntime` / `Pool_*` 父节点 |
+| `BaseLogSys/AssetRefTraceLogger.cs` | 运行时 Resource/Bundle/Pool Trace（`DumpRecent`） |
 
 ---
 
-*本文档为引用计数附件；API 变更时请同步更新本附件与 [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) §5–§7。*
+## 12. 运行时追溯（AssetRefTraceLogger）
+
+Editor / Development 构建下，加载与池生命周期会自动输出 `[AssetRefTrace]` 日志，格式与上文表格对照。
+
+```csharp
+// 导出最近 64 条 Trace（排查泄漏 / 过早 UnLoad）
+AssetRefTraceLogger.DumpRecent(64);
+
+// 关闭 Trace（性能敏感场景）
+AssetRefTraceLogger.Enabled = false;
+```
+
+规范与后续 **AssetReference / 统一池** 计划见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)。
+
+---
+
+*本文档为引用计数附件；API 变更时请同步更新本附件、[LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) 与 [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) §5–§7。*

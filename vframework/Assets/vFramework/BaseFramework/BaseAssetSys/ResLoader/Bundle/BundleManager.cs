@@ -90,6 +90,7 @@ public class BundleManager
         if (loadedBundles.TryGetValue(bundleName, out BundleEntry entry))
         {
             entry.Ref++;
+            AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, +1, "AcquireBundle");
             return entry.Bundle;
         }
 
@@ -102,6 +103,7 @@ public class BundleManager
         }
 
         loadedBundles[bundleName] = new BundleEntry { Bundle = bundle, Ref = 1 };
+        AssetRefTraceLogger.TraceBundle(bundleName, 1, +1, "AcquireBundle(new)");
         return bundle;
     }
 
@@ -126,6 +128,7 @@ public class BundleManager
         }
 
         entry.Ref--;
+        AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, -1, "ReleaseBundle");
         if (entry.Ref <= 0)
         {
             entry.Bundle.Unload(true);

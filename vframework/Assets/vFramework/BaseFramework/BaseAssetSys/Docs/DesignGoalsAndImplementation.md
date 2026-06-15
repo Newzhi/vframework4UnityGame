@@ -68,7 +68,8 @@
 |------|------|------|
 | **A** | 打包 + 清单 + 同步 Load + Ref | ✅ |
 | **B-1** | 异步双 Runner 集成 JSON | ✅ 三端 19/0（`225805`/`230136`/`231720`） |
-| **B-Pool** | `PrefabPool` + `GetOrCreatPool`；按 Active Scene 分池、`refCount` 共享；`PoolSceneRootsUtil` | ✅ |
+| **B-Pool** | `PrefabPool` + `PrefabPoolManager`；按 Active Scene 分池、`refCount` 共享 | ✅ |
+| **B-RefTrace** | `AssetRefTraceLogger` + [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | 🟡 首版 |
 | **B-2** | 真异步 / inFlight / ref==0 丢弃 | ❌ |
 | **C** | CDN 下载 + 多 root + version 比对 | ❌ |
 
@@ -91,6 +92,7 @@
 | 文档 | 内容 |
 |------|------|
 | [MainRoadmap.md](./MainRoadmap.md) | **方向 + 排期 + 测试门禁** |
+| [DocumentIndex.md](./DocumentIndex.md) | 文档索引 + **新建文档门禁** |
 | [DocumentIndex.md](./DocumentIndex.md) | 全模块文档导航 |
 | [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | **业务侧 7 项需求** + CDN 扩展点（重点） |
 | [CatalogueReference.md](./CatalogueReference.md) | 清单 `entries` / `bundles`、打包写端与加载读端 |
@@ -368,7 +370,8 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | `BundleManager` | `LoadFromFile` + `IBundlePathResolver`；`AcquireBundleWithDependencies` 读清单 `bundles[]` |
 | `CatalogueReader` + `StreamingAssetsIO` | 读 JSON；Editor 可 `LoadFromProjectCatalogue`；Android `jar:` 已验 |
 | `BundleResLoader` | 同步 `Load` ✅；`LoadUniTaskAsync` + 回调 ✅；`PreLoad` ❌ |
-| `AssetPool` | ✅ `PrefabPool` + `PoolSceneRootsUtil`；`poolsBySceneAndPath`（Active Scene + `loadPath`） |
+| `AssetPool` | ✅ `PrefabPool` + `PrefabPoolManager` + `PoolSceneRootsUtil` |
+| `BaseLogSys` | 🟡 `AssetRefTraceLogger`（Ref Trace）；`DebugLogger` 占位 |
 | `AssetRouter` | ✅ 四源：`ABUNDLE` / `RESOURCES` / `EDITORRESOURCES` / `NETCDN`（Stub） |
 | **集成测试** | 同步/异步双 Runner **三端 19/19** |
 
@@ -381,7 +384,8 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 ```text
 Assets/vFramework/BaseFramework/BaseAssetSys/
 ├── AbstractAssets/          # AbstractResource + README.md
-├── AssetPool/               # PrefabPool、PoolSceneRootsUtil
+├── AssetPool/               # PrefabPool、PrefabPoolManager、PoolSceneRootsUtil
+├── BaseLogSys/              # AssetRefTraceLogger（见 LoaderOptimizationPlan §4）
 ├── ResLoader/               # Business / Bundle / Catalogue / Router + README.md
 ├── BundleRuleConfig/        # BuildSetting、AssetCatalog、BundleDependencyTopology + README.md
 ├── Editor/                  # 打包工具 + README.md

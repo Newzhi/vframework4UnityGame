@@ -23,9 +23,10 @@
 【阶段 B · 进行中】TestABScene 异步双 Runner 验收 → 真异步 / inFlight 合并
         │
         ▼
-【阶段 B-Pool · 规划中】对象池（Load 一次 + Instantiate 复用 + 模块退出 Release）
+【阶段 B-Pool · 已完成】PrefabPoolManager + 按 Scene 分池 + comprehensiveTest
         │
         ▼
+【阶段 P1.5 · 进行中】AssetReference / Ref Trace / 统一池持 Handle
 【阶段 C · 下一阶段】CDN 运行时（路径解析 + 下载 + 缓存 + 清单 version 比对）
         │
         ▼
@@ -37,9 +38,10 @@
 | **A** | 规则制定器 + 打包器 + Catalogue + 同步 API | `ConcurrentLoad_*` passCount=19（Editor / Player / Android） |
 | **B-1** | 在 **现有 `TestABScene`** 启用异步双 Runner，`LoadUniTaskAsync` 集成 | `UniConcurrentLoad_*` passCount=19（**Editor / Player / Android ✅**） |
 | **B-2** | 真异步 I/O、同 path inFlight 合并、完成时 ref==0 丢弃 | 新 Case + **不回归**阶段 A 同步 19/19 |
-| **B-Pool-1** | 对象池 **业务范式** + `BundleResLoader.CreatPool` | ✅ `PrefabPool` + §7.7 |
+| **B-Pool-1** | 对象池 **业务范式** + `PrefabPoolManager` | ✅ [业务API §5.4](./BusinessApiUsageGuide.md) |
 | **B-Pool-2** | 对象池集成自动化 Case | ⏸ 暂不纳入 AB_Test 套系 |
-| **B-Pool-3** | （可选）池化 Helper 扩展 | ⏳ 可选 |
+| **B-Pool-3** | （可选）`IPooledObject` / 集中池服务 | ⏳ 见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) §3.2 |
+| **P1.5** | 加载侧优化：AssetReference、Ref Trace、池唯一入口 | 🟡 见 §4 P1.5 |
 | **C-1** | `IBundlePathResolver` 多根目录（首包 / persistentDataPath） | 本地缓存命中 Load |
 | **C-2** | `IRemoteBundleProvider` 清单对比 + HTTP 下载 | CdnHotUpdate 产物可拉取并 Load |
 | **C-3** | 首包 / 远程分包策略上线 | 非全部 AB 进 StreamingAssets |
@@ -67,10 +69,10 @@
 
 | 子项 | 内容 | 状态 |
 |------|------|------|
-| **范式** | `CreatPool` + `GetObj(pos,rot)`（`parent` 已忽略；单父节点 + `SetActive`）；`ReleaseObj` 不 Release | ✅ `PrefabPool` + §7.7 |
-| **场景隔离** | `poolsBySceneAndPath` + `PoolSceneRootsUtil`；同场景 `refCount` 共享、跨场景分池 | ✅ §5.4 |
-| **集成 Case** | AB_Test 自动化套系 | ⏸ 已移除，业务侧按 §7.7 手测 |
-| **框架封装** | `PrefabPool` | ✅ |
+| **范式** | `PrefabPoolManager.GetOrCreatPool` + `GetObj`/`RecycleObj`；池持 Handle | ✅ |
+| **场景隔离** | `PrefabPoolManager` + `PoolSceneRootsUtil`；同场景 `refCount` 共享 | ✅ §5.4 |
+| **集成 Case** | AB_Test 自动化套系 | ⏸ 业务侧 `comprehensiveTest` 手测 |
+| **框架封装** | `PrefabPool` + `PrefabPoolManager` | ✅ |
 | **与 B/C 关系** | **依赖 B-1**：异步 Load 路径稳定后再跑池 Case；**先于 C**：CDN 下载与池化正交，避免并发改 Ref 语义 |
 
 **延后（不纳入 B-Pool 首版）**：AutoUnload、延迟卸载队列、池内跨 bundle 热替换。
@@ -84,7 +86,9 @@
 | 同步 `Load<T>` + Release / UnloadAll | ✅ 三端双 Runner 19/19 |
 | 打包三种模式 + Player 平台过滤 | ✅ |
 | `LoadUniTaskAsync` / 回调 API | ✅ **三端异步双 Runner 19/19**（`225805` / `230136` / `231720`） |
-| `BundleResLoader` 对象池（`GetOrCreatPool` / 按 Active Scene 分池） | ✅ |
+| `BundleResLoader` 对象池 | ✅ 已迁至 `PrefabPoolManager` |
+| `AssetRefTraceLogger`（Resource/Bundle/Pool Trace） | 🟡 首版 + 关键路径接入 |
+| `AssetReference` 自动 Release（非池） | ❌ 见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) |
 | CDN 打包产出 | ✅ `cdnOutputPath` |
 | CDN 运行时下载 | 🟡 `AssetRouter` + `CdnBundleAssetProvider` 路由已接；真实 HTTP 仍 Stub |
 | `AssetRouter` 四源路由 | ✅ ABUNDLE / RESOURCES / EDITORRESOURCES / NETCDN |
@@ -121,6 +125,15 @@
 | 1 | 对象池范式 + **谁创建谁销毁** + **按 Active Scene 分池** | ✅ [业务API §5.4–5.5 / §7.7](./BusinessApiUsageGuide.md)；`PoolSceneRootsUtil`；手测 `comprehensiveTest` |
 | 2 | （可选）业务模块手测 GetObj/DestroyPool | 不纳入 AB_Test JSON 门禁 |
 | 3 | （可选）`PrefabPool` 扩展 | Clear 时单次 Release |
+
+### P1.5 — 加载侧优化（与 B-2 / C 并行）
+
+| # | 项 | 说明 | 状态 |
+|---|-----|------|------|
+| 1 | [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | AssetReference/TEngine、统一池持 Handle、Trace 规范 | ✅ 文档 |
+| 2 | `BaseLogSys/AssetRefTraceLogger` | Resource/Bundle/Pool 关键路径 Trace | 🟡 首版 |
+| 3 | `AssetReference` + `LoadGameObject` 门面 | 非池自动 Release | ❌ |
+| 4 | 池路径禁止业务直接 `Load`（文档 + 可选 Lint） | 统一经 `PrefabPoolManager` | ❌ |
 
 ### P1 — 加载补全 + 清单/打包增强（与 B/C 并行）
 
@@ -209,17 +222,38 @@ BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
 | [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步扩展设计细节 |
 | [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) | 业务抄用范式 |
 | [CatalogueReference.md](./CatalogueReference.md) | 清单字段 |
-| [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md) | 拓扑排序 + 构建优化排期 |
+| [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md) | 拓扑 + 构建优化 **设计**（排期见 §4 P1） |
+| [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | 加载侧优化 **设计**（排期见 §4 P1.5） |
+| [RefCountAppendix.md](./RefCountAppendix.md) | 引用计数附件 / Trace 对照 |
+| [DocumentIndex.md](./DocumentIndex.md) | 文档索引 + **新建文档门禁** |
 | [ResLoader/README.md](../ResLoader/README.md) | 加载侧架构图 + 子目录索引 |
 | [LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md) | 双层架构 + Router 细节 |
 | [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md) | Case + JSON 基准 |
 | [ResourceSystemDesignGuide.md](../../../Resources/ResourceSystemDesignGuide.md) | 外部通用参考（**不驱动本项目改方向**） |
 
-**维护约定**：排期、阶段状态只改 **MainRoadmap.md** 与 **设计目标·实现细节区**；子模块 `README.md` 只写模块职责，不写总排期。
+**维护约定**：**排期、阶段状态、代码 TODO 登记** 只改 **MainRoadmap.md**（§4、§8）与 **DesignGoals 实现细节区**；专题 Plan 只写设计不写状态表；子模块 `README.md` 只链主路线。
 
 ---
 
-## 8. 变更记录
+## 8. 代码内 TODO 登记（合并自源码注释）
+
+> **不在此新建独立 `TODO.md`**。新增代码 `TODO` 应在本表补一行并链到 **§4 排期项**。
+
+| 位置 | 摘要 | 主路线 |
+|------|------|--------|
+| `BundleResLoader.PreLoad` | 包级预加载 | P2-10 |
+| `BundleResLoader.LoadWithAutoUnLoad` | 实例绑定自动卸 | P1.5-b / 延后 DestroyInstance |
+| `BundleResLoader.LoadUniTaskAsynWithAutoUnLoad` | 异步版同上 | P1.5-b |
+| `BundleBuilder` / `BundleBuilderTabView` | DLC 分包输出、`dlcOutputPath`、按模式清单策略 | 远期 / 阶段 C 后 |
+| `CatalogueWriter` | 清单 JSON → 二进制 | P3-12 |
+| `AssetCatalog` 注释 | 清单二进制 | P3-12 |
+| `BundleManager` / `CdnBundleAssetProvider` | 真实 CDN HTTP | P2-9 / C-2 |
+| `LoaderOptimizationPlan` §2.2 | `AssetReference`、`LoadGameObject` | P1.5-3 |
+| `LoaderOptimizationPlan` §3.2 | 池路径禁止业务直接 `Load` | P1.5-4 |
+
+---
+
+## 9. 变更记录
 
 | 日期 | 说明 |
 |------|------|
@@ -229,3 +263,4 @@ BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
 | 2026-06-13 | 集成归档：Android 同步 19/19 复测；异步 Editor/Player **19/19**（`225805`/`230136`）；场景 Collector 默认异步套系 |
 | 2026-06-13 | **B-Pool**：`PrefabPool` + 按 Active Scene 分池（`PoolSceneRootsUtil`、`poolsBySceneAndPath`） |
 | 2026-06-13 | 异步 **Android 19/19**（`231720`）；**阶段 B-1 三端完成** |
+| 2026-06-13 | **P1.5**：`PrefabPoolManager` 迁出 Loader、`AssetRefTraceLogger`、文档合并门禁 |

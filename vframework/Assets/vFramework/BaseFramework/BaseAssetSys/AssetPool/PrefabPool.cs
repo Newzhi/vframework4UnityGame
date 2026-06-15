@@ -15,6 +15,7 @@ public sealed class PrefabPool
     readonly Queue<GameObject> inactivePool = new Queue<GameObject>(32);
     readonly HashSet<GameObject> activeInstances = new HashSet<GameObject>();
     readonly int baseInactiveCapacity;
+    readonly string traceLoadPath;
     int maxInactiveCapacity;
     int refCount;
     bool isPoolCreated;
@@ -39,12 +40,13 @@ public sealed class PrefabPool
 
     #endregion
 
-    internal PrefabPool(IAssetHandle prefabHandle, Transform poolRoot = null, int maxInactiveCapacity = 0)
+    internal PrefabPool(IAssetHandle prefabHandle, Transform poolRoot = null, int maxInactiveCapacity = 0, string loadPathForTrace = null)
     {
         this.prefabHandle = prefabHandle;
         this.poolRoot = poolRoot;
         this.baseInactiveCapacity = maxInactiveCapacity;
         this.maxInactiveCapacity = maxInactiveCapacity;
+        this.traceLoadPath = loadPathForTrace;
     }
 
     #region 业务接口
@@ -125,6 +127,7 @@ public sealed class PrefabPool
         isPoolCreated = true;
         refCount = 1;
         ApplyCapacityForRefCount();
+        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, +1, "Initialize");
     }
 
     internal void RegisterShare()
@@ -137,6 +140,7 @@ public sealed class PrefabPool
 
         refCount++;
         ApplyCapacityForRefCount();
+        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, +1, "RegisterShare");
     }
 
     internal void ReleaseShare()
@@ -145,6 +149,7 @@ public sealed class PrefabPool
             return;
 
         refCount--;
+        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, -1, "ReleaseShare");
         if (refCount > 0)
         {
             ApplyCapacityForRefCount();
@@ -195,6 +200,7 @@ public sealed class PrefabPool
 
     void TearDown()
     {
+        AssetRefTraceLogger.TraceEvent("PrefabPool.TearDown path=" + (traceLoadPath ?? "?"));
         isPoolCreated = false;
         refCount = 0;
         maxInactiveCapacity = baseInactiveCapacity;
@@ -216,6 +222,8 @@ public sealed class PrefabPool
             prefabHandle.Release();
             prefabHandle = null;
         }
+
+        AssetRefTraceLogger.TracePoolShare(traceLoadPath, 0, 0, "TearDownComplete");
     }
 
     #endregion

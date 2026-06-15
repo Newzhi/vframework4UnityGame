@@ -9,7 +9,7 @@ public static class CatalogueWriter
     public const string CatalogueAssetPath = BundleBuilder.SystemRoot + "/BundleRuleConfig/Catalogue/AssetCatalog.json";
     public const string RuntimeCatalogueFileName = "AssetCatalog.json";
 
-    // TODO: 清单输出后续改二进制格式，见 Docs/TODO.md（若未建则见 CatalogueReference.md 第六节）。
+    // TODO: 清单输出后续改二进制格式，见 MainRoadmap.md P3-12 / CatalogueReference.md §六。
 
     public static bool Write(
         BuildSetting setting,

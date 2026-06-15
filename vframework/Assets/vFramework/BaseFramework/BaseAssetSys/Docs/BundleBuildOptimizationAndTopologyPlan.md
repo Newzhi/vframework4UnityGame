@@ -293,9 +293,10 @@ Gate
 | 文档 | 更新内容 |
 |------|----------|
 | [CatalogueReference.md](./CatalogueReference.md) | §三 补充拓扑序约定；链到本文 |
-| [MainRoadmap.md](./MainRoadmap.md) | P1 增加 #6/#7 |
+| [MainRoadmap.md](./MainRoadmap.md) | P1 #6/#7 排期（**唯一状态源**） |
 | [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md) | 打包器 / 清单 checklist 增行 |
 | [Editor/README.md](../Editor/README.md) | BundleBuildAnalyzer 职责 |
+| [DocumentIndex.md](./DocumentIndex.md) | 文档分类；**勿在本文再维护排期** |
 
 ---
 

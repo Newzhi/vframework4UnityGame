@@ -46,7 +46,7 @@ public class BundleCatalogInfo
 #region 资源清单 - 根结构
 
 /// <summary>
-/// 资源清单根结构（当前 JSON；后续可能改二进制，见 Docs/TODO.md）。
+/// 资源清单根结构（当前 JSON；后续可能改二进制，见 MainRoadmap.md P3-12）。
 /// </summary>
 /// <remarks>
 /// 两张逻辑表：

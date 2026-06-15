@@ -1,0 +1,36 @@
+---
+description: vFramework 文档治理 — 新建/合并文档前查索引与 MainRoadmap，禁止重复排期文档
+alwaysApply: true
+---
+
+# 文档治理（ABSystem_Beta / vFramework）
+
+## 新建 Markdown 前（必须）
+
+1. 阅读 `Assets/vFramework/BaseFramework/BaseAssetSys/Docs/DocumentIndex.md` § **文档分类与合并规则**。
+2. 在 `Docs/` 与 `DocumentIndex` 搜索是否已有同类文档 → **优先扩写**，不新建平行文档。
+3. 排期、TODO、阶段状态（✅/❌/🟡）→ **只写入** `Docs/MainRoadmap.md` §4、§8。
+4. 专题设计（CDN、池优化、构建优化）→ `*Plan.md` / `*Planning.md`，**不写**独立状态表；文首链 MainRoadmap。
+5. 代码 `// TODO` → 在 MainRoadmap §8 登记一行，**禁止**新建 `TODO.md` / `Roadmap2.md`。
+
+## 文档角色（勿混淆）
+
+| 需求 | 写到哪里 |
+|------|----------|
+| 做什么、何时做、完成没 | `MainRoadmap.md` |
+| 模块 checklist、禁止区对照 | `DesignGoalsAndImplementation.md`（仅实现区） |
+| 业务怎么调 API | `BusinessApiUsageGuide.md` |
+| 引用计数逐步模拟 | `RefCountAppendix.md` |
+| 加载侧/ CDN / 构建 **设计方案** | 已有 Plan 文档，见 DocumentIndex |
+| 模块职责与代码入口 | 子目录 `README.md` |
+
+## 合并而非拆分
+
+- `LoaderOptimizationPlan`、`BundleBuildOptimizationAndTopologyPlan`、`BusinessApiAndCdnPlanning` 已存在 → 新内容并入对应章节，不新建第三份「优化计划」。
+- 测试验收 → `Assets/Test/**/集成测试归档.md`，不写在 Docs 排期里重复 JSON 细节。
+
+## 更新联动
+
+新增常驻 Docs 时同步：`DocumentIndex.md` 必读表 + `MainRoadmap.md` §7 文档地图。
+
+详细流程：`.cursor/skills/vframework-documentation/SKILL.md`。
