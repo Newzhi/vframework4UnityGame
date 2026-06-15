@@ -4,12 +4,18 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-//从AssetBundle加载抽象资源，管理Resource层缓存与引用
+/// <summary>
+/// 从 AssetBundle / Resources 加载抽象资源，管理 Resource 层缓存与引用计数。
+/// 对象池见 <see cref="PrefabPoolManager"/>。
+/// </summary>
 public class BundleResLoader
 {
     #region 单例
 
+    /// <summary>单例实例（懒创建）。</summary>
     static volatile BundleResLoader instance;
+
+    /// <summary>保护 <see cref="instance"/> 初始化的锁对象。</summary>
     static readonly object instanceLock = new object();
 
     public static BundleResLoader Instance
@@ -30,14 +36,24 @@ public class BundleResLoader
 
     #endregion
 
-    #region 变量定义
+    #region 字段定义
 
+    /// <summary>懒 Init 时默认在 Bundle 根下追加当前平台子目录（如 StreamingAssets/Windows）。</summary>
     const bool DefaultUsePlatformSubfolder = true;
 
+    /// <summary>保护 <see cref="Init"/> / <see cref="EnsureInitialized"/> 的互斥锁。</summary>
     readonly object initLock = new object();
+
+    /// <summary>是否已完成 Catalogue + BundleManager + AssetRouter 初始化。</summary>
     bool initialized;
 
+    /// <summary>资源清单读取器；Load 前解析 loadPath → bundle / asset。</summary>
     readonly CatalogueReader catalogue = new CatalogueReader();
+
+    /// <summary>
+    /// Resource 层缓存：key 多为 bundleName/assetName，Resources 路径为 loadPath。
+    /// 命中时 <see cref="AbstractResource.AddReference"/>，归零时 onUnLoad 移除项。
+    /// </summary>
     Dictionary<string, AbstractResource> resourceDic = new Dictionary<string, AbstractResource>();
 
     #endregion
@@ -131,9 +147,11 @@ public class BundleResLoader
 
     #endregion
 
-    #region 加载/卸载
+    #region 加载
 
-    //TODO 用于业务侧预先加载对应模块；见 Docs/BusinessApiAndCdnPlanning.md §1 需求4
+    #region 同步加载
+
+    // TODO：业务侧预先加载对应模块；见 Docs/BusinessApiAndCdnPlanning.md §1 需求4
     public IAssetHandle PreLoad<T>()
     {
         return null;
@@ -169,205 +187,6 @@ public class BundleResLoader
         return LoadByBundle<T>(entry.bundleName, entry.assetName, entry.assetPath, loadPath);
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="loadPath"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    IAssetHandle LoadResources<T>(string loadPath) where T : Object
-    {
-        if (resourceDic.TryGetValue(loadPath, out AbstractResource res))
-        {
-            res.AddReference();
-            if (res.GetAsset<T>() == null)
-            {
-                res.Release();
-                Debug.LogError("LoadResources type mismatch for: " + loadPath + ", requested type: " + typeof(T).Name);
-                return null;
-            }
-            return res;
-        }
-
-        res = new AbstractResource(loadPath, null, null, null, loadPath);
-        res.onUnLoad = () => resourceDic.Remove(loadPath);
-        resourceDic.Add(loadPath, res);
-        res.AddReference();
-        res.LoadAsset(typeof(T), null, loadPath);
-
-        if (res.GetAsset<T>() == null)
-        {
-            res.Release();
-            return null;
-        }
-
-        return res;
-    }
-    
-    /// <summary>
-    /// 业务侧需要加载三四个但是用池会比较浪费的情况实用这个方法将句柄交给创建的对象来管理
-    /// </summary>
-    /// <param name="loadPath"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public IAssetHandle LoadWithAutoUnLoad<T>(string loadPath) where T : Object
-    {
-        //TODO 待实现
-       return Load<T>(loadPath);
-    }
-    
-    /// <summary>
-    /// 业务侧需要加载三四个但是用池会比较浪费的情况实用这个方法将句柄交给创建的对象来管理（异步版本）
-    /// </summary>
-    /// <param name="loadPath"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public IAssetHandle LoadUniTaskAsynWithAutoUnLoad<T>(string loadPath) where T : Object
-    {
-        //TODO 待实现
-        return Load<T>(loadPath);
-    }
-
-    /// <summary>
-    /// UniTask 异步加载默认入口。当前阶段先提供 await 形态；
-    /// 实际资源 I/O 仍复用同步 Load，后续接入 CDN 下载/并发合并。
-    /// </summary>
-    public async UniTask<IAssetHandle> LoadUniTaskAsync<T>(string loadPath) where T : Object
-    {
-        // 让调用方可 await，避免在同一调用栈内立即阻塞。
-        await UniTask.Yield(PlayerLoopTiming.Update);
-
-        return Load<T>(loadPath);
-    }
-
-    /// <summary>
-    /// UniTask 带回调加载，默认走 UniTask 异步；useUniTask=false 时走同步 Load 并立即回调。
-    /// </summary>
-    public void LoadUniTaskWithCallback<T>(string loadPath, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true) where T : Object
-    {
-        if (!useUniTask)
-        {
-            InvokeSyncLoadWithCallback(
-                () => Load<T>(loadPath),
-                onComplete,
-                onFailed,
-                "LoadUniTaskWithCallback failed, loadPath=" + loadPath);
-            return;
-        }
-
-        InvokeUniTaskLoadWithCallback(
-            () => LoadUniTaskAsync<T>(loadPath),
-            onComplete,
-            onFailed,
-            "LoadUniTaskWithCallback failed, loadPath=" + loadPath);
-    }
-
-    /// <summary>
-    /// 按 Unity 完整 assetPath 的 UniTask 回调加载，默认走 UniTask 异步。
-    /// </summary>
-    public void LoadByAssetPathUniTaskWithCallback<T>(string assetPath, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true) where T : Object
-    {
-        if (!useUniTask)
-        {
-            InvokeSyncLoadWithCallback(
-                () => LoadByAssetPath<T>(assetPath),
-                onComplete,
-                onFailed,
-                "LoadByAssetPathUniTaskWithCallback failed, assetPath=" + assetPath);
-            return;
-        }
-
-        InvokeUniTaskLoadWithCallback(
-            () => LoadByAssetPathUniTaskAsync<T>(assetPath),
-            onComplete,
-            onFailed,
-            "LoadByAssetPathUniTaskWithCallback failed, assetPath=" + assetPath);
-    }
-
-    /// <summary>
-    /// 按 bundle+asset 的 UniTask 回调加载，默认走 UniTask 异步。
-    /// </summary>
-    public void LoadByBundleUniTaskWithCallback<T>(string bundleName, string assetName, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true, string assetPath = null) where T : Object
-    {
-        if (!useUniTask)
-        {
-            InvokeSyncLoadWithCallback(
-                () => LoadByBundle<T>(bundleName, assetName, assetPath),
-                onComplete,
-                onFailed,
-                "LoadByBundleUniTaskWithCallback failed, key=" + bundleName + "/" + assetName);
-            return;
-        }
-
-        InvokeUniTaskLoadWithCallback(
-            async () => await LoadByBundleUniTaskAsync<T>(bundleName, assetName, assetPath),
-            onComplete,
-            onFailed,
-            "LoadByBundleUniTaskWithCallback failed, key=" + bundleName + "/" + assetName);
-    }
-
-    async UniTask<IAssetHandle> LoadByAssetPathUniTaskAsync<T>(string assetPath) where T : Object
-    {
-        await UniTask.Yield(PlayerLoopTiming.Update);
-        return LoadByAssetPath<T>(assetPath);
-    }
-
-    async UniTask<IAssetHandle> LoadByBundleUniTaskAsync<T>(string bundleName, string assetName, string assetPath = null) where T : Object
-    {
-        await UniTask.Yield(PlayerLoopTiming.Update);
-        return LoadByBundle<T>(bundleName, assetName, assetPath);
-    }
-
-    /// <summary>
-    /// 卸载资源：可选直接销毁实例，并减少资源引用计数。
-    /// </summary>
-    /// <param name="resource">由 Load/LoadUniTaskAsync 返回的资源句柄，可为 null。</param>
-    /// <param name="instance">业务侧实例对象，可为 null；不为 null 时会直接 Destroy。</param>
-    /// <param name="onComplete">卸载完成回调，参数表示是否执行了至少一个有效卸载动作。</param>
-    public void Unload(IAssetHandle resource, GameObject instance = null, Action<bool> onComplete = null)
-    {
-        bool unloaded = false;
-
-        if (instance != null)
-        {
-            Object.Destroy(instance);
-            unloaded = true;
-        }
-
-        if (resource != null)
-        {
-            resource.Release();
-            unloaded = true;
-        }
-
-        if (!unloaded)
-            Debug.LogWarning("Unload called with null resource and null instance.");
-
-        onComplete?.Invoke(unloaded);
-    }
-
-    //卸载全部资源
-    public void UnloadAll()
-    {
-        PrefabPoolManager.Instance.DeleteAllPools();
-
-        AbstractResource[] resources = new AbstractResource[resourceDic.Count];
-        resourceDic.Values.CopyTo(resources, 0);
-        resourceDic.Clear();
-
-        foreach (AbstractResource res in resources)
-        {
-            res.onUnLoad = null;
-            res.UnLoad();
-        }
-
-        BundleManager.UnloadAll();
-    }
-
-    #endregion
-
-    #region 辅助函数
-
     /// <summary>按 bundle 名 + 包内 asset 名加载，Resource 层与 BundleManager 的桥接。</summary>
     public IAssetHandle LoadByBundle<T>(string bundleName, string assetName, string assetPath = null, string loadPath = null) where T : Object
     {
@@ -390,7 +209,6 @@ public class BundleResLoader
             res.AddReference();
             if (res.GetAsset<T>() == null)
             {
-                // 命中缓存但泛型不匹配时回滚本次引用，避免悬挂引用。
                 res.Release();
                 Debug.LogError("LoadByBundle type mismatch for cached resource: " + key + ", requested type: " + typeof(T).Name);
                 return null;
@@ -440,6 +258,271 @@ public class BundleResLoader
             entry.assetPath,
             CatalogueReader.ToLoadPath(entry.assetPath, catalogue.Catalog?.resourceRoot));
     }
+
+    /// <summary>从 Unity Resources 目录加载（loadPath 以 Resources/ 前缀标识）。</summary>
+    IAssetHandle LoadResources<T>(string loadPath) where T : Object
+    {
+        if (resourceDic.TryGetValue(loadPath, out AbstractResource res))
+        {
+            res.AddReference();
+            if (res.GetAsset<T>() == null)
+            {
+                res.Release();
+                Debug.LogError("LoadResources type mismatch for: " + loadPath + ", requested type: " + typeof(T).Name);
+                return null;
+            }
+            return res;
+        }
+
+        res = new AbstractResource(loadPath, null, null, null, loadPath);
+        res.onUnLoad = () => resourceDic.Remove(loadPath);
+        resourceDic.Add(loadPath, res);
+        res.AddReference();
+        res.LoadAsset(typeof(T), null, loadPath);
+
+        if (res.GetAsset<T>() == null)
+        {
+            res.Release();
+            return null;
+        }
+
+        return res;
+    }
+
+    #endregion
+
+    #region LoadGameObject（自动句柄）
+
+    /// <summary>
+    /// 加载 Prefab 并实例化，句柄由 <see cref="AssetReference"/> 绑定到实例；<see cref="Object.Destroy"/> 时自动 Release。
+    /// 高频复用请用 <see cref="PrefabPoolManager"/>，勿与本 API 混用同路径。
+    /// </summary>
+    public GameObject LoadGameObject(string loadPath)
+    {
+        return LoadGameObject(loadPath, Vector3.zero, Quaternion.identity, null);
+    }
+
+    /// <summary>
+    /// 加载 Prefab 并实例化到指定位姿；Destroy 实例时自动 Release 本次 Load 的引用。
+    /// </summary>
+    public GameObject LoadGameObject(string loadPath, Vector3 worldPosition, Quaternion worldRotation, Transform parent = null)
+    {
+        if (string.IsNullOrEmpty(loadPath))
+        {
+            Debug.LogError("LoadGameObject: loadPath is null or empty.");
+            return null;
+        }
+
+        IAssetHandle handle = Load<GameObject>(loadPath);
+        if (handle == null)
+            return null;
+
+        GameObject instance = handle.InstantiateAt(worldPosition, worldRotation, parent);
+        if (instance == null)
+        {
+            handle.Release();
+            Debug.LogError("LoadGameObject: Instantiate failed, path=" + loadPath);
+            return null;
+        }
+
+        AssetReference.Bind(instance, handle, loadPath);
+        return instance;
+    }
+
+    #endregion
+
+    #region 自动卸载门面
+
+    /// <summary>加载并实例化，句柄挂 <see cref="AssetReference"/>；Destroy 时自动 Release（低频非池用法）。</summary>
+    public GameObject LoadWithAutoUnLoad(string loadPath)
+    {
+        return LoadGameObject(loadPath);
+    }
+
+    /// <summary>泛型：仅返回句柄，不自动绑定实例。GameObject 请用 <see cref="LoadGameObject"/>。</summary>
+    public IAssetHandle LoadWithAutoUnLoadGeneric<T>(string loadPath) where T : Object
+    {
+        return Load<T>(loadPath);
+    }
+
+    #endregion
+
+    #region UniTask 加载
+
+    /// <summary>UniTask 版 <see cref="LoadGameObject"/>（当前 Yield 后同步 Load）。</summary>
+    public async UniTask<GameObject> LoadGameObjectAsync(string loadPath)
+    {
+        return await LoadGameObjectAsync(loadPath, Vector3.zero, Quaternion.identity, null);
+    }
+
+    /// <summary>UniTask 版 <see cref="LoadGameObject"/> 带位姿。</summary>
+    public async UniTask<GameObject> LoadGameObjectAsync(
+        string loadPath,
+        Vector3 worldPosition,
+        Quaternion worldRotation,
+        Transform parent = null)
+    {
+        await UniTask.Yield(PlayerLoopTiming.Update);
+        return LoadGameObject(loadPath, worldPosition, worldRotation, parent);
+    }
+
+    /// <summary>异步版 <see cref="LoadWithAutoUnLoad"/>。</summary>
+    public async UniTask<GameObject> LoadUniTaskAsynWithAutoUnLoad(string loadPath)
+    {
+        return await LoadGameObjectAsync(loadPath);
+    }
+
+    /// <summary>
+    /// UniTask 异步加载默认入口。当前 Yield 一帧后复用同步 <see cref="Load{T}"/>；
+    /// 后续接入 CDN 下载 / inFlight 合并。
+    /// </summary>
+    public async UniTask<IAssetHandle> LoadUniTaskAsync<T>(string loadPath) where T : Object
+    {
+        await UniTask.Yield(PlayerLoopTiming.Update);
+        return Load<T>(loadPath);
+    }
+
+    /// <summary>UniTask 带回调加载；useUniTask=false 时走同步 Load 并立即回调。</summary>
+    public void LoadUniTaskWithCallback<T>(string loadPath, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true) where T : Object
+    {
+        if (!useUniTask)
+        {
+            InvokeSyncLoadWithCallback(
+                () => Load<T>(loadPath),
+                onComplete,
+                onFailed,
+                "LoadUniTaskWithCallback failed, loadPath=" + loadPath);
+            return;
+        }
+
+        InvokeUniTaskLoadWithCallback(
+            () => LoadUniTaskAsync<T>(loadPath),
+            onComplete,
+            onFailed,
+            "LoadUniTaskWithCallback failed, loadPath=" + loadPath);
+    }
+
+    /// <summary>按 Unity 完整 assetPath 的 UniTask 回调加载。</summary>
+    public void LoadByAssetPathUniTaskWithCallback<T>(string assetPath, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true) where T : Object
+    {
+        if (!useUniTask)
+        {
+            InvokeSyncLoadWithCallback(
+                () => LoadByAssetPath<T>(assetPath),
+                onComplete,
+                onFailed,
+                "LoadByAssetPathUniTaskWithCallback failed, assetPath=" + assetPath);
+            return;
+        }
+
+        InvokeUniTaskLoadWithCallback(
+            () => LoadByAssetPathUniTaskAsync<T>(assetPath),
+            onComplete,
+            onFailed,
+            "LoadByAssetPathUniTaskWithCallback failed, assetPath=" + assetPath);
+    }
+
+    /// <summary>按 bundle+asset 的 UniTask 回调加载。</summary>
+    public void LoadByBundleUniTaskWithCallback<T>(string bundleName, string assetName, Action<IAssetHandle> onComplete, Action<string> onFailed = null, bool useUniTask = true, string assetPath = null) where T : Object
+    {
+        if (!useUniTask)
+        {
+            InvokeSyncLoadWithCallback(
+                () => LoadByBundle<T>(bundleName, assetName, assetPath),
+                onComplete,
+                onFailed,
+                "LoadByBundleUniTaskWithCallback failed, key=" + bundleName + "/" + assetName);
+            return;
+        }
+
+        InvokeUniTaskLoadWithCallback(
+            async () => await LoadByBundleUniTaskAsync<T>(bundleName, assetName, assetPath),
+            onComplete,
+            onFailed,
+            "LoadByBundleUniTaskWithCallback failed, key=" + bundleName + "/" + assetName);
+    }
+
+    async UniTask<IAssetHandle> LoadByAssetPathUniTaskAsync<T>(string assetPath) where T : Object
+    {
+        await UniTask.Yield(PlayerLoopTiming.Update);
+        return LoadByAssetPath<T>(assetPath);
+    }
+
+    async UniTask<IAssetHandle> LoadByBundleUniTaskAsync<T>(string bundleName, string assetName, string assetPath = null) where T : Object
+    {
+        await UniTask.Yield(PlayerLoopTiming.Update);
+        return LoadByBundle<T>(bundleName, assetName, assetPath);
+    }
+
+    #endregion
+
+    #endregion
+
+    #region 卸载
+
+    #region 单资源卸载
+
+    /// <summary>
+    /// 卸载资源：可选直接销毁实例，并减少资源引用计数。
+    /// </summary>
+    /// <param name="resource">由 Load / LoadUniTaskAsync 返回的资源句柄，可为 null。</param>
+    /// <param name="instance">业务侧实例对象，可为 null；不为 null 时会直接 Destroy。</param>
+    /// <param name="onComplete">卸载完成回调，参数表示是否执行了至少一个有效卸载动作。</param>
+    public void Unload(IAssetHandle resource, GameObject instance = null, Action<bool> onComplete = null)
+    {
+        bool unloaded = false;
+
+        if (instance != null)
+        {
+            Object.Destroy(instance);
+            unloaded = true;
+        }
+
+        if (resource != null)
+        {
+            resource.Release();
+            unloaded = true;
+        }
+
+        if (!unloaded)
+            Debug.LogWarning("Unload called with null resource and null instance.");
+
+        onComplete?.Invoke(unloaded);
+    }
+
+    #endregion
+
+    #region 全部卸载
+
+    /// <summary>
+    /// 进程级收尾：销毁全部对象池 → 清空 Resource 缓存 → BundleManager.UnloadAll。
+    /// 切场景 / 关游戏时调用；之后勿再使用旧句柄。
+    /// </summary>
+    public void UnloadAll()
+    {
+        AssetRefTraceLogger.TraceEvent("BundleResLoader.UnloadAll begin");
+        PrefabPoolManager.Instance.DeleteAllPools();
+
+        AbstractResource[] resources = new AbstractResource[resourceDic.Count];
+        resourceDic.Values.CopyTo(resources, 0);
+        resourceDic.Clear();
+
+        foreach (AbstractResource res in resources)
+        {
+            res.onUnLoad = null;
+            res.UnLoad();
+        }
+
+        BundleManager.UnloadAll();
+        AssetRefTraceLogger.TraceEvent("BundleResLoader.UnloadAll complete");
+        AssetRefTraceLogger.FlushDeviceJson();
+    }
+
+    #endregion
+
+    #endregion
+
+    #region 辅助函数
 
     void InvokeSyncLoadWithCallback(Func<IAssetHandle> loader, Action<IAssetHandle> onComplete, Action<string> onFailed, string failMessage)
     {
@@ -497,6 +580,4 @@ public class BundleResLoader
     }
 
     #endregion
-
 }
-

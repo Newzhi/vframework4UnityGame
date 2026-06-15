@@ -19,9 +19,15 @@ MonoBehaviour:
   cdnOutputPath: Bundles/CDN
   usePlatformSubfolders: 1
   buildMode: 1
-  packingRule: 0
+  packingRule: 2
   targetDirectory: Assets/AssetBundle
-  customItems: []
+  customItems:
+  - assetPath: Assets/AssetBundle
+    bundleName: bundle_1
+    buildMode: 1
+    downloadPriority: 1
+    folderPackingRule: 0
+    note: 
   useTopologicalSort: 1
   runBuildAnalyzer: 1
   loadPathDuplicateAsError: 0

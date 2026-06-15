@@ -127,7 +127,7 @@ public sealed class PrefabPool
         isPoolCreated = true;
         refCount = 1;
         ApplyCapacityForRefCount();
-        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, +1, "Initialize");
+        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, +1, "Initialize", GetPrefabResourceRef());
     }
 
     internal void RegisterShare()
@@ -140,7 +140,7 @@ public sealed class PrefabPool
 
         refCount++;
         ApplyCapacityForRefCount();
-        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, +1, "RegisterShare");
+        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, +1, "RegisterShare", GetPrefabResourceRef());
     }
 
     internal void ReleaseShare()
@@ -149,7 +149,7 @@ public sealed class PrefabPool
             return;
 
         refCount--;
-        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, -1, "ReleaseShare");
+        AssetRefTraceLogger.TracePoolShare(traceLoadPath, refCount, -1, "ReleaseShare", GetPrefabResourceRef());
         if (refCount > 0)
         {
             ApplyCapacityForRefCount();
@@ -200,7 +200,7 @@ public sealed class PrefabPool
 
     void TearDown()
     {
-        AssetRefTraceLogger.TraceEvent("PrefabPool.TearDown path=" + (traceLoadPath ?? "?"));
+        AssetRefTraceLogger.TraceEvent("PrefabPool.TearDown path=" + (traceLoadPath ?? "?") + " resRef=" + GetPrefabResourceRef());
         isPoolCreated = false;
         refCount = 0;
         maxInactiveCapacity = baseInactiveCapacity;
@@ -224,6 +224,14 @@ public sealed class PrefabPool
         }
 
         AssetRefTraceLogger.TracePoolShare(traceLoadPath, 0, 0, "TearDownComplete");
+    }
+
+    int GetPrefabResourceRef()
+    {
+        if (prefabHandle is AbstractResource resource)
+            return resource.GetRefForTrace();
+
+        return -1;
     }
 
     #endregion

@@ -59,24 +59,31 @@ public class BundleManager
     {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
 
+        string[] deps = null;
         if (catalogue != null && catalogue.IsLoaded)
         {
-            string[] deps = catalogue.GetBundleDependencies(bundleName);
+            deps = catalogue.GetBundleDependencies(bundleName);
 #if DEVELOPMENT_BUILD
             ValidateDependencyOrder(bundleName, deps);
 #endif
+        }
+
+        AssetRefTraceLogger.TraceBundleLoadScopeBegin(bundleName, deps);
+
+        if (deps != null)
+        {
             foreach (string dep in deps)
             {
                 if (string.IsNullOrEmpty(dep))
                     continue;
 
-                AssetBundle depBundle = AcquireBundle(dep);
+                AssetBundle depBundle = AcquireBundle(dep, "Dep", bundleName);
                 if (depBundle != null)
                     acquiredBundles?.Add(dep);
             }
         }
 
-        AssetBundle bundle = AcquireBundle(bundleName);
+        AssetBundle bundle = AcquireBundle(bundleName, "Main", bundleName);
         if (bundle != null)
             acquiredBundles?.Add(bundleName);
 
@@ -85,12 +92,17 @@ public class BundleManager
 
     public static AssetBundle AcquireBundle(string bundleName)
     {
+        return AcquireBundle(bundleName, null, null);
+    }
+
+    static AssetBundle AcquireBundle(string bundleName, string role, string mainBundle)
+    {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
 
         if (loadedBundles.TryGetValue(bundleName, out BundleEntry entry))
         {
             entry.Ref++;
-            AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, +1, "AcquireBundle");
+            AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, +1, "AcquireBundle", role, mainBundle);
             return entry.Bundle;
         }
 
@@ -103,7 +115,7 @@ public class BundleManager
         }
 
         loadedBundles[bundleName] = new BundleEntry { Bundle = bundle, Ref = 1 };
-        AssetRefTraceLogger.TraceBundle(bundleName, 1, +1, "AcquireBundle(new)");
+        AssetRefTraceLogger.TraceBundle(bundleName, 1, +1, "AcquireBundle(new)", role, mainBundle);
         return bundle;
     }
 
@@ -128,7 +140,7 @@ public class BundleManager
         }
 
         entry.Ref--;
-        AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, -1, "ReleaseBundle");
+        AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, -1, "ReleaseBundle", "Release", null);
         if (entry.Ref <= 0)
         {
             entry.Bundle.Unload(true);
@@ -141,6 +153,9 @@ public class BundleManager
     /// </summary>
     public static void UnloadAll()
     {
+        int count = loadedBundles.Count;
+        AssetRefTraceLogger.TraceBundleUnloadAll(count);
+
         foreach (BundleEntry entry in loadedBundles.Values)
             entry.Bundle.Unload(true);
 

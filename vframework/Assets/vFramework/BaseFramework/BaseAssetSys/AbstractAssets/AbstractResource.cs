@@ -68,6 +68,8 @@ internal class AbstractResource : IAssetHandle
         string resolvedLoadPath = explicitLoadPath ?? loadPath ?? assetKey;
         string resolvedAssetPath = !string.IsNullOrEmpty(fallbackAssetPath) ? fallbackAssetPath : catalogueAssetPath;
 
+        AssetRefTraceLogger.BeginResourceLoad(GetTraceKey(), resolvedLoadPath, bundleName, Ref);
+
         var ctx = new AssetLoadContext
         {
             loadPath = resolvedLoadPath,
@@ -82,17 +84,24 @@ internal class AbstractResource : IAssetHandle
 
         if (asset == null)
         {
+            AssetRefTraceLogger.CancelLoadScope("LoadFailed");
             ReleaseLoadedAsset();
             Debug.LogError("Asset load failed: " + assetName + " in " + bundleName + ", loadPath=" + resolvedLoadPath);
             return;
         }
 
-        AssetRefTraceLogger.TraceResourceLoad(GetTraceKey(), Ref, resolvedLoadPath);
+        AssetRefTraceLogger.CompleteResourceLoad(
+            GetTraceKey(),
+            Ref,
+            resolvedLoadPath,
+            bundleName,
+            acquiredBundleNames,
+            loadedSource.ToString());
     }
 
     internal void UnLoad()
     {
-        AssetRefTraceLogger.TraceResourceUnload(GetTraceKey(), "UnLoad");
+        AssetRefTraceLogger.TraceResourceUnload(GetTraceKey(), Ref, "UnLoad", acquiredBundleNames);
         ReleaseLoadedAsset();
         onUnLoad?.Invoke();
         onUnLoad = null;
@@ -161,6 +170,11 @@ internal class AbstractResource : IAssetHandle
     string GetTraceKey()
     {
         return !string.IsNullOrEmpty(loadPath) ? loadPath : assetKey;
+    }
+
+    internal int GetRefForTrace()
+    {
+        return Ref;
     }
 
     #endregion

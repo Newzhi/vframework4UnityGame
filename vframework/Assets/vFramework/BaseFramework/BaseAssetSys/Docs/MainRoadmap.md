@@ -88,7 +88,7 @@
 | `LoadUniTaskAsync` / 回调 API | ✅ **三端异步双 Runner 19/19**（`225805` / `230136` / `231720`） |
 | `BundleResLoader` 对象池 | ✅ 已迁至 `PrefabPoolManager` |
 | `AssetRefTraceLogger`（Resource/Bundle/Pool Trace） | 🟡 首版 + 关键路径接入 |
-| `AssetReference` 自动 Release（非池） | ❌ 见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) |
+| `AssetReference` 自动 Release（非池） | ✅ `AssetReference` + `LoadGameObject` |
 | CDN 打包产出 | ✅ `cdnOutputPath` |
 | CDN 运行时下载 | 🟡 `AssetRouter` + `CdnBundleAssetProvider` 路由已接；真实 HTTP 仍 Stub |
 | `AssetRouter` 四源路由 | ✅ ABUNDLE / RESOURCES / EDITORRESOURCES / NETCDN |
@@ -132,7 +132,7 @@
 |---|-----|------|------|
 | 1 | [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | AssetReference/TEngine、统一池持 Handle、Trace 规范 | ✅ 文档 |
 | 2 | `BaseLogSys/AssetRefTraceLogger` | Resource/Bundle/Pool 关键路径 Trace | 🟡 首版 |
-| 3 | `AssetReference` + `LoadGameObject` 门面 | 非池自动 Release | ❌ |
+| 3 | `AssetReference` + `LoadGameObject` 门面 | 非池自动 Release | ✅ |
 | 4 | 池路径禁止业务直接 `Load`（文档 + 可选 Lint） | 统一经 `PrefabPoolManager` | ❌ |
 
 ### P1 — 加载补全 + 清单/打包增强（与 B/C 并行）
@@ -242,8 +242,8 @@ BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
 | 位置 | 摘要 | 主路线 |
 |------|------|--------|
 | `BundleResLoader.PreLoad` | 包级预加载 | P2-10 |
-| `BundleResLoader.LoadWithAutoUnLoad` | 实例绑定自动卸 | P1.5-b / 延后 DestroyInstance |
-| `BundleResLoader.LoadUniTaskAsynWithAutoUnLoad` | 异步版同上 | P1.5-b |
+| `BundleResLoader.LoadWithAutoUnLoad` | 实例绑定自动卸 | ✅ → `LoadGameObject` |
+| `BundleResLoader.LoadUniTaskAsynWithAutoUnLoad` | 异步版 | ✅ |
 | `BundleBuilder` / `BundleBuilderTabView` | DLC 分包输出、`dlcOutputPath`、按模式清单策略 | 远期 / 阶段 C 后 |
 | `CatalogueWriter` | 清单 JSON → 二进制 | P3-12 |
 | `AssetCatalog` 注释 | 清单二进制 | P3-12 |

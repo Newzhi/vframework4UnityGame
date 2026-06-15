@@ -360,15 +360,21 @@ Logger `holders`（`PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareC
 
 ## 12. 运行时追溯（AssetRefTraceLogger）
 
-Editor / Development 构建下，加载与池生命周期会自动输出 `[AssetRefTrace]` 日志，格式与上文表格对照。
+Editor / Development 构建下，加载与池生命周期会自动输出 `[AssetRefTrace][RefCountCheck]` 日志。
 
 ```csharp
 // 导出最近 64 条 Trace（排查泄漏 / 过早 UnLoad）
 AssetRefTraceLogger.DumpRecent(64);
 
+// 真机 JSONL 路径（UnloadAll 后也会打一条）
+AssetRefTraceLogger.FlushDeviceJson();
+// AssetRefTraceLogger.DeviceJsonFilePath
+
 // 关闭 Trace（性能敏感场景）
 AssetRefTraceLogger.Enabled = false;
 ```
+
+真机 JSONL：`{persistentDataPath}/vFramework/AssetRefTrace/Logs/ref_trace_*.jsonl`，`purpose=AssetRefCountCheck`，用于校验引用计数是否正常。
 
 规范与后续 **AssetReference / 统一池** 计划见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)。
 

@@ -1,7 +1,7 @@
 ﻿# AbstractAssets 模块说明
 
 > 路径：`BaseAssetSys/AbstractAssets/`  
-> 对外接口：`IAssetHandle.cs`；内部实现：`AbstractResource.cs`
+> 对外接口：`IAssetHandle.cs`、`AssetReference.cs`；内部实现：`AbstractResource.cs`
 
 ---
 
@@ -30,12 +30,14 @@
 |--------------|--------|
 | §5 卸载单个资源 | ✅ `Release()` |
 | §5 Instantiate | ✅ `Instantiate()`（实例 Destroy 与 Release 无关） |
+| 自动 Release（非池） | ✅ `AssetReference` + `BundleResLoader.LoadGameObject` |
 
 ---
 
 ## 已知限制
 
-- 实例 `Destroy` 与 `Release` 分离：业务在适当时机 `Release()` 或 `Unload(handle, instance)`。
+- 实例 `Destroy` 与 `Release` 分离：模块持句柄则模块 `Release`；实例自持用 `LoadGameObject` + `AssetReference`。
+- **池化实例禁止挂 `AssetReference`**（句柄由 `PrefabPool` 管理）。
 - DestroyInstance / AutoUnload 为 **延后项**，见 [Docs/MainRoadmap.md](../Docs/MainRoadmap.md) §4。
 
 ---
