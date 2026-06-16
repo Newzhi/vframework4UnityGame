@@ -1,4 +1,4 @@
-﻿# ABSystem_Beta 文档索引
+# ABSystem_Beta 文档索引
 
 > **Docs/**：集中说明、验收标准、跨模块规划。  
 > **各子文件夹/**：对应模块的详细设计，与代码同目录维护。  
@@ -70,6 +70,8 @@ Cursor 自动化：见项目 `.cursor/rules/documentation-governance.mdc` 与 `.
 | `ABSystemTester/` | [ABSystem_BetaTestCases.md](../../../../BaseLayer/AssetLayer/ABSystemTester/ABSystem_BetaTestCases.md) | `ABLoadSmokeTest.cs` |
 | `Assets/Test/AB_Test/` | [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md) | 双 Runner 门禁 |
 | `Assets/Test/comprehensiveTest/` | [综合测试归档.md](../../../../Test/comprehensiveTest/综合测试归档.md) | 池 / EventBus 手测 |
+
+> **范围说明**：本索引仅覆盖 **BaseAssetSys（资源打包/加载）**。全局入口 **BaseGameRoot** 为独立子系统，文档见 [BaseGameRoot/README.md](../../BaseGameRoot/README.md) 与 [FrameworkDesign.md](../../../Docs/FrameworkDesign.md) §4.1，**不在此维护排期**。
 
 ---
 

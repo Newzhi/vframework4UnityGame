@@ -34,8 +34,9 @@
 ### 3.1 框架层（vFramework）
 
 - 提供清晰的三层结构：**基础架构层 → 全局系统层 → 业务逻辑层**。
-- 全局 Manager 统一由 **GameRoot** 注册与销毁，生命周期可控。
-- **资源域**（`AssetLayer`）统一管理资源加载、场景、对象池。
+- **BaseGameRoot**（生命周期 + IOC）与 **BaseAssetSys**（资源加载）为同级独立子系统，文档与排期分开维护。
+- 全局 Manager 由 **GameRoot** 注册与 Tick，生命周期可控（不替代 Bundle Load API）。
+- **资源域**（`BaseAssetSys` / `AssetLayer`）统一管理资源加载、场景、对象池。
 - **第三方依赖下沉**：UniTask、Addressables 等仅在底层引用，上层通过接口访问。
 - 业务层采用 **MVC + Proxy**：Proxy 处理网络数据更新 Model，Controller 协调玩法与 View。
 
@@ -49,7 +50,7 @@
 
 - 程序集（`asmdef`）按层拆分，热更程序集 `HotUpdateLayer` 承载主要业务。
 - 文档与代码目录一致，模块职责可单独测试与替换。
-- 优先完成 **P0 骨架**（GameRoot、EventBus、AssetLayer、网络分发、Logic Bootstrap），再扩展玩法。
+- 优先完成 **P0 骨架**（BaseGameRoot、EventBus、BaseAssetSys、网络分发、Logic Bootstrap），再扩展玩法。
 
 ---
 
@@ -57,9 +58,9 @@
 
 ### 当前阶段（框架搭建）
 
-- [ ] GameRoot 与模块注册中心
+- [ ] **BaseGameRoot**：GameRoot 与模块注册中心（与资源加载独立）
 - [ ] BaseEventSys 事件总线
-- [ ] AssetLayer：`ResMgr` / `SceneMgr` / `ObjPoolMgr` 接口与最小实现
+- [ ] **BaseAssetSys**：`ResMgr` / `SceneMgr` / `ObjPoolMgr` 或现有 Bundle 加载 API（排期见 BaseAssetSys MainRoadmap）
 - [ ] 网络底层与消息分发
 - [ ] HotUpdateLayer：AppContext、Proxy / Controller 骨架
 - [ ] 单机可跑的塔防原型场景（验证框架，非完整产品）

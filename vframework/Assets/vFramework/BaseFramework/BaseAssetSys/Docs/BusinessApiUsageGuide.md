@@ -4,7 +4,7 @@
 > 句柄：`IAssetHandle`  
 > 详细排期与能力边界：[BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)、[MainRoadmap.md](./MainRoadmap.md)  
 > **引用计数附件**：常见写法逐步模拟见 **[RefCountAppendix.md](./RefCountAppendix.md)**。  
-> **加载侧优化（计划）**：自动 Handle / 统一池 / 运行时 Trace 见 **[LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)**。
+> **加载侧扩展**：`LoadGameObject` / `AssetReference` 已实现；架构排期见 **[LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)**（引用计数 **Trace 日志**为调试能力，不在本文业务 API 范围）。
 
 ---
 
@@ -15,7 +15,8 @@
 | `BundleResLoader.Instance.EnsureReady()` | 懒加载 Catalogue 与 Bundle 根目录；可在首次 `Load` 前预热 |
 | `BundleResLoader.Instance.Init(bundleRootPath, usePlatformSubfolder)` | 显式指定 AB 根路径；重复 Init 会打 Warning |
 | `BundleResLoader.GetDefaultRuntimeBundleRoot()` | 默认 `StreamingAssets/{当前平台}/` |
-| `BundleResLoader.Instance.GetCatalogue()` | 读取已加载清单（调试 / 查 `buildMode`） |
+| `BundleResLoader.Instance.GetCatalogue()` | 读取已加载清单（查 `buildMode` 等） |
+| `BundleResLoader.Instance.IsCatalogueLoaded` | 清单是否已加载 |
 
 ```csharp
 // 一般无需手动 Init；首次 Load 会自动 EnsureReady
@@ -59,6 +60,43 @@ IAssetHandle handle = BundleResLoader.Instance.LoadByBundle<Sprite>(
     "Hog_Attack_000");
 ```
 
+### 2.4 低频实例化 + 自动 `Release`（`LoadGameObject` / `AssetReference`）
+
+面向 **偶尔生成、Destroy 即卸** 的 Prefab；**高频复用请用对象池**（§5.4），勿与同 `loadPath` 池混用。
+
+| API | 说明 |
+|-----|------|
+| `LoadGameObject(loadPath)` | `Load` + `InstantiateAt` + `AssetReference.Bind`；`Destroy` 实例时自动 `Release` |
+| `LoadGameObject(loadPath, pos, rot, parent?)` | 带位姿的实例化 |
+| `LoadWithAutoUnLoad(loadPath)` | 等同 `LoadGameObject(loadPath)` |
+| `LoadWithAutoUnLoadGeneric<T>(loadPath)` | 仅 `Load<T>` 返回句柄，**不**绑实例；须自行 `Release` |
+| `LoadGameObjectAsync` / `LoadUniTaskAsynWithAutoUnLoad` | UniTask 版（当前 Yield 一帧后走同步逻辑） |
+
+```csharp
+// ✅ 低频 UI / 临时特效：Destroy(go) 即 Release，无需字段保存句柄
+GameObject popup = BundleResLoader.Instance.LoadGameObject("UI/SubPanel");
+
+// ✅ 指定位姿
+GameObject fx = BundleResLoader.Instance.LoadGameObject(
+    "FX/Hit", hitPos, Quaternion.identity, null);
+
+// 手动绑定（与 LoadGameObject 内部一致）
+IAssetHandle handle = BundleResLoader.Instance.Load<GameObject>(path);
+GameObject go = handle.InstantiateAt(pos, rot, parent);
+AssetReference.Bind(go, handle, path);
+```
+
+**`AssetReference`（`AbstractAssets/AssetReference.cs`）**
+
+| API | 说明 |
+|-----|------|
+| `AssetReference.Bind(instance, handle, loadPathForTrace?)` | 绑定句柄；`OnDestroy` 时 `Release` 一次 |
+| `HasHandle` / `LoadPath` | 是否仍持有句柄 / 追溯用路径 |
+| `ReleaseBinding()` | 主动释放；之后 `OnDestroy` 不再 `Release` |
+
+- **池化实例勿挂** `AssetReference`（句柄由 `PrefabPool` 持有）。  
+- 与 `Load` + 字段 `Release` **二选一**，勿对同一 `Load` 又 `Bind` 又在模块里 `Release`（双 Release）。
+
 ---
 
 ## 3. 异步加载
@@ -72,7 +110,16 @@ IAssetHandle handle = await BundleResLoader.Instance.LoadUniTaskAsync<GameObject
 GameObject go = handle?.Instantiate();
 ```
 
-### 3.2 `LoadUniTaskWithCallback<T>(loadPath, onComplete, onFailed, useUniTask)`
+### 3.2 `LoadGameObjectAsync` / `LoadUniTaskAsynWithAutoUnLoad`
+
+```csharp
+GameObject go = await BundleResLoader.Instance.LoadGameObjectAsync("UI/SubPanel");
+GameObject go2 = await BundleResLoader.Instance.LoadUniTaskAsynWithAutoUnLoad("FX/Hit");
+```
+
+语义同 §2.4；失败返回 `null`。
+
+### 3.3 `LoadUniTaskWithCallback<T>(loadPath, onComplete, onFailed, useUniTask)`
 
 ```csharp
 BundleResLoader.Instance.LoadUniTaskWithCallback<GameObject>(
@@ -85,7 +132,7 @@ BundleResLoader.Instance.LoadUniTaskWithCallback<GameObject>(
     onFailed: err => Debug.LogError(err));
 ```
 
-### 3.3 按路径 / 按 Bundle 的回调重载
+### 3.4 按路径 / 按 Bundle 的回调重载
 
 ```csharp
 BundleResLoader.Instance.LoadByAssetPathUniTaskWithCallback<Sprite>(assetPath, onComplete, onFailed);
@@ -105,6 +152,8 @@ BundleResLoader.Instance.LoadByBundleUniTaskWithCallback<Sprite>(bundleName, ass
 | `InstantiateAt(pos, rot, parent)` | 指定位置 / 父节点实例化 |
 | `Instance` | 等价于 **每次访问** 调用 `Instantiate()`；**勿重复读** |
 | `Release()` | Ref -1；Ref 为 0 时立即卸载资源占用 |
+
+非池路径也可用 **`AssetReference`**（§2.4）在实例 `Destroy` 时自动 `Release`，等价于手动调用本表 `Release()`。
 
 ```csharp
 IAssetHandle handle = BundleResLoader.Instance.Load<GameObject>("Model/Prefabs/tester");
@@ -209,8 +258,9 @@ BundleResLoader.Instance.UnloadAll();
 
 1. **不要**用全局 PoolHost 集中建池；谁要生成实例谁 `GetOrCreatPool`（或首次射击时懒加载）。  
 2. 同一 Active Scene 同 `loadPath`：`GetOrCreatPool` 去重共享；额外借用方用 `TryGetPool`；每个曾 `GetOrCreatPool` 的组件 `OnDestroy` 各 `ReleasePoolShare` 一次。  
-3. **池化实例**（如 `enemyTest`）可懒加载共享子弹池并借还，**不在实例 `OnDestroy` 卸池**（`RecycleObj` 不会触发 `OnDestroy`）。  
-4. 切场景 / ExitGame：`UnloadAll()`；`sceneUnloaded` 会兜底清理该场景池。
+3. **池化敌人**（`RecycleObj` 回收）：实例 **不** `Destroy`，**不在**死亡时 `ReleasePoolShare`；份额由建池方 / 场景流 `UnloadAll` 收尾。  
+4. **Direct 实例**（`Destroy` 死亡）：若该实例曾 `GetOrCreatPool` 子弹池，须在 `OnDestroy` 对称 `ReleasePoolShare`（`ownsBulletPoolShare` 标记）。  
+5. 切场景 / ExitGame：`UnloadAll()`；`sceneUnloaded` 会兜底清理该场景池。
 
 综合测试：`PlayerTest` + 各 `enemyTest` 各自 `GetOrCreatPool` 子弹池（共享 `refCount`）；`enemyManager` 仅敌人池；`ComprehensiveTestSceneFlow` 切场景收尾。
 
@@ -363,7 +413,8 @@ UnloadAll();  // 其它模块仍持有的句柄已失效
 |------|------|---------|
 | 模块 / UI / 一两个实例 | 模块内各 `Load` 1 次 | 模块 `OnDestroy` 各 `Release` 1 次 |
 | 同一 Prefab 多实例（低频） | 1 次 | 模块 `OnDestroy` **1 次** |
-| 每实例 Destroy 里收尾 | 每 spawn `Load` 1 次 | 实例 `OnDestroy` 各 `Release` 1 次 |
+| 每实例 Destroy 里收尾 | 每 spawn `Load` 1 次 | 实例 `OnDestroy` 各 `Release` 1 次；或 `AssetReference.Bind`（§2.4） |
+| 低频实例 Destroy 即卸 | `LoadGameObject` 1 次 | `Destroy` 实例即可（`AssetReference` 自动 `Release`） |
 | Load 1 次 + 提前卸 AB | 1 次 + 活实例计数 | 计数为 0 时 **Release 1 次** |
 | 对象池 | 建池方 `GetOrCreatPool`（共享时 `refCount++`）；借方 `TryGetPool` + `GetObj` | 每个建池方 `OnDestroy` `ReleasePoolShare` 一次；`refCount` 归零才 `Release`；切场景 `UnloadAll` 强制收尾；`RecycleObj` **不** Release |
 
@@ -475,7 +526,16 @@ void OnDestroy()
 
 ### 7.5 每实例 `OnDestroy` 里 Release
 
-每次生成 `Load` 一次（缓存命中，Ref++），句柄绑到实例上：
+**方式 A — `AssetReference`（推荐，与 `LoadGameObject` 一致）**
+
+```csharp
+IAssetHandle handle = BundleResLoader.Instance.Load<GameObject>("FX/Bullet");
+GameObject go = handle.Instantiate();
+AssetReference.Bind(go, handle, "FX/Bullet");
+// go Destroy 时自动 Release；勿再手动 handle.Release()
+```
+
+**方式 B — 实例脚本自持句柄**
 
 ```csharp
 // 生成方
@@ -575,7 +635,7 @@ PoolRuntime                    ← 每场景一个，MoveGameObjectToScene
 GameObject bullet = bulletPool.GetObj(firePoint.position, firePoint.rotation);
 ```
 
-#### 7.7.5 谁创建谁销毁（范例：发射方建池，无全局管理者）
+#### 7.7.5 谁创建谁销毁（范例）
 
 ```csharp
 // —— PlayerTest：当前 Active Scene 内 GetOrCreatPool，OnDestroy ReleasePoolShare ——
@@ -583,20 +643,35 @@ void EnsureBulletPool()
 {
     if (bulletPool != null) return;
     bulletPool = PrefabPoolManager.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
+    ownsBulletPoolShare = true;
 }
 
-void OnDestroy() => PrefabPoolManager.Instance.ReleasePoolShare(BulletPath);
+void OnDestroy()
+{
+    if (ownsBulletPoolShare)
+        PrefabPoolManager.Instance.ReleasePoolShare(BulletPath);
+}
 
-// —— enemyManager：仅敌人池 ——
-enemyPool = PrefabPoolManager.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: 12);
+// —— enemyManager：Pooled 模式敌人池；Direct 模式 Load 预制体句柄 ——
+if (IsPooledSpawnMode())
+    enemyPool = PrefabPoolManager.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: 12);
+else
+    enemyPrefabHandle = BundleResLoader.Instance.Load<GameObject>(EnemyPath);
+// OnDestroy：ReleasePoolShare(EnemyPath) 或 enemyPrefabHandle?.Release()
 
-// —— enemyTest：无控制器时敌人自建子弹池份额 ——
+// —— enemyTest：首次射击 GetOrCreatPool 子弹池；Direct 死亡 Destroy → OnDestroy 释份额 ——
 void EnsureBulletPool()
 {
+    if (bulletPool != null) return;
     bulletPool = PrefabPoolManager.Instance.GetOrCreatPool(BulletPath, maxInactiveCapacity: 48);
     ownsBulletPoolShare = true;
 }
-void OnDestroy() { if (ownsBulletPoolShare) PrefabPoolManager.Instance.ReleasePoolShare(BulletPath); }
+void OnDestroy()
+{
+    if (ownsBulletPoolShare)
+        PrefabPoolManager.Instance.ReleasePoolShare(BulletPath);
+}
+// Pooled 敌人死亡走 RecycleObj，不 Destroy → 不触发上述 OnDestroy 释池
 
 // —— 场景流：切场景 / ExitGame 前 ——
 BundleResLoader.Instance.UnloadAll();
@@ -635,7 +710,8 @@ GameObject uiGo = ui?.Instantiate();
 
 ## 8. 其它注意
 
-- 仅在主线程调用 `Load` / `Unload`。  
-- `LoadUniTaskAsync` 当前为 Yield 一帧 + 同步 `Load`；加载失败时 `onFailed` / 判空后再决定是否重试。  
+- 仅在主线程调用 `Load` / `Unload` / `LoadGameObject`。  
+- `LoadUniTaskAsync` / `LoadGameObjectAsync` 当前为 Yield 一帧 + 同步 `Load`；加载失败时 `onFailed` / 判空后再决定是否重试。  
+- **池路径**：业务侧对已在池中的 `loadPath` 应走 `PrefabPoolManager`，勿再 `Load` 同路径（否则多占 Resource Ref）。  
 - Editor Play + 清单 `buildMode=EditorTest` 时在 Editor 内走 AssetDatabase；Player 走 AB，见 [ResLoader/README.md](../ResLoader/README.md)。  
-- Ref 与范例细则见 **§6**；抄代码见 **§7**；逐步追踪见 **[引用计数附件 RefCountAppendix.md](./RefCountAppendix.md)**。
+- Ref 与范例细则见 **§6**；抄代码见 **§7**；逐步追踪见 **[RefCountAppendix.md](./RefCountAppendix.md)**。引用计数 **运行时 Trace** 为调试能力，见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) §4，**不属于本文业务 API**。

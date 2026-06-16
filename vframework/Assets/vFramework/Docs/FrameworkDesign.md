@@ -25,8 +25,7 @@ flowchart TB
     end
 
     subgraph L2["BaseLayer 全局系统层"]
-        GR["GameRoot 启动编排"]
-        Asset["AssetLayer<br/>ResMgr / SceneMgr / ObjPoolMgr"]
+        Asset["AssetLayer / BaseAssetSys<br/>BundleResLoader / 池"]
         Net["Network / NetMgr"]
         UI["UIMgr"]
         Audio["AudioMgr"]
@@ -34,12 +33,12 @@ flowchart TB
     end
 
     subgraph L1["BaseFramework 基础架构层"]
+        Root["BaseGameRoot<br/>GameRoot + IOC + Module Update"]
         Event["BaseEventSys"]
         FSM["BaseFSM"]
         NetCore["BaseNetwork"]
         Ser["BaseSerialization"]
         Log["Log"]
-        Root["GameRoot MonoBehaviour"]
     end
 
     L3 --> L2
@@ -60,9 +59,9 @@ flowchart TB
 Assets/vFramework/
 ├── Docs/                          # 项目与框架文档
 ├── BaseFramework/                 # 基础架构层
-│   ├── GameRoot/                  # 启动入口 MonoBehaviour
+│   ├── BaseGameRoot/              # 全局入口 Mono + IOC + 模块 Update（与资源加载无关）
 │   ├── BaseEventSys/              # 事件总线（Interface / Impt）
-│   ├── BaseAssetSys/              # AB 打包与加载（原 ABSystem_Beta）
+│   ├── BaseAssetSys/              # AB 打包与加载（独立子系统，文档见 BaseAssetSys/Docs）
 │   ├── BaseFSM/                   # 状态机内核
 │   ├── BaseNetwork/               # 传输、包结构、编解码
 │   ├── BaseSerialization/         # 序列化抽象
@@ -85,29 +84,50 @@ Assets/vFramework/
     └── GameFlow/
 ```
 
-> **说明**：`BaseAssetSys` 承载当前 AB 打包/加载实现；`BaseLayer/AssetLayer` 保留学习文档与测试夹具。资源域 Manager（`ResMgr` / `SceneMgr` / `ObjPoolMgr`）接口与实现目录规划中，逐步与 `BaseAssetSys` 对齐。
+> **说明**  
+> - **BaseGameRoot** 与 **BaseAssetSys** 为**同级、独立**子系统：前者只管 App 生命周期、IOC、模块 Update；后者只管打包、清单、Bundle 加载与 Ref。二者代码、文档、排期、测试门禁**互不混入**。  
+> - 若需在游戏启动后使用资源 API，由热更层 `IGameBootstrap` **可选**注册资源相关 Module/Service，属于集成点而非耦合。  
+> - `BaseAssetSys` 排期见 [BaseAssetSys/Docs/MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md)；`BaseLayer/AssetLayer` 保留学习文档与测试夹具。
 
 ---
 
 ## 4. BaseFramework 模块说明
 
-### 4.1 BaseEventSys
+### 4.1 BaseGameRoot（全局入口，与资源加载无关）
+
+**GameRoot**（Bootstrap Scene 唯一 MonoBehaviour）负责：
+
+```text
+Awake → ServiceContainer + ModuleManager
+      → IGameBootstrap.Configure（业务层实现并挂到 GameRoot Inspector，必填）
+      → InitAll（模块 Init，Resolve 依赖）
+Update → ModuleManager.Update
+FixedUpdate → ModuleManager.FixedUpdate（IFixedUpdateModule）
+LateUpdate → ModuleManager.LateUpdate（ILateUpdateModule）
+OnDestroy → DisposeAll（逆序）+ Clear 容器
+```
+
+- 实现与范例：[BaseGameRoot/README.md](../BaseFramework/BaseGameRoot/README.md)  
+- **不包含** `Load` / `Release` / Bundle / 清单；资源能力在 **BaseAssetSys**，见 §5.1。  
+- 各全局 Module 实现 `IGameModule`，在 `IGameBootstrap` 注册，**禁止** lazy `Instance` getter 隐式 `new`。
+
+### 4.2 BaseEventSys
 
 - 类型安全事件总线：`Subscribe` / `Unsubscribe` / `Publish`。
 - 事件体实现 `IGameEvent`，推荐 `struct` + 轻量字段，避免长期持有 `UnityEngine.Object`。
 - 框架级、跨层协作事件使用；高频局内战斗消息优先走 Proxy / 直接调用，避免事件风暴。
 
-### 4.2 BaseFSM
+### 4.3 BaseFSM
 
 - 通用状态机节点，供 **GameFlow**（启动、Patch、登录、进战斗）使用。
 - 不含塔防具体状态，仅提供 `Enter` / `Update` / `Exit` 等机制。
 
-### 4.3 BaseNetwork
+### 4.4 BaseNetwork
 
 - `INetPackage`、编解码、RingBuffer、TCP/WebSocket 适配。
 - **不含**塔、波次等业务协议；业务协议在 HotUpdateLayer 的 Proxy 中注册。
 
-### 4.4 异步约定
+### 4.5 异步约定
 
 - 底层以 **UniTask** 为主；`RunOnThreadPool`、Delay 等通过 BaseFramework 工具封装，上层避免散落第三方 API。
 - Unity API 必须在主线程；IO 与纯计算可在线程池，结果回主线程再应用。
@@ -118,21 +138,11 @@ Assets/vFramework/
 
 ## 5. BaseLayer 模块说明
 
-### 5.1 GameRoot 与模块中心
+### 5.1 BaseAssetSys / AssetLayer（资源域，与 BaseGameRoot 独立）
 
-**GameRoot**（唯一 Bootstrap Scene 入口）负责：
+**文档与排期**仅维护在 `BaseAssetSys/Docs/`（[MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md)、[DocumentIndex.md](../BaseFramework/BaseAssetSys/Docs/DocumentIndex.md)），**不写入** BaseGameRoot README。
 
-```text
-Initialize 模块中心
-  → CreateModule（按 Priority）
-  → InitAllAsync
-  → UpdateAll（每帧）
-  → DestroyAll（逆序，OnDestroy）
-```
-
-各 Manager 实现 `IGameModule`（或等价接口），继承 `SingletonInstance<T>`，通过注册中心获取，**禁止**在 `get` 中隐式 `new`。
-
-### 5.2 AssetLayer（资源域）
+同一资源管线下的 Manager（规划中与 `BundleResLoader` / 池对齐）：
 
 同一资源管线下的三个 Manager，**目录聚合、运行时独立**：
 
@@ -160,7 +170,7 @@ flowchart LR
 
 **Init 顺序建议**：`ResMgr`（Priority 高）→ `SceneMgr` → `ObjPoolMgr`。
 
-### 5.3 其他全局系统（规划）
+### 5.2 其他全局系统（规划）
 
 | 模块 | 职责 |
 |------|------|
@@ -208,7 +218,7 @@ flowchart LR
 - `RegisterController<T>` / `GetController<T>`
 - `Shutdown` 时逆序 `OnRemove`，Proxy 注销网络 handler
 
-**LogicBootstrap**（热更完成后调用）集中注册，GameRoot 只触发一次 `LogicBootstrap.Initialize()`。
+**LogicBootstrap**（热更层）实现 `IGameBootstrap`，在 `Configure` 中注册 Proxy/Controller 与玩法 Module；GameRoot 只触发一次 Configure。
 
 ### 6.3 约定
 
@@ -269,9 +279,9 @@ View 点击建造
 
 ### P0 — 框架骨架
 
-1. GameRoot + 模块注册中心  
+1. **BaseGameRoot**：GameRoot + IOC + ModuleManager（与资源加载并行、独立验收）  
 2. BaseEventSys（已有）  
-3. AssetLayer 三 Manager 接口 + Resources/Addressables 最小 Adapter  
+3. **BaseAssetSys / AssetLayer**：加载 API 与测试门禁（见 BaseAssetSys MainRoadmap，不依赖 GameRoot 骨架完成）  
 4. NetMgr 消息分发  
 5. HotUpdate：AppContext + 示例 Proxy/Controller  
 
@@ -286,5 +296,9 @@ View 点击建造
 
 ## 相关文档
 
-- [项目目标](./ProjectGoals.md)
-- [BaseEventSys 异步与事件说明](../BaseFramework/BaseEventSys/README.md)
+| 文档 | 范围 |
+|------|------|
+| [ProjectGoals.md](./ProjectGoals.md) | 产品目标 |
+| [BaseGameRoot/README.md](../BaseFramework/BaseGameRoot/README.md) | 全局入口 + IOC（**非**资源加载） |
+| [BaseEventSys/README.md](../BaseFramework/BaseEventSys/README.md) | 异步与事件 |
+| [BaseAssetSys/Docs/MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md) | AB 打包/加载排期（**独立**于 GameRoot） |
