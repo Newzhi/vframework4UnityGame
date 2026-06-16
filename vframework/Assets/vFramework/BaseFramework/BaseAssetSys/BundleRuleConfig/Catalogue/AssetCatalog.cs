@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 #region 资源清单 - 单条资源
 
@@ -97,6 +97,9 @@ public class AssetCatalog
 
     /// <summary>本次 BuildPipeline 使用的压缩模式名（LZMA / LZ4Chunk / Uncompressed）</summary>
     public string compressionMode;
+
+    /// <summary>CDN 根 URL（末尾无斜杠）；CdnHotUpdate 运行时拉取清单与 AB，打包时从 BuildSetting 写入。</summary>
+    public string cdnBaseUrl;
 
     /// <summary>资源 → 包 映射表</summary>
     public AssetCatalogEntry[] entries;

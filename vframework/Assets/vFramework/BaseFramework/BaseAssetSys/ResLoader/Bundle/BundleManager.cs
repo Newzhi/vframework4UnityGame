@@ -173,6 +173,7 @@ public class BundleManager
     /// </summary>
     public static void UnloadAll()
     {
+        TracePositiveBundleRefs();
         int count = loadedBundles.Count;
         AssetRefTraceLogger.TraceBundleUnloadAll(count);
 
@@ -180,6 +181,19 @@ public class BundleManager
             entry.Bundle.Unload(true);
 
         loadedBundles.Clear();
+    }
+
+    /// <summary>UnloadAll 前输出仍为正引用的 Bundle 摘要。</summary>
+    public static void TracePositiveBundleRefs()
+    {
+        foreach (KeyValuePair<string, BundleEntry> pair in loadedBundles)
+        {
+            if (pair.Value != null && pair.Value.Ref > 0)
+            {
+                AssetRefTraceLogger.TraceEvent(
+                    "UnloadAll residual bundle=" + pair.Key + " ref=" + pair.Value.Ref);
+            }
+        }
     }
 
     #endregion

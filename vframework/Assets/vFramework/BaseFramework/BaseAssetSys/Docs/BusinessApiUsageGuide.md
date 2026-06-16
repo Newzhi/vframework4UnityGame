@@ -1,4 +1,4 @@
-# 业务 API 调用指南（ABSystem_Beta）
+﻿# 业务 API 调用指南（ABSystem_Beta）
 
 > 入口：`BundleResLoader.Instance`  
 > 句柄：`IAssetHandle`  
@@ -18,6 +18,12 @@
 | `BundleResLoader.Instance.GetCatalogue()` | 读取已加载清单（`buildMode`、`bundles[].resourcePriority` 等） |
 | `BundleResLoader.Instance.IsCatalogueLoaded` | 清单是否已加载 |
 
+**CDN 热更（阶段 C）**：打包时 `BuildSetting.cdnBaseUrl` 写入清单 `cdnBaseUrl`。`Init` / `EnsureReady` 时自动：
+
+1. `DefaultBundlePathResolver`：查找顺序 **ABCache → StreamingAssets**  
+2. `CdnCatalogueSyncService`：远程 `catalogueHash` 变化 → 缓存清单并重载  
+3. `HttpRemoteBundleProvider`：本地无包时 NETCDN 下载（失败回退首包/本地 cache）
+
 ```csharp
 // 一般无需手动 Init；首次 Load 会自动 EnsureReady
 if (!BundleResLoader.Instance.EnsureReady())
@@ -25,6 +31,9 @@ if (!BundleResLoader.Instance.EnsureReady())
     Debug.LogError("Catalogue init failed.");
     return;
 }
+
+// 常驻模块预热（不创建 Resource 句柄；UnloadAll 时对称 Release）
+BundleResLoader.Instance.PreLoadBundles(new[] { "common.bundle", "ui.bundle" });
 ```
 
 ---
@@ -202,6 +211,8 @@ BundleResLoader.Instance.UnloadAll();
 ### 5.4 对象池（`PrefabPool` / `PrefabPoolManager`）
 
 实现：`AssetPool/PrefabPool.cs`、`AssetPool/PrefabPoolManager.cs`、`AssetPool/PoolSceneRootsUtil.cs`。
+
+**Lint（P1.5-4）**：`DEVELOPMENT_BUILD` 或定义 `VF_POOL_LOAD_LINT` 时，对已注册池的 `loadPath` 直接 `Load` 会 `LogWarning`，应统一经 `PrefabPoolManager`。
 
 | API | 说明 |
 |-----|------|

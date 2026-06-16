@@ -376,6 +376,11 @@ AssetRefTraceLogger.Enabled = false;
 
 真机 JSONL：`{persistentDataPath}/vFramework/AssetRefTrace/Logs/ref_trace_*.jsonl`，`purpose=AssetRefCountCheck`，用于校验引用计数是否正常。
 
+### CDN 下载 Trace（阶段 C）
+
+`HttpRemoteBundleProvider` 下载完成后写入 Layer=`CDN`、Reason=`CdnDownload`（含 `bundleName`、`bytes`、`hashOk`）。  
+`BundleResLoader.UnloadAll` 前输出仍为非零 Ref 的 Resource / Bundle 摘要（TraceEvent）。
+
 规范与后续 **AssetReference / 统一池** 计划见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)。
 
 ---

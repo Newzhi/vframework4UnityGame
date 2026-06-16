@@ -148,6 +148,10 @@ public static class BundleBuildPipeline
                     manifest);
             }
 
+            AssetCatalog graphCatalog = CatalogueWriter.LoadLastBuiltCatalog();
+            if (graphCatalog != null)
+                DependencyGraphWriter.Write(bundleRoot, graphCatalog);
+
             return true;
         }
         finally

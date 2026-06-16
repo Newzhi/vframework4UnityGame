@@ -43,6 +43,9 @@ static class BundleReporterTabView
 
         EditorGUILayout.Space(8);
         DrawOpenReportActions(setting, reportBrowseMode, report);
+
+        EditorGUILayout.Space(12);
+        BundleDependencyExplorer.Draw(setting, reportBrowseMode);
     }
 
     static void DrawReportSource(BuildSetting setting, ref BuildMode reportBrowseMode)

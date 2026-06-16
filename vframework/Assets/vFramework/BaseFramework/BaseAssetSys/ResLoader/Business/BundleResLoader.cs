@@ -47,6 +47,9 @@ public class BundleResLoader
     /// <summary>是否已完成 Catalogue + BundleManager + AssetRouter 初始化。</summary>
     bool initialized;
 
+    /// <summary>预热持有的 Bundle 引用（UnloadAll 时对称 Release）。</summary>
+    readonly List<string> preloadedBundleRefs = new List<string>();
+
     /// <summary>资源清单读取器；Load 前解析 loadPath → bundle / asset。</summary>
     readonly CatalogueReader catalogue = new CatalogueReader();
 
@@ -84,6 +87,7 @@ public class BundleResLoader
                 }
             }
             resourceDic.Clear();
+            preloadedBundleRefs.Clear();
 
             bool catalogueLoaded = catalogue.LoadFromBundleRoot(bundleRootPath);
 #if UNITY_EDITOR
@@ -99,8 +103,13 @@ public class BundleResLoader
             }
 
             DefaultBundlePathResolver resolver = DefaultBundlePathResolver.Create(bundleRootPath);
+            string cacheRoot = resolver.CacheRoot;
+
+            CdnRuntimeBootstrap.SyncCatalogueIfNeeded(catalogue, cacheRoot);
+
             BundleManager.Init(bundleRootPath, catalogue);
-            AssetRouter.Instance.Init(catalogue, resolver);
+            IRemoteBundleProvider remoteProvider = CdnRuntimeBootstrap.CreateRemoteProvider(catalogue, cacheRoot);
+            AssetRouter.Instance.Init(catalogue, resolver, remoteProvider);
 
             if (catalogue.Catalog == null || catalogue.Catalog.bundles == null || catalogue.Catalog.bundles.Length == 0)
             {
@@ -152,13 +161,48 @@ public class BundleResLoader
     #region 同步加载
 
     // TODO：业务侧预先加载对应模块；见 Docs/BusinessApiAndCdnPlanning.md §1 需求4
-    public IAssetHandle PreLoad<T>()
+    public IAssetHandle PreLoad<T>(string loadPath) where T : Object
     {
-        return null;
+        if (string.IsNullOrEmpty(loadPath))
+            return null;
+
+        if (!EnsureInitialized())
+            return null;
+
+        if (!catalogue.TryGetEntryByLoadPath(loadPath, out AssetCatalogEntry entry))
+            return null;
+
+        PreLoadBundles(new[] { entry.bundleName });
+        return Load<T>(loadPath);
     }
 
     /// <summary>
-    /// 同步加载。loadPath 为相对打包根目录的简路径，无扩展名。
+    /// 包级预热：Acquire 依赖链并保持 Bundle 引用，不创建 AbstractResource。
+    /// </summary>
+    public void PreLoadBundles(IReadOnlyList<string> bundleNames)
+    {
+        if (!EnsureInitialized() || bundleNames == null)
+            return;
+
+        foreach (string rawName in bundleNames)
+        {
+            if (string.IsNullOrEmpty(rawName))
+                continue;
+
+            string bundleName = BundlePlatformPaths.NormalizeBundleName(rawName);
+            var acquired = new List<string>();
+            if (BundleManager.AcquireBundleWithDependencies(bundleName, acquired) == null)
+                continue;
+
+            foreach (string name in acquired)
+            {
+                if (!preloadedBundleRefs.Contains(name))
+                    preloadedBundleRefs.Add(name);
+            }
+        }
+    }
+
+    /// <summary>同步加载。loadPath 为相对打包根目录的简路径，无扩展名。
     /// 例：Default 规则下 targetDirectory=Assets/AssetBundle → Load&lt;Sprite&gt;("Atlas/Role/Hog_Attack_000")
     /// </summary>
     public IAssetHandle Load<T>(string loadPath) where T : Object
@@ -174,6 +218,11 @@ public class BundleResLoader
             Debug.LogError("BundleResLoader not initialized; cannot load: " + loadPath);
             return null;
         }
+
+#if DEVELOPMENT_BUILD || VF_POOL_LOAD_LINT
+        if (PrefabPoolManager.Instance.TryGetPool(loadPath, out _))
+            Debug.LogWarning("[BundleResLoader] Load on pooled path; prefer PrefabPoolManager: " + loadPath);
+#endif
 
         if (ResourcesAssetProvider.IsResourcesLoadPath(loadPath))
             return LoadResources<T>(loadPath);
@@ -501,7 +550,15 @@ public class BundleResLoader
     public void UnloadAll()
     {
         AssetRefTraceLogger.TraceEvent("BundleResLoader.UnloadAll begin");
+        AssetRefTraceLogger.TraceResidualRefsBeforeUnloadAll(
+            TracePositiveResourceRefsBeforeUnloadAll,
+            BundleManager.TracePositiveBundleRefs);
+
         PrefabPoolManager.Instance.DeleteAllPools();
+
+        foreach (string bundleName in preloadedBundleRefs)
+            BundleManager.ReleaseBundle(bundleName);
+        preloadedBundleRefs.Clear();
 
         AbstractResource[] resources = new AbstractResource[resourceDic.Count];
         resourceDic.Values.CopyTo(resources, 0);
@@ -523,6 +580,18 @@ public class BundleResLoader
     #endregion
 
     #region 辅助函数
+
+    void TracePositiveResourceRefsBeforeUnloadAll()
+    {
+        foreach (KeyValuePair<string, AbstractResource> pair in resourceDic)
+        {
+            if (pair.Value != null && pair.Value.CurrentRef > 0)
+            {
+                AssetRefTraceLogger.TraceEvent(
+                    "UnloadAll residual resource=" + pair.Key + " ref=" + pair.Value.CurrentRef);
+            }
+        }
+    }
 
     void InvokeSyncLoadWithCallback(Func<IAssetHandle> loader, Action<IAssetHandle> onComplete, Action<string> onFailed, string failMessage)
     {

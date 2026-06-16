@@ -273,6 +273,33 @@ public static class AssetRefTraceLogger
         });
     }
 
+    /// <summary>CDN 下载完成 Trace（bundleName、bytes、hashOk）。</summary>
+    public static void TraceCdnDownload(string bundleName, int bytes, bool hashOk)
+    {
+        if (!enabled)
+            return;
+
+        WriteEntry(new TraceEntry
+        {
+            Layer = "CDN",
+            Reason = "CdnDownload",
+            BundleName = bundleName,
+            Note = "bytes=" + bytes + " hashOk=" + hashOk
+        });
+    }
+
+    /// <summary>UnloadAll 前 Resource / Bundle 非零 Ref 摘要（由调用方提供 Trace 回调，避免暴露 internal 类型）。</summary>
+    public static void TraceResidualRefsBeforeUnloadAll(
+        Action traceResourceRefs,
+        Action traceBundleRefs)
+    {
+        if (!enabled)
+            return;
+
+        traceResourceRefs?.Invoke();
+        traceBundleRefs?.Invoke();
+    }
+
     #endregion
 
     #region 缓冲与导出

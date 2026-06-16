@@ -12,6 +12,9 @@ public sealed class DefaultBundlePathResolver : IBundlePathResolver
     readonly string primaryRoot;
     readonly string cacheRoot;
 
+    /// <summary>热更缓存根目录（persistentDataPath/ABCache/{平台}）。</summary>
+    public string CacheRoot => cacheRoot;
+
     public DefaultBundlePathResolver(string primaryRoot, string cacheRoot = null)
     {
         this.primaryRoot = primaryRoot;
@@ -20,12 +23,7 @@ public sealed class DefaultBundlePathResolver : IBundlePathResolver
 
     public static DefaultBundlePathResolver Create(string primaryRoot)
     {
-        string cache = Path.Combine(
-            Application.persistentDataPath,
-            "ABCache",
-            BundlePlatformPaths.GetRuntimeFolderName());
-
-        return new DefaultBundlePathResolver(primaryRoot, cache);
+        return new DefaultBundlePathResolver(primaryRoot, CdnPaths.GetCacheRoot());
     }
 
     public bool TryResolveLocalPath(string bundleName, out string localPath)

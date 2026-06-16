@@ -1,4 +1,4 @@
-# 业务 API 与 CDN 规划
+﻿# 业务 API 与 CDN 规划
 
 > 对照 [MainRoadmap.md](./MainRoadmap.md) 阶段 B/C；实现细节见 [ResLoader/LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md)。
 
@@ -11,10 +11,10 @@
 | 1 | 同步加载资源 | `Load<T>(loadPath)` 简路径；`LoadByBundle` / `LoadByAssetPath` 辅助 | ✅ 已实现 | `BundleResLoader` |
 | 2 | 异步加载（设计基线 **默认 API**） | `LoadUniTaskAsync<T>(loadPath)` / `await` 形态 | ✅ 已接入（基础版） | `BundleResLoader` + UniTask |
 | 3 | 加载 + 完成回调 | `LoadUniTaskWithCallback<T>(path, onComplete, onFailed, useUniTask)` | ✅ 已实现 | 基于 `Load/LoadUniTaskAsync` 封装 |
-| 4 | 预加载资源包 | `PreLoadBundle(moduleName)` / 按 bundle 列表预热 | ❌ 占位 | `BundleManager` 或 `BundleResLoader` |
+| 4 | 预加载资源包 | `PreLoadBundles(names)` / `PreLoad<T>(loadPath)` | ✅ 已实现 | `BundleResLoader` |
 | 5 | 卸载单个资源 | `IAssetHandle.Release()` 或 `Unload(handle, instance, cb)` | ✅ Resource 立即卸；Bundle **LRU 延迟**（§5.6） | `BundleResLoader` + `BundleManager` |
 | 6 | 卸载全部 | `BundleResLoader.UnloadAll()` | ✅ 立即全卸 Resource + Bundle | `BundleResLoader` + `BundleManager` |
-| 7 | **CDN 联网下载** | 远程清单对比 → 下载 AB → 本地缓存 → 再 Load | 🟡 **首版** `HttpRemoteBundleProvider` | 见下文 §二 |
+| 7 | **CDN 联网下载** | 远程清单对比 → 下载 AB → 本地缓存 → 再 Load | ✅ 阶段 C | 见下文 §二 |
 
 **测试要求**（设计基线）：依赖顺序 ✅；异常 Log 🟡；**竞态安全 ✅**（同步双 Runner 三端 19/19）；引用计数 ✅。
 
@@ -61,29 +61,29 @@ BundleManager            AcquireBundle 前解析物理路径
     ↓
 IBundlePathResolver      本地多根目录优先级（首包 / 缓存）     ← ✅ DefaultBundlePathResolver
     ↓
-IRemoteBundleProvider    清单 hash 比对、HTTP 下载、CRC 校验       ← 🟡 HttpRemoteBundleProvider（首版）
+IRemoteBundleProvider    清单 hash 比对、HTTP 下载、CRC 校验       ← ✅ HttpRemoteBundleProvider + CdnCatalogueSyncService
 ```
 
-**当前代码**：`AbstractResource` 经 `AssetRouter` 加载；`BundleManager.AcquireBundle` 优先 `IBundlePathResolver`；本地无包时路由 `NETCDN` → `HttpRemoteBundleProvider`（`catalogueHash` 比对 + `UnityWebRequest` 下载单包）。  
-业务 **不应** 直接写 UnityWebRequest；须注入 `AssetRouter.Init(..., remoteProvider)` 并配置 `BuildSetting.cdnBaseUrl`。
+**当前代码**：`AbstractResource` 经 `AssetRouter` 加载；`BundleManager.AcquireBundle` 优先 `IBundlePathResolver`（**ABCache → 首包**）；本地无包时路由 `NETCDN` → `HttpRemoteBundleProvider`（`BundleDownloadQueue` 合并 in-flight + 按 `resourcePriority` 排序）。  
+`BundleResLoader.Init` 在 `cdnBaseUrl` 非空时自动注入 RemoteProvider 并执行清单热更；业务 **不应** 直接写 UnityWebRequest。
 
 ### 2.4 CDN 接入步骤（实施 checklist）
 
-1. **配置**：`BuildSetting.cdnBaseUrl` + **`{Platform}/`** 子路径（与 `usePlatformSubfolders` 产出一致）。  
-2. **启动**：`HttpRemoteBundleProvider` 拉远程 `AssetCatalog.json`，与本地比 `catalogueHash`（🟡 首版）。  
-3. **下载**：按 bundle 名 HTTP 拉取 `.bundle`，`fileHash` / `crc32` 校验后写入 `persistentDataPath/...`（🟡 首版）。  
-4. **Init**：`BundleResLoader.Init(cacheRoot)` 或 `IBundlePathResolver` 多 root。  
-5. **Load**：同步 `Load(loadPath)` 与依赖预加载不变；业务侧异步入口统一为 **LoadUniTaskAsync**（UniTask）。
+1. **配置**：`BuildSetting.cdnBaseUrl` 写入清单根字段 `cdnBaseUrl` + **`{Platform}/`** 子路径（与 `usePlatformSubfolders` 产出一致）。  
+2. **启动**：`CdnCatalogueSyncService` 拉远程 `AssetCatalog.json`，`catalogueHash` 变化时写入 `ABCache/Catalogue/` 并重载 Reader。  
+3. **下载**：`HttpRemoteBundleProvider` + `BundleDownloadQueue`；`fileHash` / `crc32` 校验后写入 `persistentDataPath/ABCache/{平台}/`。  
+4. **Init**：`BundleResLoader.Init` 自动 `DefaultBundlePathResolver` + RemoteProvider（无需业务手动 Init cacheRoot）。  
+5. **Load**：同步 `Load(loadPath)` 与 `PreLoadBundles` 不变；异步入口仍为 **LoadUniTaskAsync**（内部 Yield + 同步 Load，B-2 inFlight 未做）。
 
 ### 2.5 本阶段明确不做
 
-- 断点续传、后台下载队列、按 `resourcePriority` 并发调度  
+- 断点续传、后台 Worker 线程 I/O  
 - 多 CDN 容灾、加密 bundle  
-- 拉新清单后 **自动替换** 本地 `CatalogueReader` 缓存（首版仅比对 Log）
+- B-2 全量 inFlight（`LoadUniTaskAsync` 真异步）
 
+**已实现（2026-06-13 阶段 C 封板）**：`CdnCatalogueSyncService` 清单热更；`BundleDownloadQueue`；`PreLoadBundles`；Reporter `BundleDependencyExplorer` + `DependencyGraph.json`。  
 **已实现（2026-06-08）**：`AssetRouter` 四源统一入口；EditorTest 走 AssetDatabase；`Resources/` 前缀走 Resources。  
-**已实现（2026-06-13）**：`HttpRemoteBundleProvider` 首版；清单 `catalogueHash` / 单包 hash·CRC 打包写入；Bundle **LRU 延迟卸包**（业务 API 不变，见 [BusinessApiUsageGuide.md §5.6](./BusinessApiUsageGuide.md#56-bundle-lru-延迟卸载业务无感)）。  
-**仍留后续**：下载队列、本地 Catalogue 热更、完整热更决策流。
+**已实现（2026-06-13）**：Bundle **LRU 延迟卸包**（见 [BusinessApiUsageGuide.md §5.6](./BusinessApiUsageGuide.md#56-bundle-lru-延迟卸载业务无感)）。
 
 ---
 

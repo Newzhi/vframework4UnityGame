@@ -29,7 +29,9 @@ public static class BundlePriorityResolver
 
                     int priority = assetPriority.TryGetValue(assetPath, out int p)
                         ? p
-                        : (int)setting.defaultBundlePriority;
+                        : setting.packingRule == PackingRule.Custom
+                            ? (int)ResourcePriority.Normal
+                            : (int)setting.defaultBundlePriority;
 
                     if (priority < bundlePriority)
                         bundlePriority = priority;

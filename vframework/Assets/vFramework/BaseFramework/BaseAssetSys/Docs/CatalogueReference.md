@@ -1,4 +1,4 @@
-# Catalogue 清单说明
+﻿# Catalogue 清单说明
 
 > 打包器与加载器之间的桥梁。当前实现：**JSON + `entries` + `bundles[]`**；运行时由 `CatalogueReader` 只读。  
 > 文档索引：[Docs/DocumentIndex.md](./DocumentIndex.md)  
@@ -94,6 +94,7 @@ Dependencies:
 |------|------|------|
 | `buildId` | `AssetCatalog` 根 | 本次构建 GUID，关联 `Reports/BuildManifest.json` |
 | `catalogueHash` | 根 | 整份清单 SHA256（不含本字段），运行时 CDN 比对 |
+| `cdnBaseUrl` | 根 | CDN 根 URL（末尾无斜杠）；打包时从 `BuildSetting.cdnBaseUrl` 写入；Init 注入 RemoteProvider |
 | `compressionMode` | 根 | `LZMA` / `LZ4Chunk` / `Uncompressed` |
 | `resourcePriority` | `bundles[]` | 对应 `ResourcePriority` 整型；越小越不易 LRU 卸载（运行时 `BundleLruUnloadPolicy`） |
 | `sizeBytes` / `fileHash` / `crc32` | `bundles[]` | 构建后 .bundle 完整性 |
@@ -104,6 +105,17 @@ Editor 增量产物（同 `bundleRoot/Reports/`）：
 - `BuildManifest.json` — 各包 hash/crc/优先级快照  
 - `BuildManifest.diff.json` — 相对上一份的 added/removed/changed  
 - `BuildCache.json` — 源 GUID hash + 输出 hash，供「增量打包」跳过 Unity 构建  
+- `DependencyGraph.json` — bundle 依赖图（直接/反向/传递闭包），Reporter **依赖 Explorer** 读取
+
+### C-3 运行时路径（阶段 C ✅）
+
+| 层级 | 路径 | 说明 |
+|------|------|------|
+| 热更缓存 | `persistentDataPath/ABCache/{平台}/` | CDN 下载的 bundle + 热更清单 `Catalogue/AssetCatalog.json` |
+| 首包 | `StreamingAssets/{平台}/` | 安装包内置 subset |
+| 远程 | 清单 `cdnBaseUrl` + `/{bundleName}` | `HttpRemoteBundleProvider` HTTP 拉取 |
+
+解析顺序：**ABCache → StreamingAssets → CDN**（`DefaultBundlePathResolver` + `AssetRouter` NETCDN）。
 
 ### 拓扑序约定（✅ 已实现）
 
@@ -186,6 +198,16 @@ manifestBundle.Unload(true);
 4. **CatalogueReader** — ✅ `ResLoader/Catalogue/CatalogueReader.cs`  
 5. **BundleManager** — ✅ `AcquireBundleWithDependencies`  
 6. **验收** — 手动：DeviceDebug 打包 + `ABLoadSmokeTest`（L-024 / L-033 / P-055）
+
+### C-3 运行时路径（阶段 C ✅）
+
+| 位置 | 角色 |
+|------|------|
+| `{persistentDataPath}/ABCache/{平台}/` | CDN 已下载 bundle + 热更清单 |
+| `StreamingAssets/{平台}/` | 首包内置 bundle + 首包清单 |
+| 清单 `cdnBaseUrl` | 远程根 URL；Init 注入 `HttpRemoteBundleProvider` |
+
+解析顺序：**ABCache → 首包 → CDN 下载**（见 [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md)「首包、热更包与本地缓存」）。
 
 ---
 

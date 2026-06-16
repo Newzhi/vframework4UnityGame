@@ -1,4 +1,4 @@
-# Editor 打包模块说明
+﻿# Editor 打包模块说明
 
 > 路径：`BaseAssetSys/Editor/`  
 > 菜单：**vFramework → AssetBundle Packer**（单窗口双页签）
@@ -24,7 +24,8 @@ BundleRuleConfig/      配置层：BuildSetting、AssetCatalog schema、拓扑�
 产出                   {deviceOutputPath|cdnOutputPath}/{平台}/*.bundle
                        + Catalogue/AssetCatalog.json
                        + Reports/BundleBuildReport.json
-                       + Reports/BuildManifest.json / BuildManifest.diff.json / BuildCache.json
+                       + Reports/DependencyGraph.json
+                       + Reports/DependencyGraph.json
 ```
 
 | 模块 | 目录 | 职责 |
@@ -35,6 +36,7 @@ BundleRuleConfig/      配置层：BuildSetting、AssetCatalog schema、拓扑�
 | **Builder** | `BundleBuilder/Catalogue/` | `CatalogueWriter`（拓扑序 + 环检测）、`CatalogueValidator` |
 | **Builder** | `BundleBuilder/Tests/` | EditMode 单测（`BundleDependencyTopologyTests`） |
 | **Reporter** | `BundleReporter/` | `BundleBuildAnalyzer`、`BundleBuildReport` DTO |
+| **Analysis** | `BundleBuild/Analysis/` | `DependencyGraphWriter`、`BundleDependencyExplorer`（Reporter 页签） |
 | **配置** | `BundleRuleConfig/` | `BuildSetting`、`AssetCatalog`、`BundleDependencyTopology` |
 | **Player** | 根目录 | `StreamingAssetsPlatformBuildFilter` |
 

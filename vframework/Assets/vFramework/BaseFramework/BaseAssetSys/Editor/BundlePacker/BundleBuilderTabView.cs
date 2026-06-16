@@ -164,14 +164,10 @@ static class BundleBuilderTabView
                 bundleName = "bundle_" + (setting.customItems.Count + 1),
                 buildMode = setting.buildMode,
                 folderPackingRule = BundleFolderRule.EntireFolder,
-                resourcePriority = setting.defaultBundlePriority,
+                resourcePriority = ResourcePriority.Normal,
             });
         }
         EditorGUILayout.EndHorizontal();
-
-        setting.defaultBundlePriority = (ResourcePriority)EditorGUILayout.EnumPopup(
-            BundlePackerUiShared.Tip("默认资源优先级", "新增配置项时的默认优先级；未单独配置项时使用（越小越不易 LRU 卸载）。"),
-            setting.defaultBundlePriority);
 
         for (int i = 0; i < setting.customItems.Count; i++)
         {

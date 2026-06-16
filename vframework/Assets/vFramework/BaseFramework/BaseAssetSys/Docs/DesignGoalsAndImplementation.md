@@ -60,7 +60,7 @@
 > 本节随开发进度更新，可自由修改。上方 **禁止修改区域** 为原始构思；此处对照 **设计目标四条模块**，说明当前做到哪一步。  
 > **复核日期：2026-06-13**（对照源码 + 集成测试 JSON；**禁止区正文未改**）。  
 > **主路线（2026-06-08 定稿）**：不换同步地基，**阶段 B 异步 → 阶段 C CDN**；详见 **[MainRoadmap.md](./MainRoadmap.md)**。  
-> **本阶段结论**：阶段 A **19/19** 已验收；阶段 **B-1 三端异步 19/19** 已验收；**B-Pool** `PrefabPool` 已实现；B-2 inFlight / 真异步未做；CDN 运行时未做。
+> **本阶段结论**：阶段 A **19/19** 已验收；阶段 **B-1 三端异步 19/19** 已验收；**B-Pool** `PrefabPool` 已实现；**阶段 C CDN 运行时** 已封板；B-2 inFlight / 真异步未做。
 
 ### 主路线符合度（摘要）
 
@@ -71,7 +71,7 @@
 | **B-Pool** | `PrefabPool` + `PrefabPoolManager`；按 Active Scene 分池、`refCount` 共享 | ✅ |
 | **B-RefTrace** | `AssetRefTraceLogger` + [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | 🟡 首版 |
 | **B-2** | 真异步 / inFlight / ref==0 丢弃 | ❌ |
-| **C** | CDN 下载 + 多 root + version 比对 | ❌ |
+| **C** | CDN 下载 + 多 root + version 比对 | ✅ 阶段 C 封板 |
 
 **不阻塞主路线**：DestroyInstance / AutoUnload — 见主路线 §4 延后项；Bundle LRU 延迟卸载已实现（`BundleManager` + `BundleLruUnloadPolicy`）。
 
@@ -195,7 +195,7 @@ Load("UI/UIRoot")
 |------|----------|
 | `loadPath` 以 `Resources/` 开头 | `Resources.Load` |
 | Editor Play + 清单 `buildMode=EditorTest` | `AssetDatabase` |
-| 本地无 bundle（CDN 扩展） | NETCDN Provider（当前 Stub） |
+| 本地无 bundle（CDN 扩展） | NETCDN → `HttpRemoteBundleProvider` |
 | 默认 DeviceDebug / 首包 | 真 AB + 上节依赖逻辑 |
 
 详见 [ResLoader/README.md](../ResLoader/README.md)、[BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)。
@@ -248,10 +248,10 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | 1 | 同步加载 | ✅ | `Load<T>(loadPath)`；辅助 `LoadByBundle` / `LoadByAssetPath`；**三端双 Runner 已验** |
 | 2 | 异步加载（设计基线 **默认 API**） | 🟡 | `LoadUniTaskAsync` **三端双 Runner 19/19**；内核仍为 `Yield` + 同步 `Load`；无后台 I/O |
 | 3 | 加载 + 回调 | 🟡 | `LoadUniTaskWithCallback` 等已实现，内核同上 |
-| 4 | 预加载资源包 | ❌ | `PreLoad<T>()` 仍返回 `default` |
+| 4 | 预加载资源包 | ✅ | `PreLoadBundles` / `PreLoad<T>(loadPath)` |
 | 5 | 卸载单个资源 | ✅ | `IAssetHandle.Release()` / `Unload(handle, instance, cb)` |
 | 6 | 卸载全部 | ✅ | `UnloadAll()`；双 Runner 中仅 `Myloadtest` 独占 |
-| 7 | **CDN 联网下载** | ❌ | 打包侧 `CdnHotUpdate` → `cdnOutputPath` ✅；运行时 `LoadFromFile` 仅本地；`BundleManager` 内 `TODO(CDN)` |
+| 7 | **CDN 联网下载** | ✅ | `HttpRemoteBundleProvider` + `CdnCatalogueSyncService` + `BundleDownloadQueue` |
 
 **设计基线测试要求（§46–50）对照**（实现细节区，非禁止区）：
 
@@ -274,7 +274,7 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | **2. 打包器** | ✅ | **约 73%** | 10/14 | Build/Clean/Validate、三规则、Player 平台过滤；缺增量 UI、Bundle 分析、DLC 路径、分模式清单策略 |
 | **中间桥梁 · 资源清单** | ✅ | **约 76%** | 7/10 | JSON 双份 + `entries` + `bundles[]` 三端已验；`version`/`buildNumber` **仅写入**；二进制/运行时版本对比未做 |
 | **3. 抽象资源** | ✅ | **约 68%** | — | 双层 Ref + 依赖 Acquire；三端并发 PASS；无 MOD/远程资源抽象 |
-| **4. 加载器 + 路由器** | ✅ | **约 68%** | — | **同步加载器 ~75%**；**AssetRouter ~55%**（四源已接，CDN 真下载未做）；PreLoad/真异步仍拉低加权 |
+| **4. 加载器 + 路由器** | ✅ | **约 85%** | — | CDN 运行时 + PreLoad 已接；B-2 真异步/inFlight 仍拉低加权 |
 
 **综合实现进度（五行平均）**：**约 70%**（较上一版「感估 63～82% 分散值」改为按 checklist 重算并拉齐口径）。
 
@@ -370,10 +370,10 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | `AbstractResource` / `IAssetHandle` | Resource 层 Ref；`LoadAsset` / Release 经 `AssetRouter` |
 | `BundleManager` | `LoadFromFile` + `IBundlePathResolver`；`AcquireBundleWithDependencies` 读清单 `bundles[]` |
 | `CatalogueReader` + `StreamingAssetsIO` | 读 JSON；Editor 可 `LoadFromProjectCatalogue`；Android `jar:` 已验 |
-| `BundleResLoader` | 同步 `Load` ✅；`LoadUniTaskAsync` + 回调 ✅；`PreLoad` ❌ |
+| `BundleResLoader` | 同步 `Load` ✅；`LoadUniTaskAsync` + 回调 ✅；`PreLoadBundles` ✅ |
 | `AssetPool` | ✅ `PrefabPool` + `PrefabPoolManager` + `PoolSceneRootsUtil` |
 | `BaseLogSys` | 🟡 `AssetRefTraceLogger`（Ref Trace）；`DebugLogger` 占位 |
-| `AssetRouter` | ✅ 四源：`ABUNDLE` / `RESOURCES` / `EDITORRESOURCES` / `NETCDN`（Stub） |
+| `AssetRouter` | ✅ 四源：`ABUNDLE` / `RESOURCES` / `EDITORRESOURCES` / `NETCDN`（`HttpRemoteBundleProvider`） |
 | **集成测试** | 同步/异步双 Runner **三端 19/19** |
 
 设计基线 §1 同步 `Load(简路径)` 与 §3 回调入口已实现；§2 **默认异步** 仅 UniTask 形态，**非**设计终态的真异步 I/O。§4 预加载、§7 CDN、路由器仍见 [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)。
@@ -527,6 +527,13 @@ CDN 下载 → 写入 persistentDataPath
 ```
 
 首包可能是 `v1.0`，热更后是 `v1.5`；**新版本不在 StreamingAssets 里**，在 CDN，下完进本地缓存。
+
+**阶段 C 运行时验收（✅ 2026-06-13 封板）**
+
+- [x] `DefaultBundlePathResolver`：ABCache → StreamingAssets → NETCDN 下载  
+- [x] `CdnCatalogueSyncService`：`catalogueHash` 变化写 `ABCache/Catalogue/` 并重载  
+- [x] CDN 不可达：Warning + 继续使用首包/本地 cache 清单  
+- [x] `PreLoadBundles` / `HttpRemoteBundleProvider` + `BundleDownloadQueue`  
 
 **2. 多个资源包（Package）**
 
@@ -717,7 +724,7 @@ https://cdn.example.com/bundles/Android/[PackageName]/
 | **YooAsset** | Simulate 目录 / 虚拟 FS | `Bundles/平台/` | StreamingAssets | persistentDataPath + CDN |
 | **Addressables** | Play Mode = Fast / Virtual | `ServerData` 或本地 Build 目录 | StreamingAssets | `persistentDataPath` + Remote |
 | **xAsset** | Simulation 模式 | `Bundles` 输出目录 | StreamingAssets | 下载目录 + 远程 |
-| **ABSystem_Beta（本项目）** | 编辑器测试跳过 BuildPipeline | `deviceOutputPath` / `cdnOutputPath` + 平台子目录 | 当前首包进 `StreamingAssets` | **运行时 CDN 未做**；打包 CDN 模式 ✅；**三端双 Runner 集成 ✅** |
+| **ABSystem_Beta（本项目）** | 编辑器测试跳过 BuildPipeline | `deviceOutputPath` / `cdnOutputPath` + 平台子目录 | 当前首包进 `StreamingAssets` | **阶段 C 运行时 CDN ✅**；打包 CDN 模式 ✅；**三端双 Runner 集成 ✅** |
 
 思路一致：**开发用模拟、发布用真包；首包进 StreamingAssets，补丁走 CDN + 本地缓存**。
 
@@ -756,4 +763,4 @@ https://cdn.example.com/bundles/Android/[PackageName]/
 
 - **编辑器模拟**：清单多在 **项目内 Simulate / Editor 目录**，运行时 **映射回工程资源**，不依赖真实 AB。
 - **首包（真机模式）**：先打到 **`Bundles/[包名]/[平台]/`**，再按策略：**首包 → `StreamingAssets`**，**其他包 → CDN → `persistentDataPath`**。
-- **ABSystem_Beta 当前阶段**：**打包 + 清单 + 同步 Load + 三端双 Runner 集成** 已验收；开发期可暂全进 `StreamingAssets`；**运行时 CDN / 版本热更** 见 [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)。
+- **ABSystem_Beta 当前阶段**：**打包 + 清单 + 同步 Load + CDN 运行时 + 三端双 Runner 集成** 已验收；开发期可暂全进 `StreamingAssets`；热更细节见 [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)。

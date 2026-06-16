@@ -1,4 +1,4 @@
-# 加载器设计说明（双层架构）
+﻿# 加载器设计说明（双层架构）
 
 > 目录：`BaseAssetSys/ResLoader/`（子目录见 [README.md](./README.md)）  
 > 相关：`AbstractAssets/IAssetHandle.cs`、`AbstractAssets/AbstractResource.cs`、`BundleRuleConfig/Catalogue/`（清单）、[`CatalogueReference.md`](../Docs/CatalogueReference.md)
@@ -29,7 +29,7 @@ AbstractResource         ← Resource 层 Ref；LoadAsset / Release
 AssetRouter              ← 按 loadPath / buildMode / 本地 bundle 可用性选源（业务无感）
     ├─ EDITORRESOURCES    ← Editor + Catalogue.buildMode==EditorTest → AssetDatabase
     ├─ RESOURCES          ← loadPath 以 Resources/ 开头 → Resources.Load
-    ├─ NETCDN             ← 本地无 bundle → IRemoteBundleProvider（当前 Stub）
+    ├─ NETCDN             ← 本地无 bundle → HttpRemoteBundleProvider + BundleDownloadQueue
     └─ ABUNDLE            ← BundleManager Acquire + LoadAsset
     ▼
 BundleManager            ← AcquireBundleWithDependencies；依赖包顺序加载
@@ -69,7 +69,7 @@ AssetBundle 文件         ← StreamingAssets / CDN 缓存目录等
 |----|----------|----------|
 | `RESOURCES` | `loadPath` 以 `Resources/` 开头 | `ResourcesAssetProvider` |
 | `EDITORRESOURCES` | Editor Play 且 Catalogue `buildMode == EditorTest` | `EditorResourcesAssetProvider`（AssetDatabase） |
-| `NETCDN` | 非 EditorTest 且 `IBundlePathResolver` 报告本地无 bundle | `CdnBundleAssetProvider`（当前 `StubRemoteBundleProvider`） |
+| `NETCDN` | 非 EditorTest 且 `IBundlePathResolver` 报告本地无 bundle | `CdnBundleAssetProvider` + `HttpRemoteBundleProvider` |
 | `ABUNDLE` | 默认 | `AbBundleAssetProvider` → `BundleManager` |
 
 **要点**
@@ -156,7 +156,7 @@ Resource Ref 与 Bundle Ref **不必相等**（一个包内多个 asset、或多
 | `../AbstractAssets/AbstractResource.cs` | 单资源封装 + Resource Ref |
 | `../../../../BaseLayer/AssetLayer/ABSystemTester/ABLoadSmokeTest.cs` | 手动 Smoke 测试 |
 
-**后续迭代**：按 [Docs/MainRoadmap.md](../Docs/MainRoadmap.md) — 阶段 B 异步集成 / inFlight → 阶段 C CDN（`IRemoteBundleProvider`）。
+**后续迭代**：按 [Docs/MainRoadmap.md](../Docs/MainRoadmap.md) — 阶段 **B-2** inFlight / 真异步 I/O。
 
 ---
 
@@ -169,20 +169,18 @@ Resource Ref 与 Bundle Ref **不必相等**（一个包内多个 asset、或多
 | 1 同步加载 | ✅ `Load(loadPath)`；辅助 `LoadByBundle` / `LoadByAssetPath` |
 | 2 异步加载（**设计基线默认 API**） | ✅ `LoadUniTaskAsync(loadPath)`（UniTask） |
 | 3 加载+回调 | ✅ `LoadUniTaskWithCallback(loadPath, onComplete, onFailed, useUniTask)` |
-| 4 预加载包 | ❌ `PreLoad` 占位 |
+| 4 预加载包 | ✅ `PreLoadBundles` / `PreLoad<T>(loadPath)` |
 | 5 卸载单个 | ✅ `IAssetHandle.Release()` / `Unload(handle, instance, cb)` |
 | 6 卸载全部 | ✅ `UnloadAll()` |
-| 7 CDN 联网下载 | ❌ `BundleManager` 内 TODO(CDN)，仅本地 `LoadFromFile` |
+| 7 CDN 联网下载 | ✅ `HttpRemoteBundleProvider` + `CdnCatalogueSyncService` |
 
 ---
 
-## 9. CDN 与多根目录（扩展点）
+## 9. CDN 与多根目录（阶段 C ✅）
 
-当前 `Init(bundleRootPath)` 只支持 **单一本地根**（默认 StreamingAssets）。  
-目标态需：
+1. `DefaultBundlePathResolver`：**ABCache → StreamingAssets**  
+2. `CdnCatalogueSyncService`：远程 `catalogueHash` → 写 `ABCache/Catalogue/AssetCatalog.json` → 重载 Reader  
+3. `HttpRemoteBundleProvider` + `BundleDownloadQueue`：按 `resourcePriority` 排序；同 bundle in-flight 合并  
+4. `PreLoadBundles`：Acquire 依赖链并保持 Bundle 引用至 `UnloadAll`  
 
-1. 对比远程/本地清单 `version`、`buildNumber`  
-2. 下载缺失 bundle 到 `persistentDataPath`  
-3. `AcquireBundle` 优先从缓存目录 `LoadFromFile`  
-
-打包侧 **CdnHotUpdate** 产出在 `cdnOutputPath`，与运行时下载链路分离；详见 **业务API与CDN规划** §2。
+打包侧 **CdnHotUpdate** 产出在 `cdnOutputPath`；清单 `cdnBaseUrl` 供运行时拉取。详见 **业务API与CDN规划** §2。

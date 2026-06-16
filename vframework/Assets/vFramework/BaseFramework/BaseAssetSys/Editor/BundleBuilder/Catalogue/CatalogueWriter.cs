@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -177,6 +177,7 @@ public static class CatalogueWriter
             resourceRoot = setting.targetDirectory,
             buildId = buildId,
             compressionMode = setting.compressionMode.ToString(),
+            cdnBaseUrl = setting.cdnBaseUrl ?? string.Empty,
             entries = entries.ToArray(),
             bundles = bundles
         };

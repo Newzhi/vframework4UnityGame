@@ -54,6 +54,8 @@ internal class AbstractResource : IAssetHandle
         AssetRefTraceLogger.TraceResource(GetTraceKey(), Ref, -1, "ReduceReference");
     }
 
+    internal int CurrentRef => Ref;
+
     #endregion
 
     #region 加载/卸载
