@@ -1,27 +1,47 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
     /// 游戏全局唯一入口 MonoBehaviour：装配 IOC、注册模块、驱动 Update / FixedUpdate / LateUpdate。
-    /// Bootstrap Scene 中只保留一个实例；必须挂载实现 <see cref="IGameBootstrap"/> 的组件。
+    /// Bootstrap Scene 中只保留一个实例。业务装配在热更加载后调用 <see cref="TryStart"/>（路径 B）。
     /// </summary>
     [DefaultExecutionOrder(-10000)]
     public class GameRoot : MonoBehaviour
     {
         public static GameRoot Instance { get; private set; }
 
-        [Tooltip("必填：挂载实现 IGameBootstrap 的 MonoBehaviour（业务装配入口）。")]
-        [SerializeField] private MonoBehaviour bootstrapBehaviour;
-
         private ServiceContainer _services;
         private ModuleManager _modules;
+        private bool _started;
+        private bool _waitingBootstrap;
 
-        /// <summary>只读服务表，供调试或高级扩展。</summary>
+        public bool IsStarted => _started;
         public IServiceRegistry Services => _services;
-
-        /// <summary>只读模块管理器。</summary>
         public ModuleManager ModuleManager => _modules;
+
+        public static bool TryStart(IGameBootstrap bootstrap)
+        {
+            if (bootstrap == null)
+            {
+                Debug.LogError($"{nameof(GameRoot)}.{nameof(TryStart)}: bootstrap is null.");
+                return false;
+            }
+
+            GameBootstrapRegistry.Register(bootstrap);
+
+            if (Instance == null)
+                return true;
+
+            if (Instance._started)
+            {
+                Debug.LogError($"{nameof(GameRoot)}.{nameof(TryStart)}: pipeline already started.");
+                return false;
+            }
+
+            Instance.StartPipeline(bootstrap);
+            return true;
+        }
 
         private void Awake()
         {
@@ -34,7 +54,59 @@ namespace BaseFramework.BaseGameRoot
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            if (!TryResolveBootstrap(out IGameBootstrap bootstrap))
+            if (GameBootstrapRegistry.TryGet(out IGameBootstrap bootstrap))
+                StartPipeline(bootstrap);
+            else
+                _waitingBootstrap = true;
+        }
+
+        private void Start()
+        {
+            if (_waitingBootstrap && !_started)
+            {
+                Debug.LogError(
+                    $"{nameof(GameRoot)}: Bootstrap not started. Call {nameof(TryStart)}({nameof(IGameBootstrap)}) after hotfix / logic assembly is loaded.",
+                    this);
+                enabled = false;
+            }
+        }
+
+        private void Update()
+        {
+            if (!_started) return;
+            _modules.Update(Time.deltaTime);
+        }
+
+        private void FixedUpdate()
+        {
+            if (!_started) return;
+            _modules.FixedUpdate(Time.fixedDeltaTime);
+        }
+
+        private void LateUpdate()
+        {
+            if (!_started) return;
+            _modules.LateUpdate(Time.deltaTime);
+        }
+
+        private void OnDestroy()
+        {
+            if (_started)
+            {
+                _modules?.DisposeAll();
+                _services?.Clear();
+                IoC.SetContainer(null);
+            }
+
+            GameBootstrapRegistry.Clear();
+
+            if (Instance == this)
+                Instance = null;
+        }
+
+        private void StartPipeline(IGameBootstrap bootstrap)
+        {
+            if (_started || bootstrap == null)
                 return;
 
             _services = new ServiceContainer();
@@ -43,57 +115,9 @@ namespace BaseFramework.BaseGameRoot
 
             _modules.Configure(bootstrap, _services);
             _modules.InitAll(_services);
-        }
 
-        private void Update()
-        {
-            _modules?.Update(Time.deltaTime);
-        }
-
-        private void FixedUpdate()
-        {
-            _modules?.FixedUpdate(Time.fixedDeltaTime);
-        }
-
-        private void LateUpdate()
-        {
-            _modules?.LateUpdate(Time.deltaTime);
-        }
-
-        private void OnDestroy()
-        {
-            _modules?.DisposeAll();
-            _services?.Clear();
-            IoC.SetContainer(null);
-
-            if (Instance == this)
-                Instance = null;
-        }
-
-        private bool TryResolveBootstrap(out IGameBootstrap bootstrap)
-        {
-            bootstrap = null;
-
-            if (bootstrapBehaviour == null)
-            {
-                Debug.LogError(
-                    $"{nameof(GameRoot)}: Bootstrap Behaviour is required. Assign a {nameof(MonoBehaviour)} that implements {nameof(IGameBootstrap)}.",
-                    this);
-                enabled = false;
-                return false;
-            }
-
-            if (bootstrapBehaviour is IGameBootstrap resolved)
-            {
-                bootstrap = resolved;
-                return true;
-            }
-
-            Debug.LogError(
-                $"{nameof(GameRoot)}: Bootstrap Behaviour must implement {nameof(IGameBootstrap)}. Type: {bootstrapBehaviour.GetType().Name}",
-                this);
-            enabled = false;
-            return false;
+            _started = true;
+            _waitingBootstrap = false;
         }
     }
 }

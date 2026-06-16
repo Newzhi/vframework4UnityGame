@@ -9,46 +9,58 @@
 
 | 组件 | 职责 |
 |------|------|
-| **GameRoot** | 单例 Mono；`Awake` 装配 → `Update` / `FixedUpdate` / `LateUpdate` 驱动模块 → `OnDestroy` 逆序释放 |
+| **GameRoot** | 单例 Mono；`Awake` 占位 → 热更后 `TryStart` 装配 → 三相位 Update → `OnDestroy` 释放 |
+| **GameBootstrapRegistry** | 持有 `IGameBootstrap` 实例（由 `TryStart` 写入） |
 | **ServiceContainer** | 接口 → 单例实例映射 |
-| **IoC** | 静态门面，委托 `ServiceContainer`（迁移/调试用） |
+| **IoC** | 静态门面，委托 `ServiceContainer` |
 | **ModuleManager** | 按 `Priority` 排序，`InitAll` / `Update` / `FixedUpdate` / `LateUpdate` / `DisposeAll` |
-| **IGameBootstrap** | 业务装配入口：集中 `Register` Service、`AddModule`（**必填**，由热更层实现并挂到 GameRoot） |
+| **IGameBootstrap** | 业务装配：`Register` Service + `AddModule`（热更层实现） |
 
-本目录只提供框架骨架；玩法 Module / Service 在 HotUpdate 层实现，通过 `IGameBootstrap.Configure` 注册。
+本目录只提供框架骨架；玩法 Module / Service 在热更层实现，通过 **`GameRoot.TryStart`** 接入（路径 B，对标 TEngine `GameApp.Entrance`）。
 
 ---
 
-## 2. 架构
+## 2. 架构（路径 B：热更后启动）
 
 ```text
+Bootstrap Scene：仅挂 GameRoot（DontDestroyOnLoad）
 GameRoot.Awake
-    → 校验 Bootstrap Behaviour（必须实现 IGameBootstrap）
-    → ServiceContainer + ModuleManager
-    → IGameBootstrap.Configure(services, modules)   // 业务注册 Service + Module
-    → ModuleManager.InitAll(services)               // 各 Module Init，Resolve 依赖
-GameRoot.Update       → ModuleManager.Update(deltaTime)
-GameRoot.FixedUpdate  → ModuleManager.FixedUpdate(fixedDeltaTime)   // IFixedUpdateModule
-GameRoot.LateUpdate   → ModuleManager.LateUpdate(deltaTime)         // ILateUpdateModule
-GameRoot.OnDestroy    → DisposeAll（逆序）+ Clear 容器
+    → 单例 + DontDestroyOnLoad
+    → 若 Registry 已有 Bootstrap → StartPipeline
+    → 否则 _waitingBootstrap = true（等 TryStart）
+热更 / 逻辑程序集加载完成
+    → GameRoot.TryStart(new GameBootstrap())
+    → Register + Configure + InitAll
+GameRoot.Update / FixedUpdate / LateUpdate
+    → ModuleManager（仅 _started 后）
 ```
 
 ```mermaid
-flowchart TB
-    GR["GameRoot"]
-    BS["IGameBootstrap"]
-    SC["ServiceContainer"]
-    MM["ModuleManager"]
-    Mod["IGameModule"]
-    Svc["业务 IService"]
+sequenceDiagram
+    participant Scene as BootstrapScene
+    participant GR as GameRoot
+    participant Hotfix as HotfixEntry
+    participant BS as IGameBootstrap
+    participant MM as ModuleManager
 
-    GR --> BS
-    BS -->|Register| SC
-    BS -->|AddModule| MM
-    MM --> Mod
-    SC --> Svc
-    Mod -->|Init Resolve| Svc
+    Scene->>GR: Awake DontDestroyOnLoad
+    Note over GR: waitingBootstrap
+    Hotfix->>GR: TryStart(GameBootstrap)
+    GR->>BS: Configure
+    GR->>MM: InitAll
+    loop each frame
+        GR->>MM: Update
+    end
 ```
+
+### 与 TEngine / GameFramework 对照
+
+| 概念 | TEngine | vFramework |
+|------|---------|------------|
+| 热更入口 | `GameApp.Entrance` | **`GameRoot.TryStart`** |
+| 业务装配 | `GameApp_RegisterSystem` | **`IGameBootstrap.Configure`** |
+| 框架 Mono | Procedure 驱动 | **GameRoot** |
+| Inspector 拖 Bootstrap | 无 | **无** |
 
 ---
 
@@ -66,6 +78,7 @@ BaseGameRoot/
     │   ├── IServiceRegistry.cs
     │   └── IModuleRegistry.cs
     └── Impt/
+        ├── GameBootstrapRegistry.cs
         ├── ServiceContainer.cs
         ├── ModuleManager.cs
         ├── IoC.cs
@@ -76,107 +89,80 @@ BaseGameRoot/
 
 ---
 
-## 4. 业务注册 Service 与 Module（HotUpdate 层）
+## 4. 业务接入（路径 B）
 
 ### 4.1 步骤清单
 
 | 步骤 | 做什么 |
 |------|--------|
-| 1 | 定义业务接口，如 `IGameplayService`、`IInputService` |
-| 2 | 实现类；需每帧逻辑则同时实现 `IGameModule`（及可选 `IFixedUpdateModule` / `ILateUpdateModule`） |
-| 3 | 实现 `IGameBootstrap`（建议 `MonoBehaviour`，便于挂 Inspector） |
-| 4 | 在 `Configure` 里 `services.Register<IXxx>(instance)` |
-| 5 | 需参与帧循环的实例再 `modules.AddModule(instance)` 或 `modules.AddModule(new XxxModule())` |
-| 6 | Bootstrap Scene：GameObject 挂 `GameRoot`，**Bootstrap Behaviour** 指向 Bootstrap 组件 |
+| 1 | 实现 `IGameBootstrap`（普通 C# 类） |
+| 2 | 在 `Configure` 里 `Register` / `AddModule` |
+| 3 | Bootstrap Scene **只挂 GameRoot**（无 Bootstrap 字段） |
+| 4 | 热更 DLL 加载完成后调用 **`GameRoot.TryStart(new GameBootstrap())`** |
 
-### 4.2 Bootstrap 示例
+### 4.2 IGameBootstrap
 
 ```csharp
-public sealed class GameBootstrap : MonoBehaviour, IGameBootstrap
+public sealed class GameBootstrap : IGameBootstrap
 {
     public void Configure(IServiceRegistry services, IModuleRegistry modules)
     {
         var input = new InputModule();
-        var ui = new UIModule();
         var gameplay = new GameplayService();
 
         services.Register<IInputService>(input);
-        services.Register<IUIService>(ui);
         services.Register<IGameplayService>(gameplay);
 
         modules.AddModule(input);
         modules.AddModule(new GameLogicModule());
-        modules.AddModule(ui);
         modules.AddModule(gameplay);
     }
 }
 ```
 
-### 4.3 只注册 Service、不 AddModule
-
-无帧循环的纯服务只 `Register`，不 `AddModule`：
+### 4.3 热更入口（对标 GameApp.Entrance）
 
 ```csharp
-services.Register<IConfigService>(new ConfigService());
-// 其他 Module 在 Init 里 services.Resolve<IConfigService>()
-```
-
-### 4.4 Module 取用依赖
-
-```csharp
-public sealed class GameLogicModule : IGameModule
+public static class GameEntry
 {
-    private IInputService _input;
-    private IGameplayService _gameplay;
-
-    public int Priority => ModulePriority.GameLogic;
-
-    public void Init(IServiceRegistry services)
+    public static void OnHotfixLoaded()
     {
-        _input = services.Resolve<IInputService>();
-        _gameplay = services.Resolve<IGameplayService>();
+        if (!GameRoot.TryStart(new GameBootstrap()))
+            Debug.LogError("GameRoot.TryStart failed.");
     }
-
-    public void Update(float deltaTime)
-    {
-        _gameplay.OnUpdate(deltaTime);
-    }
-
-    public void Dispose() { }
 }
 ```
 
-### 4.5 同一实例：Service + Module
+- `TryStart` 成功：Register → `Configure` → `InitAll`
+- `GameRoot` 尚未 Awake：仅 Register，Awake 时自动 `StartPipeline`
+- 已启动后再调 `TryStart`：LogError，返回 false
+- 首帧 `Start` 仍未启动：LogError 并 `enabled = false`
 
-实现类可同时承担 Service 与 Module（例如 `InputModule : IInputService, IGameModule`）：一次 `new`，`Register` 与 `AddModule` 使用同一引用。
-
-### 4.6 构造注入（可选）
-
-依赖关系明确时，在 Bootstrap 内先 `new` 再注册，避免 Service 内部 `Resolve`：
+### 4.4 Module 取依赖
 
 ```csharp
-var ui = new UIModule();
-var gameplay = new GameplayService(ui);
-services.Register<IUIService>(ui);
-services.Register<IGameplayService>(gameplay);
+public void Init(IServiceRegistry services)
+{
+    _input = services.Get<IInputService>();
+    _gameplay = services.Get<IGameplayService>();
+}
 ```
 
-### 4.7 依赖注入约定
+### 4.5 依赖注入约定
 
 | 阶段 | 推荐 | 避免 |
 |------|------|------|
-| `Configure` | `services.Register`、`modules.AddModule` | `IoC.Get` |
-| `Init` | `services.Resolve` 赋给字段 | 在 Update 内 Resolve |
-| `Update` / `FixedUpdate` / `LateUpdate` | 使用 Init 缓存的字段 | 热路径 `IoC.Get` |
+| `Configure` | `Register` / `AddModule` | `IoC.Get` |
+| `Init` | `services.Get` 赋字段 | Update 内 Get |
+| `Update` 等 | 用缓存字段 | 热路径 `IoC.Get` |
 
 ---
 
 ## 5. 场景挂载
 
-1. Bootstrap Scene 放置 **唯一** 带 `GameRoot` 的 GameObject。
-2. 同场景挂载业务 `GameBootstrap : MonoBehaviour, IGameBootstrap`。
-3. Inspector：**Bootstrap Behaviour** 必须指向该 Bootstrap 组件。
-4. 未挂载或未实现 `IGameBootstrap` 时，`GameRoot` 打 Error 并 `enabled = false`，不会启动空容器。
+1. Bootstrap Scene：唯一 GameObject 挂 **GameRoot**。
+2. **不要**在 Inspector 拖 Bootstrap 引用。
+3. 热更流程在适当时机调用 **`GameRoot.TryStart`**。
 
 ---
 
@@ -187,108 +173,24 @@ services.Register<IGameplayService>(gameplay);
 | 成员 | 说明 |
 |------|------|
 | `Instance` | 全局单例 |
-| `Services` | 只读 `IServiceRegistry` |
-| `ModuleManager` | 只读模块管理器 |
-| **Bootstrap Behaviour** | **必填**；须实现 `IGameBootstrap` |
+| `IsStarted` | 是否已完成 Configure / InitAll |
+| `TryStart(IGameBootstrap)` | **热更入口**；注册并启动管道 |
+| `Services` / `ModuleManager` | 启动后只读 |
 
-`DefaultExecutionOrder(-10000)`；`DontDestroyOnLoad`。
-
-### 6.2 IGameModule
-
-```csharp
-public interface IGameModule
-{
-    int Priority => ModulePriority.Normal;
-    void Init(IServiceRegistry services);
-    void Update(float deltaTime);
-    void Dispose();
-}
-```
-
-| `ModulePriority` | 值 | 典型用途 |
-|------------------|-----|----------|
-| `Input` | 0 | 输入采集 |
-| `Early` | 100 | 早更新 |
-| `Normal` | 500 | 默认 |
-| `GameLogic` | 600 | 核心玩法 / 规则 / 仿真 |
-| `Late` | 900 | 晚更新 |
-| `UI` | 1000 | 表现 / UI |
-
-数值越小越先执行；业务可自定义 `int`，常量之间留空便于插入。
-
-### 6.3 IFixedUpdateModule / ILateUpdateModule
-
-```csharp
-public interface IFixedUpdateModule : IGameModule
-{
-    void FixedUpdate(float fixedDeltaTime);
-}
-
-public interface ILateUpdateModule : IGameModule
-{
-    void LateUpdate(float deltaTime);
-}
-```
-
-`InitAll` 时缓存需参与 Fixed/Late 的模块；未实现的模块不会进入对应相位列表。
-
-多相位示例：
-
-```csharp
-public sealed class FollowTargetModule : ILateUpdateModule
-{
-    public int Priority => ModulePriority.Late;
-
-    public void Init(IServiceRegistry services) { }
-
-    public void Update(float deltaTime) { /* 计算目标 */ }
-
-    public void LateUpdate(float deltaTime) { /* 应用 Transform */ }
-
-    public void Dispose() { }
-}
-```
-
-### 6.4 IServiceRegistry
-
-```csharp
-void Register<T>(T instance) where T : class;
-T Resolve<T>() where T : class;
-bool TryResolve<T>(out T instance) where T : class;
-bool IsRegistered<T>() where T : class;
-void Clear();
-```
-
-- 键为 `typeof(T)`，注册时 `T` 通常为**接口**。
-- `Resolve` 未注册时抛 `InvalidOperationException`。
-- 无反射；Register / Resolve 仅在启动期。
-
-### 6.5 IGameBootstrap
-
-```csharp
-void Configure(IServiceRegistry services, IModuleRegistry modules);
-```
-
-业务**唯一**装配点；`GameRoot` 在 `Configure` 之后自动 `InitAll`。
-
-### 6.6 ModuleManager
+### 6.2 GameBootstrapRegistry
 
 | 方法 | 说明 |
 |------|------|
-| `Configure(bootstrap, services)` | 调用业务 `Configure` |
-| `AddModule(module)` | 注册模块（仅 `InitAll` 前） |
-| `InitAll(services)` | 排序 + `Init` + 缓存 Fixed/Late 列表 |
-| `Update` / `FixedUpdate` / `LateUpdate` | 三相位调度 |
-| `DisposeAll()` | 逆序释放 |
+| `Register` | 写入 Bootstrap（`TryStart` 内部调用） |
+| `TryGet` | GameRoot Awake 时尝试读取 |
 
-### 6.7 IoC（静态，过渡用）
+### 6.3 IGameModule / ModulePriority / IServiceRegistry
 
-```csharp
-IoC.Get<T>();
-IoC.TryGet<T>(out T instance);
-```
+见原 §6.2–6.4；`ModulePriority.GameLogic` = 核心玩法（600）。
 
-优先在 `Init` 中 `Resolve`；`IoC.Get` 仅用于迁移或 Editor 调试。
+### 6.4 IoC
+
+`IoC.Get<T>()` 仅迁移/调试；Module `Init` 优先 `services.Get`。
 
 ---
 
@@ -296,9 +198,7 @@ IoC.TryGet<T>(out T instance);
 
 | 阶段 | 内容 |
 |------|------|
-| Phase 1 ✅ | `IGameModule` + `ServiceContainer` + `Update` |
-| Phase 2 ✅ | `IFixedUpdateModule` / `ILateUpdateModule` |
-| Phase 3 | `EcsWorldModule : IGameModule`，内部 ECS `Systems.Update()` |
-| Phase 4 | Service 写 Component；Module 只调度 |
-
-`Priority` 与 ECS System 组顺序对应；三相位均用索引 `for` 遍历，无每帧分配。
+| Phase 1 ✅ | `IGameModule` + `ServiceContainer` + Update |
+| Phase 2 ✅ | Fixed / Late 相位 |
+| Phase 3 | `EcsWorldModule` |
+| 启动 | **路径 B** `TryStart`（可与未来 ProcedureLoadAssembly 流程衔接） |

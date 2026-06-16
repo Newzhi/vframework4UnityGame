@@ -9,7 +9,7 @@ namespace BaseFramework.BaseGameRoot
         /// <summary>执行顺序，默认 <see cref="ModulePriority.Normal"/>。</summary>
         int Priority => ModulePriority.Normal;
 
-        /// <summary>启动阶段：从 <paramref name="services"/> 解析依赖并缓存字段，禁止在此 Update。</summary>
+        /// <summary>启动阶段：从 <paramref name="services"/> Get 依赖并缓存字段，禁止在此 Update。</summary>
         void Init(IServiceRegistry services);
 
         /// <summary>Update 相位逻辑（由 <see cref="GameRoot"/> 驱动）。</summary>

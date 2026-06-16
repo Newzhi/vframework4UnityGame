@@ -2,7 +2,7 @@ namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
     /// 静态访问门面，便于 Bootstrap 与旧代码过渡。
-    /// 新代码应在 <see cref="IGameModule.Init"/> 中 Resolve 并缓存；避免在 Update 内反复 Get。
+    /// 新代码应在 <see cref="IGameModule.Init"/> 中 Get 并缓存；避免在 Update 内反复 IoC.Get。
     /// </summary>
     public static class IoC
     {
@@ -15,7 +15,7 @@ namespace BaseFramework.BaseGameRoot
             if (Container == null)
                 throw new System.InvalidOperationException("IoC not initialized. Ensure GameRoot is in the bootstrap scene.");
 
-            return Container.Resolve<T>();
+            return Container.Get<T>();
         }
 
         public static bool TryGet<T>(out T instance) where T : class
@@ -26,7 +26,7 @@ namespace BaseFramework.BaseGameRoot
                 return false;
             }
 
-            return Container.TryResolve(out instance);
+            return Container.TryGet(out instance);
         }
     }
 }

@@ -98,9 +98,10 @@ Assets/vFramework/
 **GameRoot**（Bootstrap Scene 唯一 MonoBehaviour）负责：
 
 ```text
-Awake → ServiceContainer + ModuleManager
-      → IGameBootstrap.Configure（业务层实现并挂到 GameRoot Inspector，必填）
-      → InitAll（模块 Init，Resolve 依赖）
+Awake → ServiceContainer + ModuleManager（或等待 TryStart）
+      → GameRoot.TryStart(IGameBootstrap)   // 热更入口，对标 TEngine GameApp.Entrance
+      → IGameBootstrap.Configure
+      → InitAll（模块 Init，Get 依赖）
 Update → ModuleManager.Update
 FixedUpdate → ModuleManager.FixedUpdate（IFixedUpdateModule）
 LateUpdate → ModuleManager.LateUpdate（ILateUpdateModule）

@@ -18,7 +18,7 @@ namespace BaseFramework.BaseGameRoot
             _map[typeof(T)] = instance;
         }
 
-        public T Resolve<T>() where T : class
+        public T Get<T>() where T : class
         {
             if (_map.TryGetValue(typeof(T), out object value))
                 return (T)value;
@@ -27,7 +27,7 @@ namespace BaseFramework.BaseGameRoot
                 $"Service not registered: {typeof(T).FullName}. Register it in IGameBootstrap.Configure.");
         }
 
-        public bool TryResolve<T>(out T instance) where T : class
+        public bool TryGet<T>(out T instance) where T : class
         {
             if (_map.TryGetValue(typeof(T), out object value))
             {
