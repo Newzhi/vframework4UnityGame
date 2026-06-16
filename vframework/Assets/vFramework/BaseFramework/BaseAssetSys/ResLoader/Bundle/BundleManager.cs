@@ -15,6 +15,10 @@ public class BundleManager
     {
         public AssetBundle Bundle;
         public int Ref;
+        /// <summary>最近一次 Acquire 或进入空闲队列的时刻（Time.realtimeSinceStartup）。</summary>
+        public float LastUsedTime;
+        /// <summary>来自清单 bundles[].resourcePriority。</summary>
+        public int ResourcePriority;
     }
 
     #endregion
@@ -98,10 +102,12 @@ public class BundleManager
     static AssetBundle AcquireBundle(string bundleName, string role, string mainBundle)
     {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
+        TryEvictIdleBundles();
 
         if (loadedBundles.TryGetValue(bundleName, out BundleEntry entry))
         {
             entry.Ref++;
+            entry.LastUsedTime = Time.realtimeSinceStartup;
             AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, +1, "AcquireBundle", role, mainBundle);
             return entry.Bundle;
         }
@@ -114,15 +120,20 @@ public class BundleManager
             return null;
         }
 
-        loadedBundles[bundleName] = new BundleEntry { Bundle = bundle, Ref = 1 };
+        loadedBundles[bundleName] = new BundleEntry
+        {
+            Bundle = bundle,
+            Ref = 1,
+            LastUsedTime = Time.realtimeSinceStartup,
+            ResourcePriority = ResolveResourcePriority(bundleName)
+        };
         AssetRefTraceLogger.TraceBundle(bundleName, 1, +1, "AcquireBundle(new)", role, mainBundle);
         return bundle;
     }
 
     /// <summary>
-    /// 释放包
+    /// 释放包。Ref 归零时进入 LRU 空闲队列，延迟卸载而非立即 Unload。
     /// </summary>
-    /// <param name="bundleName"></param>
     public static void ReleaseBundle(string bundleName)
     {
         bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
@@ -143,13 +154,22 @@ public class BundleManager
         AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, -1, "ReleaseBundle", "Release", null);
         if (entry.Ref <= 0)
         {
-            entry.Bundle.Unload(true);
-            loadedBundles.Remove(bundleName);
+            entry.LastUsedTime = Time.realtimeSinceStartup;
+            AssetRefTraceLogger.TraceBundle(bundleName, 0, 0, "LruDefer", "Idle", null);
+            TryEvictIdleBundles();
         }
     }
 
     /// <summary>
-    /// 关闭游戏之前或者调试的方法
+    /// 主动驱动 LRU 淘汰（可选；Acquire/Release 已会触发）。建议在低负载帧调用。
+    /// </summary>
+    public static void TickLruUnload()
+    {
+        TryEvictIdleBundles();
+    }
+
+    /// <summary>
+    /// 关闭游戏之前或者调试的方法；立即卸载全部包（含 LRU 空闲队列）。
     /// </summary>
     public static void UnloadAll()
     {
@@ -160,6 +180,80 @@ public class BundleManager
             entry.Bundle.Unload(true);
 
         loadedBundles.Clear();
+    }
+
+    #endregion
+
+    #region LRU
+
+    static int ResolveResourcePriority(string bundleName)
+    {
+        if (catalogue != null && catalogue.IsLoaded)
+            return catalogue.GetBundleResourcePriority(bundleName);
+
+        return (int)ResourcePriority.Normal;
+    }
+
+    static void TryEvictIdleBundles()
+    {
+        if (loadedBundles.Count == 0)
+            return;
+
+        float now = Time.realtimeSinceStartup;
+        var idleCandidates = new List<KeyValuePair<string, BundleEntry>>();
+
+        foreach (KeyValuePair<string, BundleEntry> pair in loadedBundles)
+        {
+            if (pair.Value != null && pair.Value.Ref <= 0)
+                idleCandidates.Add(pair);
+        }
+
+        if (idleCandidates.Count == 0)
+            return;
+
+        idleCandidates.Sort(CompareEvictionOrder);
+
+        int idleOverCap = idleCandidates.Count - BundleLruUnloadPolicy.MaxIdleBundles;
+        int forcedEvictRemaining = idleOverCap > 0 ? idleOverCap : 0;
+
+        foreach (KeyValuePair<string, BundleEntry> pair in idleCandidates)
+        {
+            string bundleName = pair.Key;
+            BundleEntry entry = pair.Value;
+            float elapsed = now - entry.LastUsedTime;
+            float grace = BundleLruUnloadPolicy.GetGraceSeconds(entry.ResourcePriority);
+            bool pastGrace = elapsed >= grace;
+
+            if (!pastGrace && forcedEvictRemaining <= 0)
+                continue;
+
+            if (!pastGrace)
+                forcedEvictRemaining--;
+
+            ForceUnloadBundle(bundleName, entry, pastGrace ? "LruEvict" : "LruEvictCap");
+        }
+    }
+
+    static int CompareEvictionOrder(KeyValuePair<string, BundleEntry> a, KeyValuePair<string, BundleEntry> b)
+    {
+        int priorityCompare = b.Value.ResourcePriority.CompareTo(a.Value.ResourcePriority);
+        if (priorityCompare != 0)
+            return priorityCompare;
+
+        return a.Value.LastUsedTime.CompareTo(b.Value.LastUsedTime);
+    }
+
+    static void ForceUnloadBundle(string bundleName, BundleEntry entry, string reason)
+    {
+        if (entry?.Bundle == null)
+        {
+            loadedBundles.Remove(bundleName);
+            return;
+        }
+
+        entry.Bundle.Unload(true);
+        loadedBundles.Remove(bundleName);
+        AssetRefTraceLogger.TraceBundle(bundleName, 0, 0, reason, "Evict", null);
     }
 
     #endregion

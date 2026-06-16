@@ -54,8 +54,8 @@ _icon = BundleResLoader.Instance.Load<Sprite>("Icon/3");
 | 1 | `Load<GameObject>("Model/Prefabs/tester")` | tester: **1** | 依赖包+主包各 **1** | 新建 Provider + `AddReference` + `LoadAsset` |
 | 2 | `_prefab.Instantiate()` | tester: **1** | 不变 | 只克隆 GO |
 | 3 | `Load<Sprite>("Icon/3")` | Icon: **1** | Icon 包 **1** | 另一条 Provider |
-| 4 | `Unload(_icon, null)` | Icon: **0** → UnLoad | Icon 包 **0** → Unload AB | `resource.Release()` |
-| 5 | `Unload(_prefab, _instance)` | tester: **0** → UnLoad | tester 相关包 **0** | Destroy GO + Release |
+| 4 | `Unload(_icon, null)` | Icon: **0** → UnLoad | Icon 包 **0** → LruDefer | `resource.Release()` |
+| 5 | `Unload(_prefab, _instance)` | tester: **0** → UnLoad | tester 相关包 **0** → LruDefer | Destroy GO + Release |
 
 ### 链路
 
@@ -77,7 +77,7 @@ sequenceDiagram
     BRL->>AR: Release()
     AR->>AR: Ref-- 若0则 UnLoad
     AR->>BM: ReleaseBundles
-    Note over BM: 包 Ref-- 归零则 Unload(true)
+    Note over BM: 包 Ref-- 归零 → LruDefer（延迟 Unload）
 ```
 
 ### 代码对应
@@ -86,7 +86,7 @@ sequenceDiagram
   文件：`ResLoader/Business/BundleResLoader.cs`
 - Release → UnLoad：`AbstractResource.Release` / `UnLoad`  
   文件：`AbstractAssets/AbstractResource.cs`
-- Bundle Acquire / Release：`BundleManager.AcquireBundle` / `ReleaseBundle`  
+- Bundle Acquire / Release：`BundleManager.AcquireBundle` / `ReleaseBundle`（Ref=0 后 LRU 延迟卸载，见 `LoaderOptimizationPlan.md` §4.5）  
   文件：`ResLoader/Bundle/BundleManager.cs`
 
 ---
@@ -331,7 +331,7 @@ Logger `holders`（`PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareC
 | API | ① Resource Ref | ② Bundle Ref | ③ Pool refCount |
 |-----|----------------|--------------|-----------------|
 | `Load` | +1 | 首次 LoadAsset 时 Acquire | — |
-| `Release` / `Unload(_, null)` | -1 | Ref=0 时 Release | — |
+| `Release` / `Unload(_, null)` | -1 | Ref=0 时 Release | Bundle Ref=0 → **LruDefer** |
 | `Instantiate` / `Destroy(GO)` | 不变 | 不变 | — |
 | `GetOrCreatPool`（新建） | +1 | 首次时 Acquire | 1 |
 | `GetOrCreatPool`（命中） | 不变 | 不变 | +1 |
@@ -339,7 +339,7 @@ Logger `holders`（`PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareC
 | `GetObj` / `RecycleObj` | 不变 | 不变 | 不变 |
 | `ReleasePoolShare` | TearDown 时 -1 | TearDown 时 Release | -1 |
 | `DeletePool` / `DeleteAllPools` | TearDown 时 -1 | TearDown 时 Release | 强制清零 |
-| `UnloadAll` | 池 Release + 全量 UnLoad | 全卸 | 强制清零 |
+| `UnloadAll` | 池 Release + 全量 UnLoad | **立即**全卸（含 LRU 队列） | 强制清零 |
 
 ---
 

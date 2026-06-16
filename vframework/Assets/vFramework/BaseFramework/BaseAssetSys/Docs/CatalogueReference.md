@@ -1,4 +1,4 @@
-﻿# Catalogue 清单说明
+# Catalogue 清单说明
 
 > 打包器与加载器之间的桥梁。当前实现：**JSON + `entries` + `bundles[]`**；运行时由 `CatalogueReader` 只读。  
 > 文档索引：[Docs/DocumentIndex.md](./DocumentIndex.md)  
@@ -87,6 +87,23 @@ Dependencies:
 - 无依赖的包：`dependencies: []` 或省略该条（实现时二选一，建议显式空数组）。
 
 对应 C# 类型：`BundleCatalogInfo`（`bundleName` + `dependencies[]`）。
+
+### P1-B 扩展字段（✅ 已实现）
+
+| 字段 | 位置 | 说明 |
+|------|------|------|
+| `buildId` | `AssetCatalog` 根 | 本次构建 GUID，关联 `Reports/BuildManifest.json` |
+| `catalogueHash` | 根 | 整份清单 SHA256（不含本字段），运行时 CDN 比对 |
+| `compressionMode` | 根 | `LZMA` / `LZ4Chunk` / `Uncompressed` |
+| `resourcePriority` | `bundles[]` | 对应 `ResourcePriority` 整型；越小越不易 LRU 卸载（运行时 `BundleLruUnloadPolicy`） |
+| `sizeBytes` / `fileHash` / `crc32` | `bundles[]` | 构建后 .bundle 完整性 |
+| `dependenciesAll` | `bundles[]` | 可选；`useDirectDependenciesOnly=true` 时存全量传递依赖 |
+
+Editor 增量产物（同 `bundleRoot/Reports/`）：
+
+- `BuildManifest.json` — 各包 hash/crc/优先级快照  
+- `BuildManifest.diff.json` — 相对上一份的 added/removed/changed  
+- `BuildCache.json` — 源 GUID hash + 输出 hash，供「增量打包」跳过 Unity 构建  
 
 ### 拓扑序约定（✅ 已实现）
 

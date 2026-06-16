@@ -1,4 +1,4 @@
-﻿# AbstractAssets 模块说明
+# AbstractAssets 模块说明
 
 > 路径：`BaseAssetSys/AbstractAssets/`  
 > 对外接口：`IAssetHandle.cs`、`AssetReference.cs`；内部实现：`AbstractResource.cs`
@@ -18,7 +18,7 @@
 |------|------|
 | `Load` 命中缓存 | `AddReference()`，Ref+1 |
 | `Release()` | Ref-1；Ref=0 时 `UnLoad()` |
-| `UnLoad()` | 清空 asset 引用、对称 `ReleaseBundle(依赖+主包)`、触发 `onUnLoad` 回调 |
+| `UnLoad()` | 清空 asset 引用、对称 `ReleaseBundle(依赖+主包)`（Bundle Ref=0 走 LRU 延迟卸包）、触发 `onUnLoad` 回调 |
 
 `onUnLoad` 由 `BundleResLoader` 注册，用于从 `resourceDic` 移除缓存项（见加载器说明 §4）。
 

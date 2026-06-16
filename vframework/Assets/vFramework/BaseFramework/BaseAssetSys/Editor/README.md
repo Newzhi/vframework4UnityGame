@@ -1,4 +1,4 @@
-﻿# Editor 打包模块说明
+# Editor 打包模块说明
 
 > 路径：`BaseAssetSys/Editor/`  
 > 菜单：**vFramework → AssetBundle Packer**（单窗口双页签）
@@ -10,17 +10,21 @@
 ```text
 BundlePacker/          UI 层：统一窗口（Builder 页签 + Reporter 页签）
         │
-        ├── BundleBuilder/     打包编排（Build / Clean / Validate / RuleResolver）
-        │   └── Catalogue/     清单写入与 loadPath 校验
-        ├── BundleReporter/    构建后只读分析（Analyzer → JSON 报告）
+        ├── BundleBuild/Pipeline/   编排：BundleBuildPipeline、BuildAssetBundleOptionsFactory
+        ├── BundleBuild/Shared/     SharedBundlePlanner（全自动公共包）
+        ├── BundleBuild/Integrity/  BuildManifest、BuildCache、Hash
+        ├── BundleBuilder/          薄门面：Build / Clean / Validate / RuleResolver
+        │   └── Catalogue/          清单写入与 loadPath 校验
+        ├── BundleReporter/         构建后只读分析（Analyzer → JSON 报告）
         │
         ▼
-BundleRuleConfig/      配置层：BuildSetting、AssetCatalog schema、拓扑工具
+BundleRuleConfig/      配置层：BuildSetting、AssetCatalog schema、拓扑工具、BundleIntegrityUtil
         │
         ▼
 产出                   {deviceOutputPath|cdnOutputPath}/{平台}/*.bundle
                        + Catalogue/AssetCatalog.json
                        + Reports/BundleBuildReport.json
+                       + Reports/BuildManifest.json / BuildManifest.diff.json / BuildCache.json
 ```
 
 | 模块 | 目录 | 职责 |
@@ -40,13 +44,17 @@ BundleRuleConfig/      配置层：BuildSetting、AssetCatalog schema、拓扑�
 
 ```text
 BundlePackerWindow [Builder 页签] → Save BuildSetting
-  → BundleBuilder.Build
-    → RuleResolver.Resolve
-    → BuildPipeline.BuildAssetBundles（EditorTest 跳过）
-    → CatalogueValidator（loadPath）
-    → CatalogueWriter（拓扑排序 + 写 JSON）
-    → BundleBuildAnalyzer（可选，写 Reports/BundleBuildReport.json）
+  → BundleBuilder.Build(setting, Incremental | FullOverwrite)
+    → BundleBuildPipeline.Execute
+      → RuleResolver.Resolve
+      → SharedBundlePlanner（可选）
+      → BuildPipeline.BuildAssetBundles（增量可跳过 / 覆盖 ForceRebuild）
+      → CatalogueWriter（priority + hash/crc + buildId）
+      → BuildManifestService（Manifest / diff / Cache）
+      → BundleBuildAnalyzer（可选）
 ```
+
+**操作区**：`增量打包` | `覆盖打包` | `清理打包` | `保存规则`（见 BuilderEditorBlueprint.html）。
 
 **Reporter 页签**只读上述 JSON，不触发 Build。
 

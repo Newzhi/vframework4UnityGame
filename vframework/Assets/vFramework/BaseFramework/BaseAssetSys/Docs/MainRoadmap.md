@@ -9,7 +9,7 @@
 
 1. **已验收的主链路不动**：`打包 → 清单 → BundleResLoader 同步 Load + 双层 Ref` 是地基，不推倒重来。  
 2. **在现有 API 上扩展**：业务入口仍是 `BundleResLoader.Instance` + `IAssetHandle`；异步走 `LoadUniTaskAsync`，CDN 走 `BundleManager` 扩展点，不另起一套 ResourceManager。  
-3. **不做四不像**：不混用旧框架 API、不为了通用指南单独改卸包策略（`Unload(true)` 维持至有真机数据再评估）。  
+3. **不做四不像**：不混用旧框架 API；Bundle 层 Ref=0 后走 **LRU 延迟卸载**（`UnloadAll` 仍立即全卸），业务 API 不变。  
 4. **测试门禁**：任何加载侧改动不得破坏同步双 Runner **三端 19/19**（基准 JSON 见集成测试归档 §6）。
 
 ---
@@ -26,8 +26,9 @@
 【阶段 B-Pool · 已完成】PrefabPoolManager + 按 Scene 分池 + comprehensiveTest
         │
         ▼
-【阶段 P1.5 · 进行中】AssetReference / Ref Trace / 统一池持 Handle
-【阶段 C · 下一阶段】CDN 运行时（路径解析 + 下载 + 缓存 + 清单 version 比对）
+【阶段 P1.5 · 进行中】AssetReference / Ref Trace / LRU 卸包 / 统一池持 Handle
+【阶段 P1-B · 进行中】打包 Pipeline / 增量 hash / 公共包 / 清单完整性
+【阶段 C · 下一阶段】CDN 运行时（路径解析 + 下载 + 缓存 + 清单比对）
         │
         ▼
 【远期 · 禁止区产品场景】边玩边下 / DLC / MOD / 分工程（依赖阶段 C）
@@ -41,7 +42,8 @@
 | **B-Pool-1** | 对象池 **业务范式** + `PrefabPoolManager` | ✅ [业务API §5.4](./BusinessApiUsageGuide.md) |
 | **B-Pool-2** | 对象池集成自动化 Case | ⏸ 暂不纳入 AB_Test 套系 |
 | **B-Pool-3** | （可选）`IPooledObject` / 集中池服务 | ⏳ 见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) §3.2 |
-| **P1.5** | 加载侧优化：AssetReference、Ref Trace、池唯一入口 | 🟡 见 §4 P1.5 |
+| **P1.5** | 加载侧优化：AssetReference、Ref Trace、LRU 卸包、池唯一入口 | 🟡 见 §4 P1.5 |
+| **P1-B** | 打包侧：Pipeline、增量/Manifest、公共包、清单 hash/CRC | 🟡 见 §4 P1-B（B4 待做） |
 | **C-1** | `IBundlePathResolver` 多根目录（首包 / persistentDataPath） | 本地缓存命中 Load |
 | **C-2** | `IRemoteBundleProvider` 清单对比 + HTTP 下载 | CdnHotUpdate 产物可拉取并 Load |
 | **C-3** | 首包 / 远程分包策略上线 | 非全部 AB 进 StreamingAssets |
@@ -90,12 +92,15 @@
 | `AssetRefTraceLogger`（Resource/Bundle/Pool Trace） | 🟡 首版 + 关键路径接入 |
 | `AssetReference` 自动 Release（非池） | ✅ `AssetReference` + `LoadGameObject` |
 | CDN 打包产出 | ✅ `cdnOutputPath` |
-| CDN 运行时下载 | 🟡 `AssetRouter` + `CdnBundleAssetProvider` 路由已接；真实 HTTP 仍 Stub |
+| CDN 运行时下载 | 🟡 `HttpRemoteBundleProvider` 首版（清单 hash + HTTP + CRC）；下载队列待完善 |
 | `AssetRouter` 四源路由 | ✅ ABUNDLE / RESOURCES / EDITORRESOURCES / NETCDN |
 | `PreLoad` | ❌ 占位 |
-| 清单 `version` / `buildNumber` 运行时比对 | ❌ 仅打包写入 |
+| 清单 `catalogueHash` / `buildId` 运行时比对 | 🟡 打包写入 + `HttpRemoteBundleProvider` 拉远程比对；本地热更决策待完善 |
+| 清单 `version` / `buildNumber` 运行时比对 | 🟡 同上；业务仍不直接读 |
 | Bundle 依赖 **拓扑排序** | ✅ `BundleDependencyTopology` + `CatalogueWriter` + `CatalogueReader` |
+| Bundle **LRU 延迟卸载** | ✅ Ref=0 入空闲队列；按 `resourcePriority` + 时长淘汰；`UnloadAll` 立即全卸 |
 | Bundle **构建优化分析**（冗余报告） | ✅ `BundleBuildAnalyzer` + Packer「上次构建报告」 |
+| **P1-B 打包侧优化**（Pipeline / 增量 / hash / 公共包） | 🟡 B0–B3 + C-2 基础 ✅；B4 依赖 Explorer 待做 |
 
 ---
 
@@ -134,6 +139,7 @@
 | 2 | `BaseLogSys/AssetRefTraceLogger` | Resource/Bundle/Pool 关键路径 Trace | 🟡 首版 |
 | 3 | `AssetReference` + `LoadGameObject` 门面 | 非池自动 Release | ✅ |
 | 4 | 池路径禁止业务直接 `Load`（文档 + 可选 Lint） | 统一经 `PrefabPoolManager` | ❌ |
+| 5 | Bundle **LRU 延迟卸载** | `BundleManager` + `BundleLruUnloadPolicy`；清单 `resourcePriority` | ✅ |
 
 ### P1 — 加载补全 + 清单/打包增强（与 B/C 并行）
 
@@ -144,6 +150,20 @@
 | 5 | Custom 规则集成 JSON | 可选 |
 | **6** | **Bundle 依赖拓扑排序** | ✅ `CatalogueWriter` 写序 + 环检测；详见 [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md) §2 |
 | **7** | **Bundle 构建优化报告** | ✅ 冗余/包体/loadPath 分析 + Packer 报告 Tab；同上 §3 |
+
+#### P1-B — 打包侧优化（Editor Pipeline）
+
+| # | 项 | 状态 |
+|---|-----|------|
+| B0 | `BundleBuildPipeline` + `BundleBuilder` 薄门面 | ✅ |
+| B1 | `ResourcePriority` + 清单 `buildId` / `catalogueHash` / `fileHash` / `crc32` | ✅ |
+| B2 | `BuildManifest` / diff / `BuildCache` + 增量/覆盖按钮 | ✅ |
+| B2-UI | 压缩格式 + 增量/覆盖按钮 + `BuilderEditorBlueprint.html`；**资源优先级仅 Custom 规则 UI 暴露** | ✅ |
+| B3 | `SharedBundlePlanner` 全自动 `shared_auto.bundle` | ✅ |
+| B4 | `BundleDependencyExplorer` + `DependencyGraph.json` | ❌ |
+| C-2 基础 | `HttpRemoteBundleProvider` 清单 hash + HTTP + CRC | 🟡 首版 |
+
+详见 [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md)。
 
 ### P2 — 异步内核（阶段 B-2）
 
@@ -157,7 +177,7 @@
 | # | 项 | 模块 |
 |---|-----|------|
 | 8 | `IBundlePathResolver` | ✅ `DefaultBundlePathResolver`（cache → 首包）；`BundleManager.SetPathResolver` |
-| 9 | `IRemoteBundleProvider` + version 比对 | 🟡 `CdnBundleAssetProvider` + Stub；真实 HTTP / 清单对比待做 |
+| 9 | `IRemoteBundleProvider` + version 比对 | 🟡 `HttpRemoteBundleProvider` 首版 + `CdnBundleAssetProvider`；下载队列待完善 |
 | 10 | `PreLoad` 包级预热 | `BundleResLoader` |
 
 ### P3 — 工程化
@@ -172,9 +192,8 @@
 | 项 | 说明 |
 |----|------|
 | DestroyInstance / AutoUnload | 释放体验优化；业务当前用「保存句柄 + Release」即可 |
-| 延迟卸载队列（15~30s） | Common 常驻可用启动 Load 不 Release |
 | `Unload(false)` 两阶段 | 有内存 profiling 再评估 |
-| 真实 CDN HTTP 下载 / 清单 version 运行时比对 | Stub 已接路由；下载队列留阶段 C-2 |
+| CDN 下载队列 / 按 `resourcePriority` 调度 | `HttpRemoteBundleProvider` 首版已接；并发队列与本地 Catalogue 热更留 C-2 |
 
 ---
 
@@ -191,9 +210,11 @@ GameObject go = h?.Instance;
 **卸载**
 
 ```csharp
-h?.Release();  // 或 Unload(h, go)；勿与 Release 重复
-BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
+h?.Release();  // Resource 立即卸原型；Bundle Ref=0 进入 LRU 空闲队列（非立即卸 AB）
+BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏；立即全卸 Resource + Bundle
 ```
+
+Bundle 层 LRU 策略见 [BusinessApiUsageGuide.md §5.6](./BusinessApiUsageGuide.md#56-bundle-lru-延迟卸载业务无感)；打包期 `resourcePriority` 见 [CatalogueReference.md](./CatalogueReference.md)。
 
 详见 [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md)。
 
@@ -247,7 +268,8 @@ BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
 | `BundleBuilder` / `BundleBuilderTabView` | DLC 分包输出、`dlcOutputPath`、按模式清单策略 | 远期 / 阶段 C 后 |
 | `CatalogueWriter` | 清单 JSON → 二进制 | P3-12 |
 | `AssetCatalog` 注释 | 清单二进制 | P3-12 |
-| `BundleManager` / `CdnBundleAssetProvider` | 真实 CDN HTTP | P2-9 / C-2 |
+| `BundleManager` / `CdnBundleAssetProvider` | CDN 下载队列、本地 Catalogue 热更 | P2-9 / C-2 |
+| `BundleLruUnloadPolicy` | grace / MaxIdleBundles 可配置化 | 可选 |
 | `LoaderOptimizationPlan` §2.2 | `AssetReference`、`LoadGameObject` | P1.5-3 |
 | `LoaderOptimizationPlan` §3.2 | 池路径禁止业务直接 `Load` | P1.5-4 |
 
@@ -264,3 +286,6 @@ BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏
 | 2026-06-13 | **B-Pool**：`PrefabPool` + 按 Active Scene 分池（`PoolSceneRootsUtil`、`poolsBySceneAndPath`） |
 | 2026-06-13 | 异步 **Android 19/19**（`231720`）；**阶段 B-1 三端完成** |
 | 2026-06-13 | **P1.5**：`PrefabPoolManager` 迁出 Loader、`AssetRefTraceLogger`、文档合并门禁 |
+| 2026-06-13 | **P1-B**：`BundleBuildPipeline`、增量/Manifest、`SharedBundlePlanner`、`ResourcePriority` 写清单 |
+| 2026-06-13 | **P1.5-5**：`BundleManager` LRU 延迟卸包 + `BundleLruUnloadPolicy` |
+| 2026-06-13 | **C-2 基础**：`HttpRemoteBundleProvider`；打包 Editor 资源优先级仅 Custom 规则 UI 暴露 |

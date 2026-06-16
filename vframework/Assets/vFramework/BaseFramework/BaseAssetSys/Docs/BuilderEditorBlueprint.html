@@ -328,6 +328,16 @@
             background: #e53935;
         }
 
+        .action-btn.success {
+            background: #2d8a4e;
+            border-color: #3aa864;
+            color: white;
+        }
+
+        .action-btn.success:hover {
+            background: #3aa864;
+        }
+
         /* 配置列表样式 */
         .config-list {
             display: flex;
@@ -495,14 +505,34 @@
                         </div>
                     </div>
                 </div>
+                <div class="settings-row">
+                    <div class="setting-item">
+                        <label title="映射 BuildAssetBundleOptions：LZMA / LZ4 分块 / 不压缩。">压缩格式:</label>
+                        <select>
+                            <option>LZ4Chunk</option>
+                            <option>LZMA</option>
+                            <option>Uncompressed</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-
-            <!-- 资源打包配置控制器 -->
-            <div class="folder-controller-section">
+            <div class="folder-controller-section" id="customPackingSection">
                 <h2>
                     📦 资源打包配置
                     <button class="add-btn" onclick="addConfigItem()" style="margin-left: 10px; padding: 4px 12px; background: #007acc; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 11px;">+ 添加配置</button>
                 </h2>
+                <div class="settings-row" style="margin-bottom: 12px;">
+                    <div class="setting-item">
+                        <label title="仅自定义打包时显示；新增配置项的默认 resourcePriority。">默认资源优先级:</label>
+                        <select>
+                            <option>Normal</option>
+                            <option>Critical</option>
+                            <option>High</option>
+                            <option>Low</option>
+                            <option>Optional</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="config-list" id="configList">
                     <!-- 配置项会动态添加到这里 -->
                 </div>
@@ -545,8 +575,10 @@
 
             <!-- 操作按钮 -->
             <div class="action-section">
-                <button class="action-btn danger" title="清理首包/CDN 输出目录中的 bundle、manifest 与 Catalogue。">清理打包</button>
-                <button class="action-btn primary" title="按当前规则与打包模式执行打包并生成清单。">开始打包</button>
+                <button class="action-btn success" title="对比 BuildCache，无源变更时跳过 Unity 构建；仍更新清单/Manifest。">增量打包</button>
+                <button class="action-btn primary" title="ForceRebuild 全量重建并刷新 BuildCache。">覆盖打包</button>
+                <button class="action-btn danger" title="清理首包/CDN 输出、清单与 BuildCache。">清理打包</button>
+                <button class="action-btn" title="将当前配置写入 DefaultBuildSetting.asset。">保存规则</button>
             </div>
         </div>
     </div>
@@ -635,7 +667,7 @@
                         </select>
                     </div>
                     <div class="config-field">
-                        <label title="资源下载优先级标记，供后续热更策略使用。">下载优先级</label>
+                        <label title="该项资源优先级；聚合到 Bundle 的 resourcePriority（取最高）。">资源优先级</label>
                         <select>
                             <option value="high">高优先级</option>
                             <option value="normal" selected>普通优先级</option>

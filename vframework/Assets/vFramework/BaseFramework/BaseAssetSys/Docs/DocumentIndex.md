@@ -45,8 +45,8 @@ Cursor 自动化：见项目 `.cursor/rules/documentation-governance.mdc` 与 `.
 |------|------|
 | **[MainRoadmap.md](./MainRoadmap.md)** | **方向 + 排期 + TODO + 测试门禁（唯一总纲）** |
 | [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md) | 设计基线（禁止区）+ 模块实现进度 |
-| [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步扩展设计细节 |
-| [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) | 业务侧加载/卸载范式 |
+| [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步扩展设计（含 `HttpRemoteBundleProvider` 首版） |
+| [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) | 业务侧加载/卸载范式（含 §5.6 Bundle LRU） |
 | [RefCountAppendix.md](./RefCountAppendix.md) | **引用计数附件**：API 逐步追踪、三层计数、代码链路 |
 | [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | 加载侧优化 **设计**（排期 → MainRoadmap P1.5） |
 | **本文 § 业务场景总结** | 模块/Prefab/Ref/依赖/路由 **场景速查** |

@@ -16,108 +16,22 @@ public class BundleBuilder
 
     public static bool Build(BuildSetting setting)
     {
-        if (setting == null)
-        {
-            Debug.LogError("BuildSetting 为空");
-            return false;
-        }
-
-        if (!Validate(setting))
-            return false;
-
-        BuildTarget target = ToBuildTarget(setting.platform);
-        BuildAssetBundleOptions options = BuildAssetBundleOptions.ChunkBasedCompression;
-
-        if (setting.packingRule == PackingRule.Custom)
-            return BuildCustom(setting, target, options);
-
-        List<AssetBundleBuild> builds = RuleResolver.Resolve(setting);
-        if (builds.Count == 0)
-        {
-            Debug.LogError("没有可打包的内容");
-            return false;
-        }
-
-        if (!BuildByMode(setting.buildMode, builds, setting, target, options))
-            return false;
-
-        AssetDatabase.Refresh();
-        Debug.Log("打包完成，bundle 数量: " + builds.Count
-            + "，输出: " + ResolveBundleRoot(setting.buildMode, setting));
-        return true;
+        return Build(setting, BundleBuildExecutionMode.Incremental);
     }
 
-    static bool BuildCustom(BuildSetting setting, BuildTarget target, BuildAssetBundleOptions options)
+    public static bool Build(BuildSetting setting, BundleBuildExecutionMode executionMode)
     {
-        Dictionary<BuildMode, List<AssetBundleBuild>> grouped =
-            RuleResolver.ResolveCustomGrouped(setting.customItems);
-
-        int totalCount = 0;
-        bool anyBuild = false;
-        bool allSucceeded = true;
-
-        foreach (KeyValuePair<BuildMode, List<AssetBundleBuild>> pair in grouped)
-        {
-            if (pair.Value.Count == 0)
-                continue;
-
-            anyBuild = true;
-            totalCount += pair.Value.Count;
-            if (!BuildByMode(pair.Key, pair.Value, setting, target, options))
-                allSucceeded = false;
-        }
-
-        if (!anyBuild)
-        {
-            Debug.LogError("没有可打包的内容");
-            return false;
-        }
-
-        AssetDatabase.Refresh();
-        if (allSucceeded)
-            Debug.Log("自定义打包完成，bundle 数量: " + totalCount);
-        else
-            Debug.LogError("自定义打包部分失败，bundle 数量: " + totalCount);
-
-        return allSucceeded;
+        return BundleBuildPipeline.Execute(setting, executionMode);
     }
 
-    static bool BuildByMode(
-        BuildMode mode,
-        List<AssetBundleBuild> builds,
-        BuildSetting setting,
-        BuildTarget target,
-        BuildAssetBundleOptions options)
+    public static void EnsureOutputDirectoryPublic(string outputPath)
     {
-        string bundleRoot = ResolveBundleRoot(mode, setting);
-        EnsureOutputDirectory(bundleRoot);
-
-        AssetBundleManifest manifest = null;
-
-        if (mode != BuildMode.EditorTest)
-        {
-            // TODO: DlcPackage 独立输出路径、分包 manifest、与首包/CDN 的目录隔离策略
-            if (mode == BuildMode.DlcPackage)
-                Debug.LogWarning("DLC分包模式尚未实现专用逻辑，当前临时按 CDN 输出路径处理。见 BundleBuilder.BuildByMode / ResolveBundleRoot。");
-
-            manifest = BuildPipeline.BuildAssetBundles(bundleRoot, builds.ToArray(), options, target);
-        }
-
-        // TODO: 按打包模式区分清单生成策略（编辑器模拟 / 首包 / CDN / DLC分包）
-        if (!CatalogueWriter.Write(setting, builds.ToArray(), bundleRoot, manifest))
-            return false;
-
-        if (setting.runBuildAnalyzer)
-        {
-            BundleBuildAnalyzer.AnalyzeAndWriteReport(
-                setting,
-                builds.ToArray(),
-                bundleRoot,
-                manifest);
-        }
-
-        return true;
+        EnsureOutputDirectory(outputPath);
     }
+
+    #endregion
+
+    #region 清理
 
     public static void Clean(BuildSetting setting)
     {
@@ -125,6 +39,8 @@ public class BundleBuilder
         {
             CleanOutputPath(setting.deviceOutputPath, setting);
             CleanOutputPath(setting.cdnOutputPath, setting);
+            BuildManifestService.DeleteCache(BundleBuilder.ResolveBundleRoot(BuildMode.DeviceDebug, setting));
+            BuildManifestService.DeleteCache(BundleBuilder.ResolveBundleRoot(BuildMode.CdnHotUpdate, setting));
         }
 
         string cataloguePath = Path.Combine(
@@ -140,10 +56,8 @@ public class BundleBuilder
                 DeleteFileAndMeta(cataloguePath);
         }
 
-        // TODO: 清理 Simulate 目录；DLC 输出目录（dlcOutputPath）待 BuildSetting 字段落地后接入
-
         AssetDatabase.Refresh();
-        Debug.Log("已清理打包输出与清单");
+        Debug.Log("已清理打包输出、清单与 BuildCache");
     }
 
     #endregion
@@ -298,6 +212,8 @@ public class BundleBuilder
                 DeleteOutputFile(file);
         }
 
+        DeleteReportsArtifacts(outputPath);
+
         foreach (string file in Directory.GetFiles(outputPath, "*", SearchOption.TopDirectoryOnly))
         {
             if (ShouldDeleteExtensionlessManifest(file))
@@ -316,6 +232,16 @@ public class BundleBuilder
             else if (Directory.Exists(runtimeCatalogueDir) && Directory.GetFiles(runtimeCatalogueDir).Length == 0)
                 Directory.Delete(runtimeCatalogueDir, true);
         }
+    }
+
+    static void DeleteReportsArtifacts(string outputPath)
+    {
+        string reportsDir = Path.Combine(outputPath, BundleBuildAnalyzer.ReportsFolderName);
+        if (!Directory.Exists(reportsDir))
+            return;
+
+        foreach (string file in Directory.GetFiles(reportsDir, "*", SearchOption.TopDirectoryOnly))
+            DeleteOutputFile(file);
     }
 
     static bool ShouldDeleteBuildArtifact(string filePath)

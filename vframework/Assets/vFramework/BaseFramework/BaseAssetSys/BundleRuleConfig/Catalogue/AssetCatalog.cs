@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 #region 资源清单 - 单条资源
 
@@ -11,8 +11,13 @@
 [Serializable]
 public class AssetCatalogEntry
 {
+    /// <summary>Unity 工程内完整路径，如 Assets/AssetBundle/Model/Prefabs/Bullet.prefab</summary>
     public string assetPath;
+
+    /// <summary>所在 AssetBundle 文件名，如 model.bundle</summary>
     public string bundleName;
+
+    /// <summary>包内加载名（通常为文件名无扩展名）</summary>
     public string assetName;
 }
 
@@ -21,13 +26,9 @@ public class AssetCatalogEntry
 #region 资源清单 - Bundle 依赖
 
 /// <summary>
-/// 按 AssetBundle 粒度记录「全量依赖的其他 bundle 名」（由 GetAllDependencies 生成）。
-/// 与 AssetCatalogEntry（资源→包）互补，供加载器在 LoadAsset 前先 AcquireBundle 依赖包。
+/// 按 AssetBundle 粒度记录依赖与其它 bundle 的完整性元数据。
+/// 与 AssetCatalogEntry（资源→包）互补，供加载器 AcquireBundle 与 CDN/卸载策略使用。
 /// </summary>
-/// <remarks>
-/// 由 CatalogueWriter 从 AssetBundleManifest 写入 AssetCatalog.json。
-/// 不要放在 AssetCatalogEntry 上重复记录——同一 bundle 内所有 asset 的依赖相同。
-/// </remarks>
 [Serializable]
 public class BundleCatalogInfo
 {
@@ -35,10 +36,26 @@ public class BundleCatalogInfo
     public string bundleName;
 
     /// <summary>
-    /// 全量依赖的包名列表（仅 bundle 文件名，不含路径）。
-    /// 例：ui.bundle 依赖 atlas.bundle、common.bundle。
+    /// 依赖的包名列表（拓扑序：叶→根）。全量或仅直接依赖由打包设置 useDirectDependenciesOnly 决定。
     /// </summary>
     public string[] dependencies;
+
+    /// <summary>
+    /// 全量传递依赖（可选，兼容旧读端）；仅当 useDirectDependenciesOnly 时写入。
+    /// </summary>
+    public string[] dependenciesAll;
+
+    /// <summary>资源优先级整型，对应 <see cref="ResourcePriority"/>；越小越不易 LRU 卸载。</summary>
+    public int resourcePriority;
+
+    /// <summary>构建后 .bundle 文件大小（字节）。</summary>
+    public long sizeBytes;
+
+    /// <summary>构建后 .bundle 文件 SHA256（十六进制小写）。</summary>
+    public string fileHash;
+
+    /// <summary>构建后 .bundle 文件 CRC32（与下载校验一致）。</summary>
+    public uint crc32;
 }
 
 #endregion
@@ -48,29 +65,43 @@ public class BundleCatalogInfo
 /// <summary>
 /// 资源清单根结构（当前 JSON；后续可能改二进制，见 MainRoadmap.md P3-12）。
 /// </summary>
-/// <remarks>
-/// 两张逻辑表：
-/// 1. entries（已实现）— 每个资源 assetPath 落在哪个 bundle、assetName 是什么。
-/// 2. bundles — 每个 bundle 依赖哪些其它 bundle，见 BundleCatalogInfo。
-/// 加载器：Load(简路径) → 查 loadPathMap → LoadByBundle → bundles 依赖 → LoadAsset。
-/// 详细说明：Docs/CatalogueReference.md
-/// </remarks>
 [Serializable]
 public class AssetCatalog
 {
+    /// <summary>应用版本号 x.y.z</summary>
     public string version;
+
+    /// <summary>递增构建号</summary>
     public int buildNumber;
+
+    /// <summary>构建目标平台名</summary>
     public string platform;
+
+    /// <summary>打包模式（DeviceDebug / CdnHotUpdate 等）</summary>
     public string buildMode;
+
+    /// <summary>分包规则（Default / Detailed / Custom）</summary>
     public string packingRule;
+
+    /// <summary>本次 AB 输出根目录（建议相对 StreamingAssets 或项目根）</summary>
     public string bundleRoot;
-    /// <summary>打包资源根目录（BuildSetting.targetDirectory），用于解析业务 Load 简路径。</summary>
+
+    /// <summary>打包资源根目录，用于解析业务 Load 简路径</summary>
     public string resourceRoot;
+
+    /// <summary>本次构建唯一 ID（GUID），用于增量 diff 关联</summary>
+    public string buildId;
+
+    /// <summary>整份清单 JSON 内容哈希（SHA256），运行时比对是否需要拉新清单</summary>
+    public string catalogueHash;
+
+    /// <summary>本次 BuildPipeline 使用的压缩模式名（LZMA / LZ4Chunk / Uncompressed）</summary>
+    public string compressionMode;
 
     /// <summary>资源 → 包 映射表</summary>
     public AssetCatalogEntry[] entries;
 
-    /// <summary>bundle → 依赖 bundle 映射表</summary>
+    /// <summary>bundle → 依赖与完整性 映射表</summary>
     public BundleCatalogInfo[] bundles;
 }
 

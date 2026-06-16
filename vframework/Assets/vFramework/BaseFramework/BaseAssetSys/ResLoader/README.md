@@ -1,4 +1,4 @@
-﻿# ResLoader 模块说明
+# ResLoader 模块说明
 
 > 路径：`BaseAssetSys/ResLoader/`  
 > 运行时加载侧；与打包侧 `Editor/` + `BundleRuleConfig/` 通过 **清单 JSON** 衔接。
@@ -59,7 +59,8 @@ Catalogue/         CatalogueReader     读清单 entries / bundles[]
 | 目录 | 文件 | 职责 |
 |------|------|------|
 | `Business/` | `BundleResLoader.cs` | 单例入口：`Load` / `LoadUniTaskAsync` / `UnloadAll` |
-| `Bundle/` | `BundleManager.cs` | Bundle Ref、`AcquireBundleWithDependencies` |
+| `Bundle/` | `BundleManager.cs` | Bundle Ref、`AcquireBundleWithDependencies`、**LRU 延迟卸载** |
+| `Bundle/` | `BundleLruUnloadPolicy.cs` | Ref=0 保留时长与空闲包上限 |
 | `Bundle/` | `IBundlePathResolver.cs` | 本地多根（cache → 首包）；`StubRemoteBundleProvider` |
 | `Catalogue/` | `CatalogueReader.cs` | 运行时读 `AssetCatalog.json`；Editor 可回退工程内副本 |
 | `Catalogue/` | `StreamingAssetsIO.cs` | Android `jar:` 等 StreamingAssets 读文件 |

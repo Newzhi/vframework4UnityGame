@@ -118,7 +118,7 @@ Bullet RecycleObj     → 不 Release Handle
 | 模块 | 打点 |
 |------|------|
 | `AbstractResource` | `AddReference` / `ReduceReference` / `UnLoad` / 首次 `LoadAsset` |
-| `BundleManager` | `AcquireBundle` / `ReleaseBundle` |
+| `BundleManager` | `AcquireBundle` / `ReleaseBundle` / `LruDefer` / `LruEvict` |
 | `PrefabPool` | `Initialize` / `RegisterShare` / `ReleaseShare` / `TearDown` |
 
 ### 4.4 后续扩展
@@ -126,6 +126,20 @@ Bullet RecycleObj     → 不 Release Handle
 - 与 `ComprehensiveTestLogger` 字段对齐（`schema=v2-ref-holders-max`）
 - 泄漏检测：进程结束时 `DumpRecent` + Resource/Bundle 非零 Ref 告警
 - Release 包可选接入 `DebugLogger` 统一真机目录（当前 JSONL 已独立落盘）
+
+---
+
+## 4.5 Bundle LRU 延迟卸载（✅ 已实现）
+
+| 项 | 说明 |
+|----|------|
+| 触发 | `ReleaseBundle` 使 Ref=0 → 进入空闲队列，**不**立即 `Unload(true)` |
+| 优先级 | 读清单 `bundles[].resourcePriority`；`Critical` 保留最久，`Optional` 最先淘汰 |
+| 策略类 | `ResLoader/Bundle/BundleLruUnloadPolicy.cs`（grace 秒数 + `MaxIdleBundles=32`） |
+| 淘汰时机 | 每次 `Acquire`/`Release` 尝试淘汰；可选 `BundleManager.TickLruUnload()` |
+| 强制全卸 | `UnloadAll` / `Init` 仍立即卸载全部包 |
+
+Trace：`Reason=LruDefer`（Ref 归零入队）、`LruEvict` / `LruEvictCap`（真正 Unload）。
 
 ---
 

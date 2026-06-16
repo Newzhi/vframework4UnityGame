@@ -1,10 +1,10 @@
-﻿# 业务 API 调用指南（ABSystem_Beta）
+# 业务 API 调用指南（ABSystem_Beta）
 
 > 入口：`BundleResLoader.Instance`  
 > 句柄：`IAssetHandle`  
 > 详细排期与能力边界：[BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)、[MainRoadmap.md](./MainRoadmap.md)  
 > **引用计数附件**：常见写法逐步模拟见 **[RefCountAppendix.md](./RefCountAppendix.md)**。  
-> **加载侧扩展**：`LoadGameObject` / `AssetReference` 已实现；架构排期见 **[LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)**（引用计数 **Trace 日志**为调试能力，不在本文业务 API 范围）。
+> **加载侧扩展**：`LoadGameObject` / `AssetReference`、Bundle **LRU 延迟卸包**（§5.6）已实现；架构排期见 **[LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)**（引用计数 **Trace 日志**为调试能力，不在本文业务 API 范围）。
 
 ---
 
@@ -15,7 +15,7 @@
 | `BundleResLoader.Instance.EnsureReady()` | 懒加载 Catalogue 与 Bundle 根目录；可在首次 `Load` 前预热 |
 | `BundleResLoader.Instance.Init(bundleRootPath, usePlatformSubfolder)` | 显式指定 AB 根路径；重复 Init 会打 Warning |
 | `BundleResLoader.GetDefaultRuntimeBundleRoot()` | 默认 `StreamingAssets/{当前平台}/` |
-| `BundleResLoader.Instance.GetCatalogue()` | 读取已加载清单（查 `buildMode` 等） |
+| `BundleResLoader.Instance.GetCatalogue()` | 读取已加载清单（`buildMode`、`bundles[].resourcePriority` 等） |
 | `BundleResLoader.Instance.IsCatalogueLoaded` | 清单是否已加载 |
 
 ```csharp
@@ -151,7 +151,7 @@ BundleResLoader.Instance.LoadByBundleUniTaskWithCallback<Sprite>(bundleName, ass
 | `Instantiate()` | 在原点实例化 GameObject |
 | `InstantiateAt(pos, rot, parent)` | 指定位置 / 父节点实例化 |
 | `Instance` | 等价于 **每次访问** 调用 `Instantiate()`；**勿重复读** |
-| `Release()` | Ref -1；Ref 为 0 时立即卸载资源占用 |
+| `Release()` | Ref -1；Ref 为 0 时卸载 Resource 占用（Bundle 走 LRU 延迟卸包） |
 
 非池路径也可用 **`AssetReference`**（§2.4）在实例 `Destroy` 时自动 `Release`，等价于手动调用本表 `Release()`。
 
@@ -195,7 +195,7 @@ handle?.Release();
 BundleResLoader.Instance.UnloadAll();
 ```
 
-- 进程级收尾（切场景 / 关游戏）；清空全部 Resource 缓存并 `BundleManager.UnloadAll()`。  
+- 进程级收尾（切场景 / 关游戏）；清空全部 Resource 缓存并 **`BundleManager.UnloadAll()`（立即卸全部 AB，绕过 LRU）**。  
 - 与单资源 `Release` 分开使用，避免混用。
 - **会先** `PrefabPoolManager.DeleteAllPools()`（销毁池内全部实例并对每个池 `Release` 句柄一次），再清 `resourceDic` 与 Bundle。
 
@@ -264,6 +264,31 @@ BundleResLoader.Instance.UnloadAll();
 
 综合测试：`PlayerTest` + 各 `enemyTest` 各自 `GetOrCreatPool` 子弹池（共享 `refCount`）；`enemyManager` 仅敌人池；`ComprehensiveTestSceneFlow` 切场景收尾。
 
+### 5.6 Bundle LRU 延迟卸载（业务无感）
+
+业务 **只** 调用 `Release` / `Unload`；Bundle 容器何时从内存卸掉由框架按清单优先级调度，**无需**业务调用额外 API。
+
+| 层级 | `Release` 后行为 |
+|------|------------------|
+| **Resource**（`AbstractResource`） | Ref=0 → **立即**清空原型引用、对称 `ReleaseBundle` |
+| **Bundle**（`BundleManager`） | Ref=0 → 进入 **空闲队列**（Trace：`LruDefer`），保留 `AssetBundle` 一段时间 |
+| **再次 Load 同包** | 命中空闲队列则 **复用**已加载 AB，不重复 `LoadFromFile` |
+| **`UnloadAll`** | **立即**卸全部 Resource + Bundle（含空闲队列） |
+
+**保留时长**（`BundleLruUnloadPolicy`，读清单 `bundles[].resourcePriority`）：
+
+| `ResourcePriority` | Ref=0 后约保留 |
+|--------------------|----------------|
+| Critical | 300s |
+| High | 120s |
+| Normal | 60s（Default/Detailed 打包默认） |
+| Low | 30s |
+| Optional | 15s |
+
+- 空闲包总数超过 **32** 时，按「优先级低者优先、同优先级 LRU」强制淘汰（Trace：`LruEvict` / `LruEvictCap`）。  
+- **打包期**配置：自定义打包规则下可在 Editor 为每项设 `resourcePriority`；Default/Detailed 规则写入 `Normal`。详见 [CatalogueReference.md](./CatalogueReference.md)。  
+- **注意**：Resource Ref=0 后若场上仍有实例引用包内资源，仍可能材质变粉；与是否 LRU 无关。**有活实例时不要 Release 到 0。**
+
 ---
 
 ## 6. 引用计数与规范用法
@@ -277,13 +302,13 @@ BundleResLoader.Instance.UnloadAll();
 | `Load` 成功 ×1 | +1 |
 | `Instantiate` ×N | 不变 |
 | `Destroy` 实例 ×N | 不变 |
-| `Release` ×1 | -1；为 0 时卸载 |
+| `Release` ×1 | -1；为 0 时 Resource 卸载；对应 Bundle Ref=0 进入 LRU 空闲队列 |
 | 同路径 `Load` ×N（缓存命中） | +N |
 
 - 每次 **成功** 的 `Load` 最终要有 **一次** `Release` 或 `Unload(handle, …)`。  
 - `Load` 返回 `null` → **不要** `Release`。  
 - 句柄出作用域 **不会** 自动 Release。  
-- Ref 为 0 后 AB 会 `Unload(true)`；场上仍有依赖该资源的实例时会丢 Mesh/材质。**有活实例时不要 Release 到 0。**
+- Ref 为 0 后 Resource 立即卸原型；**Bundle 层** Ref=0 后进入 LRU 延迟卸载（按清单 `resourcePriority` 保留一段时间），`UnloadAll` 仍立即全卸。场上仍有依赖该资源的实例时会丢 Mesh/材质。**有活实例时不要 Release 到 0。**
 
 ### 6.2 必须遵守的写法
 
@@ -712,6 +737,7 @@ GameObject uiGo = ui?.Instantiate();
 
 - 仅在主线程调用 `Load` / `Unload` / `LoadGameObject`。  
 - `LoadUniTaskAsync` / `LoadGameObjectAsync` 当前为 Yield 一帧 + 同步 `Load`；加载失败时 `onFailed` / 判空后再决定是否重试。  
+- **Bundle LRU**：单资源 `Release` 不保证 AB 立刻卸内存；短时间内重复 Load 同路径可能命中缓存（§5.6）。切场景务必 `UnloadAll()`。  
 - **池路径**：业务侧对已在池中的 `loadPath` 应走 `PrefabPoolManager`，勿再 `Load` 同路径（否则多占 Resource Ref）。  
 - Editor Play + 清单 `buildMode=EditorTest` 时在 Editor 内走 AssetDatabase；Player 走 AB，见 [ResLoader/README.md](../ResLoader/README.md)。  
 - Ref 与范例细则见 **§6**；抄代码见 **§7**；逐步追踪见 **[RefCountAppendix.md](./RefCountAppendix.md)**。引用计数 **运行时 Trace** 为调试能力，见 [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) §4，**不属于本文业务 API**。

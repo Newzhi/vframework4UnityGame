@@ -119,6 +119,28 @@ public class CatalogueReader
         return new string[0];
     }
 
+    /// <summary>读取 bundles[] 中的 resourcePriority；无清单或未配置时返回 Normal。</summary>
+    public int GetBundleResourcePriority(string bundleName)
+    {
+        if (string.IsNullOrEmpty(bundleName) || catalog?.bundles == null)
+            return (int)ResourcePriority.Normal;
+
+        string normalized = BundlePlatformPaths.NormalizeBundleName(bundleName);
+        foreach (BundleCatalogInfo info in catalog.bundles)
+        {
+            if (info == null || string.IsNullOrEmpty(info.bundleName))
+                continue;
+
+            if (string.Equals(
+                    BundlePlatformPaths.NormalizeBundleName(info.bundleName),
+                    normalized,
+                    System.StringComparison.OrdinalIgnoreCase))
+                return info.resourcePriority;
+        }
+
+        return (int)ResourcePriority.Normal;
+    }
+
     #endregion
 
     #region 辅助函数
@@ -164,7 +186,9 @@ public class CatalogueReader
                 if (info == null || string.IsNullOrEmpty(info.bundleName))
                     continue;
 
-                string[] deps = info.dependencies ?? new string[0];
+                string[] deps = info.dependenciesAll != null && info.dependenciesAll.Length > 0
+                    ? info.dependenciesAll
+                    : info.dependencies ?? new string[0];
                 if (deps.Length > 1)
                 {
                     deps = BundleDependencyTopology.SortUsingCatalogAllDeps(

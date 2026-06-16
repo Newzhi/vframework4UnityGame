@@ -94,6 +94,10 @@ static class BundleBuilderTabView
             "CDN联网模式下 AB 包的输出目录，默认 Bundles/CDN。",
             ref setting.cdnOutputPath);
 
+        setting.compressionMode = (BundleCompressionMode)EditorGUILayout.EnumPopup(
+            BundlePackerUiShared.Tip("压缩格式", "映射 BuildAssetBundleOptions：LZMA / LZ4 分块 / 不压缩。"),
+            setting.compressionMode);
+
         if (GUILayout.Button(BundlePackerUiShared.Tip("更新版本号（patch+1 / build+1）", "版本号 patch 位 +1，同时 buildNumber +1。")))
             BumpVersion(setting);
 
@@ -150,7 +154,7 @@ static class BundleBuilderTabView
     {
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField(
-            BundlePackerUiShared.Tip("资源打包配置", "自定义打包：每项可指定路径、粒度与打包模式。"),
+            BundlePackerUiShared.Tip("资源打包配置", "自定义打包：每项可指定路径、粒度、打包模式与资源优先级。"),
             EditorStyles.boldLabel);
         if (GUILayout.Button(BundlePackerUiShared.Tip("+ 添加配置", "新增一条自定义打包配置项。"), GUILayout.Width(100)))
         {
@@ -160,9 +164,14 @@ static class BundleBuilderTabView
                 bundleName = "bundle_" + (setting.customItems.Count + 1),
                 buildMode = setting.buildMode,
                 folderPackingRule = BundleFolderRule.EntireFolder,
+                resourcePriority = setting.defaultBundlePriority,
             });
         }
         EditorGUILayout.EndHorizontal();
+
+        setting.defaultBundlePriority = (ResourcePriority)EditorGUILayout.EnumPopup(
+            BundlePackerUiShared.Tip("默认资源优先级", "新增配置项时的默认优先级；未单独配置项时使用（越小越不易 LRU 卸载）。"),
+            setting.defaultBundlePriority);
 
         for (int i = 0; i < setting.customItems.Count; i++)
         {
@@ -223,9 +232,9 @@ static class BundleBuilderTabView
                 BuildModeLabels);
             item.buildMode = BuildModes[newItemModeIndex];
 
-            item.downloadPriority = (DownloadPriority)EditorGUILayout.EnumPopup(
-                BundlePackerUiShared.Tip("下载优先级", "资源下载优先级标记。"),
-                item.downloadPriority);
+            item.resourcePriority = (ResourcePriority)EditorGUILayout.EnumPopup(
+                BundlePackerUiShared.Tip("资源优先级", "该项资源优先级；聚合到 Bundle 的 resourcePriority（取最高）。"),
+                item.resourcePriority);
             item.note = EditorGUILayout.TextField(
                 BundlePackerUiShared.Tip("备注说明", "可选的配置说明。"),
                 item.note);
@@ -249,6 +258,15 @@ static class BundleBuilderTabView
         setting.loadPathDuplicateAsError = EditorGUILayout.Toggle(
             BundlePackerUiShared.Tip("loadPath 重复阻断", "关闭时仅 Warning；开启时重复 loadPath 会阻断写清单。"),
             setting.loadPathDuplicateAsError);
+        setting.useDirectDependenciesOnly = EditorGUILayout.Toggle(
+            BundlePackerUiShared.Tip("仅存直接依赖", "bundles[] 仅存直接依赖，并写入 dependenciesAll 兼容字段。"),
+            setting.useDirectDependenciesOnly);
+        setting.enableAutoSharedBundle = EditorGUILayout.Toggle(
+            BundlePackerUiShared.Tip("自动公共包", "跨包引用 ≥ 阈值的资产自动抽到 shared_auto.bundle。"),
+            setting.enableAutoSharedBundle);
+        setting.cdnBaseUrl = EditorGUILayout.TextField(
+            BundlePackerUiShared.Tip("CDN 根 URL", "运行时拉取清单与 AB 的根 URL（末尾无斜杠）。"),
+            setting.cdnBaseUrl);
 
         EditorGUI.indentLevel--;
     }
@@ -258,18 +276,25 @@ static class BundleBuilderTabView
         EditorGUILayout.BeginHorizontal();
         GUILayout.FlexibleSpace();
 
-        GUI.backgroundColor = new Color(0.8f, 0.2f, 0.2f);
-        if (GUILayout.Button(BundlePackerUiShared.Tip("清理打包", "清理首包/CDN 输出目录中的 bundle 与 Catalogue。"), GUILayout.Width(100), GUILayout.Height(30)))
+        GUI.backgroundColor = new Color(0.2f, 0.55f, 0.35f);
+        if (GUILayout.Button(BundlePackerUiShared.Tip("增量打包", "对比 BuildCache，无源变更时跳过 Unity 构建；仍更新清单/Manifest。"), GUILayout.Width(100), GUILayout.Height(30)))
         {
-            if (EditorUtility.DisplayDialog("清理打包", "确定清理输出目录中的 bundle 与清单？", "确定", "取消"))
-                BundleBuilder.Clean(setting);
+            BundlePackerUiShared.SaveSetting(setting);
+            BundleBuilder.Build(setting, BundleBuildExecutionMode.Incremental);
         }
 
         GUI.backgroundColor = new Color(0.2f, 0.5f, 0.9f);
-        if (GUILayout.Button(BundlePackerUiShared.Tip("开始打包", "执行 BuildPipeline 并生成清单/报告。"), GUILayout.Width(100), GUILayout.Height(30)))
+        if (GUILayout.Button(BundlePackerUiShared.Tip("覆盖打包", "ForceRebuild 全量重建并刷新 BuildCache。"), GUILayout.Width(100), GUILayout.Height(30)))
         {
             BundlePackerUiShared.SaveSetting(setting);
-            BundleBuilder.Build(setting);
+            BundleBuilder.Build(setting, BundleBuildExecutionMode.FullOverwrite);
+        }
+
+        GUI.backgroundColor = new Color(0.8f, 0.2f, 0.2f);
+        if (GUILayout.Button(BundlePackerUiShared.Tip("清理打包", "清理首包/CDN 输出、清单与 BuildCache。"), GUILayout.Width(100), GUILayout.Height(30)))
+        {
+            if (EditorUtility.DisplayDialog("清理打包", "确定清理输出目录中的 bundle 与清单？", "确定", "取消"))
+                BundleBuilder.Clean(setting);
         }
 
         GUI.backgroundColor = Color.white;

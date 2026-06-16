@@ -73,7 +73,7 @@
 | **B-2** | 真异步 / inFlight / ref==0 丢弃 | ❌ |
 | **C** | CDN 下载 + 多 root + version 比对 | ❌ |
 
-**不阻塞主路线**：DestroyInstance / AutoUnload、延迟卸载、`Unload(false)` 评估 — 见主路线 §4 延后项。
+**不阻塞主路线**：DestroyInstance / AutoUnload — 见主路线 §4 延后项；Bundle LRU 延迟卸载已实现（`BundleManager` + `BundleLruUnloadPolicy`）。
 
 ### 进度估算方法（2026-06-11 重估）
 
@@ -142,6 +142,7 @@ Load 1 次          →  Resource Ref = 1，bundle 进内存，得到 Prefab 原
 Instantiate ×N     →  Ref 不变，场景里 N 个 GameObject
 Destroy(实例) ×N   →  Ref 仍不变
 Release 1 次       →  Ref 0 → 卸原型 + ReleaseBundle（及依赖 Ref）
+                   →  Bundle Ref=0 → LRU 空闲队列（延迟 Unload，见 BundleLruUnloadPolicy）
 
 错误：Load ×100 再 Instantiate ×100  →  Ref = 100，须 Release ×100
 错误：只 Destroy 实例不 Release       →  AB 泄漏

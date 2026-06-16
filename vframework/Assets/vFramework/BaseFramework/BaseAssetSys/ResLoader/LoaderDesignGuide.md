@@ -1,4 +1,4 @@
-﻿# 加载器设计说明（双层架构）
+# 加载器设计说明（双层架构）
 
 > 目录：`BaseAssetSys/ResLoader/`（子目录见 [README.md](./README.md)）  
 > 相关：`AbstractAssets/IAssetHandle.cs`、`AbstractAssets/AbstractResource.cs`、`BundleRuleConfig/Catalogue/`（清单）、[`CatalogueReference.md`](../Docs/CatalogueReference.md)
@@ -48,12 +48,14 @@ AssetBundle 文件         ← StreamingAssets / CDN 缓存目录等
 | `Init(rootPath, reader)` | 设置 AB 根目录与 CatalogueReader | ✅ |
 | `AcquireBundle(bundleName)` | 加载或命中缓存，Bundle Ref +1 | ✅ |
 | `AcquireBundleWithDependencies(bundleName)` | 先 Acquire 清单依赖，再加载本体 | ✅ |
-| `ReleaseBundle(bundleName)` | Ref -1，为 0 时 `Unload` | ✅ |
-| `UnloadAll()` | 清空所有已加载包 | ✅ |
+| `ReleaseBundle(bundleName)` | Ref -1；为 0 时进入 **LRU 空闲队列**（延迟 `Unload`） | ✅ |
+| `TickLruUnload()` | 可选主动驱动淘汰（Acquire/Release 已会触发） | ✅ |
+| `UnloadAll()` | 立即清空所有已加载包（含空闲队列） | ✅ |
 
 **设计要点**
 
-- 同一 `bundleName` 全局一份 `AssetBundle` 实例，多资源共用，靠 Ref 决定何时卸载。
+- 同一 `bundleName` 全局一份 `AssetBundle` 实例，多资源共用，靠 Ref 决定何时进入空闲队列。
+- **LRU 延迟卸载**：Ref 归零后不立即 `Unload(true)`；按清单 `bundles[].resourcePriority`（越小保留越久）与 `BundleLruUnloadPolicy` 空闲上限淘汰。`UnloadAll` / `Init` 仍立即全卸。
 - 依赖解析属于 Bundle 层：例如加载 `ui.bundle` 前，先 `AcquireBundle` atlas / common 等（数据来自打包清单，见 Catalogue 文档）。
 - 业务 **不应** 直接 `LoadFromFile` 或手动 `Unload`，避免与 Resource 层 Ref 不一致。
 
@@ -122,7 +124,7 @@ Load 第 2 次同一 Panel（另一脚本）
 
 Release × 2
   → AbstractResource Ref = 0 → UnLoad → ReleaseBundle(ui.bundle)
-  → Bundle Ref = 0 → Unload(true)
+  → Bundle Ref = 0 → LruDefer（空闲队列；超时或超上限后 Unload(true)）
 ```
 
 Resource Ref 与 Bundle Ref **不必相等**（一个包内多个 asset、或多个 asset 共享同一包时，Bundle Ref 可能更高）。
