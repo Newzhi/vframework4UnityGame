@@ -15,6 +15,7 @@
 | **IoC** | 静态门面，委托 `ServiceContainer` |
 | **ModuleManager** | 按 `Priority` 排序，`InitAll` / `Update` / `FixedUpdate` / `LateUpdate` / `DisposeAll` |
 | **GameTimeModule** | 内置 Clock / 双时刻 / Timer / UpdateFacade / Pipeline（`ModulePriority.Early`） |
+| **GameFlowModule** | 宏观游戏流程 FSM（Boot / 主菜单 / …）；`IGameFlowService`（`ModulePriority.GameFlow`） |
 | **IGameBootstrap** | 业务装配：`Register` Service + `AddModule`（热更层实现） |
 
 本目录只提供框架骨架；玩法 Module / Service 在热更层实现，通过 **`GameRoot.TryStart`** 接入（路径 B，对标 TEngine `GameApp.Entrance`）。
@@ -64,7 +65,7 @@ sequenceDiagram
 |------|---------|------------|
 | 热更入口 | `GameApp.Entrance` | **`GameRoot.TryStart`** |
 | 业务装配 | `GameApp_RegisterSystem` | **`IGameBootstrap.Configure`** |
-| 框架 Mono | Procedure 驱动 | **GameRoot** |
+| 框架 Mono | Procedure 驱动 | **GameRoot** + **GameFlowModule** |
 | Inspector 拖 Bootstrap | 无 | **无** |
 
 ---
@@ -88,6 +89,12 @@ BaseGameRoot/
 │       ├── ModuleManager.cs
 │       ├── IoC.cs
 │       └── ModulePriority.cs
+├── GameFlow/
+│   ├── GameFlowApi.md   宏观流程 API + 设计思想
+│   ├── Interface/
+│   ├── Impt/
+│   ├── Events/
+│   └── States/          MVP 示例状态（Boot / MainMenu）
 └── GameTime/
     ├── GameTimeApi.md   业务 API 参考（Clock / 双时刻 / Timer / Facade）
     ├── Interface/
@@ -127,6 +134,7 @@ public sealed class GameBootstrap : IGameBootstrap
             CalendarSettings = new GameCalendarSettings { SecondsPerDay = 120f },
             InitialTimeScale = 1f
         }));
+        modules.AddModule(GameFlowModule.CreateMvp());
         modules.AddModule(input);
         modules.AddModule(new GameLogicModule());
         modules.AddModule(gameplay);
@@ -200,7 +208,15 @@ public void Init(IServiceRegistry services)
 
 ### 6.3 IGameModule / ModulePriority / IServiceRegistry
 
-见原 §6.2–6.4；`ModulePriority.GameLogic` = 核心玩法（600）。
+| 常量 | 值 | 典型模块 |
+|------|-----|----------|
+| `Input` | 0 | InputModule |
+| `Early` | 100 | GameTimeModule |
+| `GameFlow` | 150 | GameFlowModule |
+| `Normal` | 500 | ArchiveModule |
+| `GameLogic` | 600 | 战斗 ECS |
+| `Late` | 900 | DebugCommandModule |
+| `UI` | 1000 | UIMgr |
 
 ### 6.4 IoC
 
@@ -223,12 +239,29 @@ modules.AddModule(new GameTimeModule(new GameTimeOptions
 
 ---
 
-## 9. 扩展设计
+## 9. GameFlow
+
+内置子模块：宏观游戏阶段（Boot → 主菜单 → …），单当前态 + `Enter/Update/Exit`，无 `MonoBehaviour`。Bootstrap 注册 `GameFlowModule` 后，业务实现 `IGameFlowState` 并在 Configure 中 `Register`；运行时经 `IGameFlowService` 查询与切换。
+
+**详细 API、设计思想、新增状态步骤** → [GameFlow/GameFlowApi.md](GameFlow/GameFlowApi.md)
+
+```csharp
+modules.AddModule(GameFlowModule.CreateMvp(extra: reg =>
+    reg.Register(new ProcedureBattle())));  // 热更层状态
+
+modules.AddModule(new DebugCommandModule(reg =>
+    GameFlowModule.RegisterDebugCommands(reg)));
+```
+
+---
+
+## 10. 扩展设计
 
 | 阶段 | 内容 |
 |------|------|
 | Phase 1 ✅ | `IGameModule` + `ServiceContainer` + Update |
 | Phase 2 ✅ | Fixed / Late 相位 |
 | Phase 2.5 ✅ | GameTime 双时刻 + Pipeline |
+| Phase 2.6 ✅ | GameFlow 宏观流程 MVP（Boot / MainMenu） |
 | Phase 3 | `EcsWorldModule` |
-| 启动 | **路径 B** `TryStart`（可与未来 ProcedureLoadAssembly 流程衔接） |
+| 启动 | **路径 B** `TryStart`（Boot 态可衔接 Patch / LoadAssembly） |

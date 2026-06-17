@@ -59,7 +59,7 @@ flowchart TB
 Assets/vFramework/
 ├── Docs/                          # 项目与框架文档
 ├── BaseFramework/                 # 基础架构层
-│   ├── BaseGameRoot/              # 全局入口 Mono + IOC + 模块 Update（与资源加载无关）
+│   ├── BaseGameRoot/              # 全局入口 Mono + IOC + 模块 Update（含 GameFlow）
 │   ├── BaseEventSys/              # 事件总线（Interface / Impt）
 │   ├── BaseAssetSys/              # AB 打包与加载（独立子系统，文档见 BaseAssetSys/Docs）
 │   ├── BaseFSM/                   # 状态机内核
@@ -109,6 +109,7 @@ OnDestroy → DisposeAll（逆序）+ Clear 容器
 ```
 
 - 实现与范例：[BaseGameRoot/README.md](../BaseFramework/BaseGameRoot/README.md)  
+- **GameFlow**（宏观流程）：[GameFlow/GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) — `GameFlowModule` + `IGameFlowService`，对标 Procedure。  
 - **不包含** `Load` / `Release` / Bundle / 清单；资源能力在 **BaseAssetSys**，见 §5.1。  
 - 各全局 Module 实现 `IGameModule`，在 `IGameBootstrap` 注册，**禁止** lazy `Instance` getter 隐式 `new`。
 
@@ -118,10 +119,15 @@ OnDestroy → DisposeAll（逆序）+ Clear 容器
 - 事件体实现 `IGameEvent`，推荐 `struct` + 轻量字段，避免长期持有 `UnityEngine.Object`。
 - 框架级、跨层协作事件使用；高频局内战斗消息优先走 Proxy / 直接调用，避免事件风暴。
 
-### 4.3 BaseFSM
+### 4.3 BaseFSM 与 GameFlow（分工）
 
-- 通用状态机节点，供 **GameFlow**（启动、Patch、登录、进战斗）使用。
-- 不含塔防具体状态，仅提供 `Enter` / `Update` / `Exit` 等机制。
+| 子系统 | 路径 | 状态 | 职责 |
+|--------|------|------|------|
+| **GameFlow** | `BaseGameRoot/GameFlow/` | **已实现 MVP** | **游戏专用**宏观流程：Boot、主菜单、进战斗；单当前态；`GameFlowModule` 进 Update |
+| **BaseFSM** | `BaseFramework/BaseFSM/` | 规划中 | **通用** FSM 内核（AI、UI 子状态、嵌套小状态机）；多实例；**不替代** GameFlow |
+
+- GameFlow 详细 API：[GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md)  
+- BaseFSM 将来仅提供 `Enter` / `Update` / `Exit` 机制，**不含**塔防具体状态名。
 
 ### 4.4 BaseNetwork
 
@@ -288,7 +294,7 @@ View 点击建造
 
 ### P1 — 塔防联机准备
 
-6. GameFlow FSM（Patch → Login → Battle）  
+6. GameFlow 扩展（Patch → Login → Battle 等 Procedure，见 GameFlowApi.md）  
 7. UIMgr 最小窗口栈  
 8. ObjPoolMgr 与 ResMgr 打通  
 9. 第一条战斗同步协议端到端  
@@ -301,5 +307,6 @@ View 点击建造
 |------|------|
 | [ProjectGoals.md](./ProjectGoals.md) | 产品目标 |
 | [BaseGameRoot/README.md](../BaseFramework/BaseGameRoot/README.md) | 全局入口 + IOC（**非**资源加载） |
+| [GameFlow/GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) | 宏观流程 API 与设计 |
 | [BaseEventSys/README.md](../BaseFramework/BaseEventSys/README.md) | 异步与事件 |
 | [BaseAssetSys/Docs/MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md) | AB 打包/加载排期（**独立**于 GameRoot） |

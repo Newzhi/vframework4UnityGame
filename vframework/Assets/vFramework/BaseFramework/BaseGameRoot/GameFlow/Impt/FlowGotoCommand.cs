@@ -4,14 +4,21 @@ using BaseFramework.BaseCommandSys;
 namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
-    /// 调试：强制切换流程状态（仅 Development）。用法：flow.goto MainMenu
+    /// 调试命令：Development 下强制 <see cref="IGameFlowService.ChangeState"/>。
+    /// 未知 stateId 时 Service 打 Error 日志。
     /// </summary>
     public sealed class FlowGotoCommand : IGameCommand
     {
+        /// <inheritdoc />
         public string Name => "flow.goto";
+
+        /// <inheritdoc />
         public string Description => "Change game flow state (development only).";
+
+        /// <inheritdoc />
         public string Usage => "flow.goto <stateId>";
 
+        /// <inheritdoc />
         public string Execute(IReadOnlyList<string> args, ICommandContext context)
         {
             if (!context.IsDevelopment)

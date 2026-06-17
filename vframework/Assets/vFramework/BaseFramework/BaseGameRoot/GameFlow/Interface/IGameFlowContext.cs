@@ -1,17 +1,17 @@
 namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
-    /// 状态生命周期内可用的只读上下文；由 <see cref="GameFlowService"/> 在切换时注入。
+    /// 状态 Enter / Update / Exit 期间可用的上下文；由 <see cref="GameFlowService"/> 在每帧复用同一实例。
     /// </summary>
     public interface IGameFlowContext
     {
-        /// <summary>IOC 容器；Init 阶段依赖应已注册完毕。</summary>
+        /// <summary>IOC 容器；Enter 内 Get/TryGet 依赖并缓存到状态私有字段，勿在 Update 热路径反复 Get。</summary>
         IServiceRegistry Services { get; }
 
-        /// <summary>当前流程服务；状态内切换请调用 <see cref="IGameFlowService.ChangeState"/>。</summary>
+        /// <summary>流程服务；状态内切换阶段请用 Flow.ChangeState，避免绕路 IoC。</summary>
         IGameFlowService Flow { get; }
 
-        /// <summary>本次 <see cref="IGameFlowService.ChangeState"/> 传入的附加参数（如 sceneName、关卡 Id）。</summary>
+        /// <summary>最近一次 ChangeState 传入的 userData；切换后由 Service 覆盖。</summary>
         object UserData { get; }
     }
 }

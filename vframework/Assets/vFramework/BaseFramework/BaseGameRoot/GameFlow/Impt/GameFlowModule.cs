@@ -4,25 +4,22 @@ using BaseFramework.BaseCommandSys;
 namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
-    /// 游戏宏观流程模块：注册 <see cref="IGameFlowService"/>，由 <see cref="GameRoot"/> 每帧 Tick 当前状态。
-    /// <para>
-    /// 用法（热更 Bootstrap）：
-    /// <code>
-    /// modules.AddModule(GameFlowModule.CreateMvp(extra: reg =>
-    /// {
-    ///     reg.Register(new ProcedureBattle()); // 新增状态：实现 IGameFlowState + Register
-    /// }));
-    /// </code>
-    /// 调试命令（可选，在 DebugCommandModule 中注册）：
-    /// <see cref="FlowStateCommand"/>、<see cref="FlowGotoCommand"/>。
-    /// </para>
+    /// 游戏宏观流程模块：注册 <see cref="IGameFlowService"/>，由 <see cref="GameRoot"/> 经
+    /// <see cref="ModuleManager"/> 每帧 Tick 当前 <see cref="IGameFlowState"/>。
+    /// <para>详见 <c>GameFlow/GameFlowApi.md</c>。</para>
     /// </summary>
     public sealed class GameFlowModule : IGameModule
     {
+        /// <summary>Init 时调用，向内部 Service 注册所有流程状态。</summary>
         private readonly Action<IGameFlowRegistry> _registerStates;
+
+        /// <summary>Init 末尾自动 ChangeState 的目标 Id；null 表示不自动切入。</summary>
         private readonly string _initialStateId;
+
+        /// <summary>流程调度器实例；Init 创建，Dispose 置 null。</summary>
         private GameFlowService _service;
 
+        /// <inheritdoc />
         public int Priority => ModulePriority.GameFlow;
 
         /// <param name="registerStates">配置阶段注册所有 <see cref="IGameFlowState"/>。</param>
@@ -36,8 +33,8 @@ namespace BaseFramework.BaseGameRoot
         }
 
         /// <summary>
-        /// 内置 MVP：Boot + MainMenu，启动后自动进入 Boot。
-        /// 扩展时在 <paramref name="extra"/> 里 Register 更多状态，并修改 Boot 内的切换逻辑。
+        /// 内置 MVP：注册 <see cref="BootFlowState"/> + <see cref="MainMenuFlowState"/>，
+        /// 启动后自动 <c>ChangeState(Boot)</c>。扩展时在 <paramref name="extra"/> 里 Register 更多状态。
         /// </summary>
         public static GameFlowModule CreateMvp(Action<IGameFlowRegistry> extra = null)
         {
@@ -52,7 +49,7 @@ namespace BaseFramework.BaseGameRoot
         }
 
         /// <summary>
-        /// 向 <see cref="BaseCommandSys.DebugCommandModule"/> 的 registerExtra 注册 flow.state / flow.goto。
+        /// 向 <see cref="DebugCommandModule"/> 的 registerExtra 注册 <c>flow.state</c> / <c>flow.goto</c>。
         /// </summary>
         public static void RegisterDebugCommands(ICommandRegistry registry)
         {

@@ -6,14 +6,21 @@ using BaseFramework.BaseCommandSys;
 namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
-    /// 调试：查询当前宏观流程状态。在 Bootstrap 中挂到 <c>DebugCommandModule</c> 的 registerExtra。
+    /// 调试命令：输出当前宏观流程态（Current / Previous / Elapsed）。
+    /// 通过 <see cref="GameFlowModule.RegisterDebugCommands"/> 挂入 DebugCommandModule。
     /// </summary>
     public sealed class FlowStateCommand : IGameCommand
     {
+        /// <inheritdoc />
         public string Name => "flow.state";
+
+        /// <inheritdoc />
         public string Description => "Show current game flow state.";
+
+        /// <inheritdoc />
         public string Usage => "flow.state";
 
+        /// <inheritdoc />
         public string Execute(IReadOnlyList<string> args, ICommandContext context)
         {
             var flow = context.TryGetService<IGameFlowService>();
