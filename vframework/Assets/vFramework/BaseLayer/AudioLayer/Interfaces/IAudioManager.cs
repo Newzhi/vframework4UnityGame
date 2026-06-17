@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 使用资源管理系统来实现对应的播放音乐关闭音乐等功能，对游戏全局bgm,音效等有调度控制权
+/// 使用资源管理系统来加载对应资源
+/// 这个类是用来管理音频的，提供一些对外接口
+/// 由AudioPlay来实现具体的播放等方法
 /// </summary>
 public interface IAudioManager
 {
-    void PlaySound(string soundName);
-    void StopSound(string soundName);
+    
 }

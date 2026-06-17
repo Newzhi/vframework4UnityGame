@@ -89,8 +89,9 @@ BaseGameRoot/
 │       ├── IoC.cs
 │       └── ModulePriority.cs
 └── GameTime/
-    ├── Interface/   GameMoment, IGameTimeClock, IGameCalendar, ITimerService …
-    └── Impt/        GameTimeModule, GameUpdatePipeline, TimerService …
+    ├── GameTimeApi.md   业务 API 参考（Clock / 双时刻 / Timer / Facade）
+    ├── Interface/
+    └── Impt/
 ```
 
 命名空间：`BaseFramework.BaseGameRoot`。
@@ -207,73 +208,18 @@ public void Init(IServiceRegistry services)
 
 ---
 
-## 8. GameTime（双时刻模型）
+## 8. GameTime
 
-### 8.1 职责
+内置子模块：游戏时钟、连续 + 日历双时刻、`ITimerService`（Delay / Repeat）、三相位 Update 门面。Bootstrap 中注册 `GameTimeModule` 后，`GameRoot` 经 `IGameUpdatePipeline` 驱动 Update / Fixed / Late。
 
-| 组件 | 职责 |
-|------|------|
-| **IGameTimeClock** | RealTime / GameTime / DeltaTime / Frame；TimeScale、暂停 |
-| **ISessionTimeline** (A) | 连续时刻：`ChapterId`，供存档 / 同步 |
-| **IGameCalendar** (B) | 日历：`Day/Hour/Minute`，按游戏 delta 推进 |
-| **IGameMomentProvider** | `Now` 快照，聚合 A + B |
-| **ITimerService** | `Delay` / `Repeat` / `Cancel`，基于游戏时间 |
-| **IUpdateFacade** | 轻量 `IUpdatable` 订阅，不必实现 `IGameModule` |
-| **IFixedUpdateFacade** | 轻量 `IFixedUpdatable` 订阅（FixedUpdate 相位） |
-| **ILateUpdateFacade** | 轻量 `ILateUpdatable` 订阅（LateUpdate 相位） |
-| **IGameUpdatePipeline** | Update：Clock → Modules → Facade → Calendar → Timer；Fixed / Late：Modules → 对应 Facade |
-
-### 8.2 每帧顺序
-
-1. `clock.Advance(Time.deltaTime)` → `GameDeltaTime`
-2. `ModuleManager.Update(gameDelta)`
-3. `UpdateFacade.Tick(gameDelta)`
-4. `Calendar.Advance(gameDelta)`（已配置 B 时）
-5. `TimerService.Tick(gameDelta)`
-
-`FixedUpdate` / `LateUpdate` 经 Pipeline 时仍使用 Unity `fixedDeltaTime` / `deltaTime`（未乘 TimeScale）；对应 Facade 与 Module 同相位、同 delta。
-
-### 8.3 日历配置
-
-| 方式 | 用法 |
-|------|------|
-| **Bootstrap 注入** | `new GameTimeModule(new GameTimeOptions { CalendarSettings = … })` |
-| **运行时覆盖** | `services.Get<IGameCalendar>().Configure(settings)`（调试 / 跳日） |
-
-未传 `CalendarSettings` 时仅启用 A（连续时刻），B 字段恒为 0。
-
-### 8.4 业务用法
+**详细 API、示例与 Timer / Facade 选型** → [GameTime/GameTimeApi.md](GameTime/GameTimeApi.md)
 
 ```csharp
-// Init 缓存
-_moment = services.Get<IGameMomentProvider>();
-_timers = services.Get<ITimerService>();
-_facade = services.Get<IUpdateFacade>();
-_fixedFacade = services.Get<IFixedUpdateFacade>();
-_lateFacade = services.Get<ILateUpdateFacade>();
-
-// 读时刻（含 GameTime + Day/Hour/Minute）
-GameMoment now = _moment.Now;
-
-// 延迟（游戏时间 3 秒）
-_timers.Delay(3f, OnTimeout);
-
-// 轻量每帧 / Fixed / Late
-_facade.Add(myUpdatable);
-_fixedFacade.Add(myFixedUpdatable);
-_lateFacade.Add(myLateUpdatable);
+modules.AddModule(new GameTimeModule(new GameTimeOptions
+{
+    CalendarSettings = new GameCalendarSettings { SecondsPerDay = 120f }
+}));
 ```
-
-### 8.5 选型
-
-| 需求 | 用 |
-|------|-----|
-| 重逻辑 / 多相位 | `IGameModule`（+ Fixed / Late 接口） |
-| 轻量 Update | `IUpdateFacade.Add(IUpdatable)` |
-| 轻量 FixedUpdate | `IFixedUpdateFacade.Add(IFixedUpdatable)` |
-| 轻量 LateUpdate | `ILateUpdateFacade.Add(ILateUpdatable)` |
-| 延迟 / 周期 | `ITimerService` |
-| 读时刻 | `IGameMomentProvider.Now` |
 
 ---
 

@@ -2,10 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 网络中心系统，封装一些方法提供调用
-/// </summary>
-public class netcenter : MonoBehaviour
+public class Localizer : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()
