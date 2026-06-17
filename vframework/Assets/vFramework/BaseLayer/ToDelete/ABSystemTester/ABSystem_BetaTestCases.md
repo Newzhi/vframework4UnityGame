@@ -1,4 +1,4 @@
-﻿# ABSystem_Beta 测试用例
+# ABSystem_Beta 测试用例
 
 > 针对 `Assets/vFramework/BaseFramework/BaseAssetSys` 资源打包与加载系统的测试设计。  
 > 被测系统入口：**Unity → vFramework → AssetBundle Packer**  
@@ -34,7 +34,7 @@
 
 ### 1.4 通用前置条件
 
-1. 测试资源根目录：`Assets/vFramework/BaseLayer/AssetLayer/ABSystemTester/Fixtures/`（需按本文「测试夹具」章节搭建）
+1. 测试资源根目录：`Assets/AssetBundle/`（与 `BuildSetting.targetDirectory` 一致；历史路径 `BaseLayer/ToDelete/ABSystemTester/Fixtures/` 已废弃）
 2. `BuildSetting` 指向 `DefaultBuildSetting.asset` 或测试专用 SO
 3. 每次打包前执行 **清理打包**，避免旧产物干扰
 4. 记录 Console 日志，便于对比预期错误信息
@@ -43,7 +43,7 @@
 
 ## 二、测试夹具（Fixtures）设计
 
-建议在 `Assets/vFramework/BaseLayer/AssetLayer/ABSystemTester/Fixtures/` 下准备以下目录结构，供多类用例复用。
+建议在 `Assets/AssetBundle/` 下准备以下目录结构，供多类用例复用（与打包器默认 `targetDirectory` 一致）。
 
 ```text
 Fixtures/
@@ -134,7 +134,7 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 | ID | 优先级 | 场景 | 操作步骤 | 预期结果 |
 |----|--------|------|----------|----------|
 | P-040 | P0 | 编辑器测试 | buildMode=EditorTest | **不** 调用 BuildPipeline；输出目录 **无** 新 `.bundle` |
-| P-041 | P0 | 编辑器测试仍写清单 | EditorTest + Basic 夹具 | `AssetCatalog.json` 仍更新；entries 与规则一致 |
+| P-041 | P0 | 编辑器测试仍写清单 | EditorTest + Basic 夹具 | `AssetCatalog.bytes` 仍更新；entries 与规则一致 |
 | P-042 | P0 | 首包（真机模式） | buildMode=DeviceDebug | `deviceOutputPath` 下生成真实 `.bundle` + Unity `.manifest` |
 | P-043 | P0 | CDN 联网 | buildMode=CdnHotUpdate | `cdnOutputPath`（默认 `Bundles/CDN`）下生成 AB |
 | P-044 | P1 | EditorTest 的 bundleRoot | 对比清单中 `bundleRoot` 字段 | 当前实现仍指向 deviceOutputPath（占位行为，记录即可） |
@@ -144,20 +144,20 @@ shared.bundle  ←── ui.bundle (Panel.prefab)
 
 | ID | 优先级 | 场景 | 操作步骤 | 预期结果 |
 |----|--------|------|----------|----------|
-| P-050 | P0 | 双份 JSON 输出 | DeviceDebug 打包后 | 工程内 `BundleRuleConfig/Catalogue/AssetCatalog.json` 与 `{bundleRoot}/Catalogue/AssetCatalog.json` 内容一致 |
+| P-050 | P0 | 双份二进制输出 | DeviceDebug 打包后 | 工程内 `AssetCatalog.bytes` 与 `{平台}/Base/Version/catalog.bytes` 的 `catalogueHash` 一致 |
 | P-051 | P0 | entries 字段完整 | 抽查 10 条 entry | 含 `assetPath`、`bundleName`、`assetName`；assetName=文件名无扩展名 |
 | P-052 | P0 | 元数据一致 | 对比 BuildSetting 窗口 | `version`、`buildNumber`、`platform`、`packingRule`、`buildMode` 与配置一致 |
 | P-053 | P1 | JSON 可解析 | 用外部工具或 JsonUtility 反序列化 | 无格式错误；能还原为 `AssetCatalog` |
 | P-054 | P1 | bundleRoot 绝对路径 | 查看 JSON 中 bundleRoot | 为本次输出目录的绝对路径 |
 | P-055 | P2 | bundles 依赖表（未实现） | DeviceDebug 打包 Dependencies 夹具 | **当前** JSON 无 `bundles` 字段；实施后：与 `ui.bundle.manifest` 的 Dependencies 一致 |
-| P-056 | P3 | 清单体积 | LargeScale 10000 entries | JSON 体积与加载耗时记录基线；二进制化后对比（未来） |
+| P-056 | P3 | 清单体积 | LargeScale 10000 entries | `.bytes` 体积与加载耗时记录基线 |
 
 ### 3.7 清理（Clean）
 
 | ID | 优先级 | 场景 | 操作步骤 | 预期结果 |
 |----|--------|------|----------|----------|
 | P-060 | P0 | 标准清理 | 先 DeviceDebug 打包，再「清理打包」 | deviceOutputPath、cdnOutputPath 下 `.bundle`/`.manifest` 删除 |
-| P-061 | P0 | Catalogue 清理 | Clean 后 | 工程内 `AssetCatalog.json` 删除 |
+| P-061 | P0 | Catalogue 清理 | Clean 后 | 工程内 `AssetCatalog.bytes` 删除 |
 | P-062 | P1 | 运行时 Catalogue 目录 | Clean 后 | `{bundleRoot}/Catalogue/` 删除 |
 | P-063 | P1 | 无 orphan .meta | Clean 后刷新 Project | Console 无 meta 丢失警告 |
 | P-064 | P2 | 空目录输出路径 | 从未打包直接 Clean | 不报错，正常完成 |
@@ -320,9 +320,10 @@ Console 摘要：
 | 项 | 路径 |
 |----|------|
 | 被测系统 | `Assets/vFramework/BaseFramework/BaseAssetSys/` |
-| 测试文档与夹具 | `Assets/vFramework/BaseLayer/AssetLayer/ABSystemTester/` |
+| 测试文档 | `Assets/vFramework/BaseLayer/ToDelete/ABSystemTester/` |
+| 集成测试（现行） | `Assets/Test/AB_Test/` + [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md) |
 | 默认配置 | `Assets/vFramework/BaseFramework/BaseAssetSys/BundleRuleConfig/Setting/DefaultBuildSetting.asset` |
-| 清单（工程内） | `Assets/vFramework/BaseFramework/BaseAssetSys/BundleRuleConfig/Catalogue/AssetCatalog.json` |
+| 清单（工程内） | `Assets/vFramework/BaseFramework/BaseAssetSys/BundleRuleConfig/Catalogue/AssetCatalog.bytes` |
 | 首包输出（默认） | `Assets/StreamingAssets/` |
 | CDN 输出（默认） | `Bundles/CDN/` |
 | 菜单入口 | **vFramework → AssetBundle Packer** |

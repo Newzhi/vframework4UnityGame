@@ -21,6 +21,11 @@ public static class BundleBuildPipeline
             return false;
 
         BuildTarget target = BundleBuilder.ToBuildTarget(setting.platform);
+        if (!BundleBuilder.EnsureActiveBuildTarget(target))
+            return false;
+
+        StreamingAssetsPlatformIsolation.WarnIfMultiplePlatformFoldersPresent();
+
         BuildAssetBundleOptions options = BuildAssetBundleOptionsFactory.Resolve(setting, executionMode);
 
         if (setting.packingRule == PackingRule.Custom)
@@ -90,8 +95,10 @@ public static class BundleBuildPipeline
         BuildAssetBundleOptions options,
         BundleBuildExecutionMode executionMode)
     {
-        string bundleRoot = BundleBuilder.ResolveBundleRoot(mode, setting);
-        BundleBuilder.EnsureOutputDirectoryPublic(bundleRoot);
+        string packageRoot = BundleBuilder.ResolveBundleRoot(mode, setting);
+        string bundlesRoot = BundlePlatformPaths.ResolveBundlesRoot(packageRoot);
+        BundleBuilder.EnsureOutputDirectoryPublic(bundlesRoot);
+        BundleBuilder.EnsureOutputDirectoryPublic(packageRoot);
 
         List<SharedBundlePlanner.ImporterRestoreEntry> sharedRestore = null;
         try
@@ -103,8 +110,8 @@ public static class BundleBuildPipeline
             }
 
             AssetBundleBuild[] buildArray = builds.ToArray();
-            bool skipUnityBuild = ShouldSkipUnityBuild(mode, executionMode, buildArray, bundleRoot, out string skipReason);
-            string buildId = ResolveBuildId(bundleRoot, skipUnityBuild);
+            bool skipUnityBuild = ShouldSkipUnityBuild(mode, executionMode, buildArray, packageRoot, out string skipReason);
+            string buildId = ResolveBuildId(packageRoot, skipUnityBuild);
             Dictionary<string, int> bundlePriorities = BundlePriorityResolver.ResolveBundlePriorities(setting, buildArray);
 
             bool skipUnityBuildResolved = skipUnityBuild;
@@ -112,45 +119,58 @@ public static class BundleBuildPipeline
 
             if (mode != BuildMode.EditorTest && !skipUnityBuildResolved)
             {
-                if (mode == BuildMode.DlcPackage)
-                    Debug.LogWarning("DLC分包模式尚未实现专用逻辑，当前临时按 CDN 输出路径处理。");
-
-                manifest = BuildPipeline.BuildAssetBundles(bundleRoot, buildArray, options, target);
+                manifest = BuildPipeline.BuildAssetBundles(bundlesRoot, buildArray, options, target);
                 if (manifest == null)
                 {
-                    Debug.LogError("BuildPipeline.BuildAssetBundles 失败: " + bundleRoot);
+                    Debug.LogError("BuildPipeline.BuildAssetBundles 失败: " + bundlesRoot);
                     return false;
                 }
+
+                CatalogueWriter.FinalizeBundlesLayout(bundlesRoot, buildArray);
             }
             else if (skipUnityBuildResolved)
             {
                 Debug.Log("[BundleBuildPipeline] 跳过 Unity 构建: " + skipReason);
-                manifest = TryLoadManifestFromDisk(bundleRoot);
+                manifest = TryLoadManifestFromDisk(bundlesRoot);
             }
 
-            if (!CatalogueWriter.Write(setting, buildArray, bundleRoot, manifest, buildId, bundlePriorities, mode))
+            string packageId = BundlePlatformPaths.ResolvePackageId(mode, setting);
+            if (!CatalogueWriter.Write(
+                    setting,
+                    buildArray,
+                    packageRoot,
+                    bundlesRoot,
+                    manifest,
+                    buildId,
+                    bundlePriorities,
+                    mode,
+                    packageId))
                 return false;
 
             AssetCatalog catalog = CatalogueWriter.LoadLastBuiltCatalog();
-            BuildManifestService.WriteManifestAndDiff(
-                bundleRoot,
-                BuildManifestService.CreateManifest(setting, buildId, mode, catalog?.bundles, bundleRoot));
+            BuildManifest manifestModel = BuildManifestService.CreateManifest(
+                setting, buildId, mode, catalog?.bundles, bundlesRoot);
+
+            BuildManifestService.WriteManifestAndDiff(packageRoot, manifestModel);
+            BuildManifestService.WriteVersionPackageFiles(packageRoot, packageId, setting, catalog, manifestModel);
 
             if (executionMode != BundleBuildExecutionMode.Incremental || !skipUnityBuildResolved)
-                BuildManifestService.UpdateCache(bundleRoot, buildId, buildArray, catalog?.bundles);
+                BuildManifestService.UpdateCache(packageRoot, buildId, buildArray, catalog?.bundles);
+
+            CopyConfigBytesIfNeeded(setting, packageRoot);
 
             if (setting.runBuildAnalyzer)
             {
                 BundleBuildAnalyzer.AnalyzeAndWriteReport(
                     setting,
                     buildArray,
-                    bundleRoot,
+                    packageRoot,
                     manifest);
             }
 
             AssetCatalog graphCatalog = CatalogueWriter.LoadLastBuiltCatalog();
             if (graphCatalog != null)
-                DependencyGraphWriter.Write(bundleRoot, graphCatalog);
+                DependencyGraphWriter.Write(packageRoot, graphCatalog);
 
             return true;
         }
@@ -214,12 +234,12 @@ public static class BundleBuildPipeline
         return Guid.NewGuid().ToString("N");
     }
 
-    static AssetBundleManifest TryLoadManifestFromDisk(string bundleRoot)
+    static AssetBundleManifest TryLoadManifestFromDisk(string bundlesRoot)
     {
-        if (string.IsNullOrEmpty(bundleRoot) || !Directory.Exists(bundleRoot))
+        if (string.IsNullOrEmpty(bundlesRoot) || !Directory.Exists(bundlesRoot))
             return null;
 
-        foreach (string file in Directory.GetFiles(bundleRoot))
+        foreach (string file in Directory.GetFiles(bundlesRoot, "*", SearchOption.AllDirectories))
         {
             if (Path.GetExtension(file).Length > 0)
                 continue;
@@ -246,5 +266,24 @@ public static class BundleBuildPipeline
         }
 
         return null;
+    }
+
+    static void CopyConfigBytesIfNeeded(BuildSetting setting, string packageRoot)
+    {
+        if (setting == null || string.IsNullOrEmpty(setting.configSourceDirectory))
+            return;
+
+        string sourceAbs = BundleBuilder.ToAbsoluteAssetsPath(setting.configSourceDirectory);
+        if (!Directory.Exists(sourceAbs))
+            return;
+
+        string configDir = BundlePlatformPaths.ResolveConfigDir(packageRoot);
+        Directory.CreateDirectory(configDir);
+
+        foreach (string file in Directory.GetFiles(sourceAbs, "*.bytes", SearchOption.AllDirectories))
+        {
+            string dest = Path.Combine(configDir, Path.GetFileName(file));
+            File.Copy(file, dest, true);
+        }
     }
 }

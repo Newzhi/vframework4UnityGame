@@ -3,7 +3,8 @@ using UnityEngine;
 public enum BulletOwner
 {
     Player,
-    Enemy
+    Enemy,
+    Ally
 }
 
 /// <summary>
@@ -60,13 +61,21 @@ public class Bullet : MonoBehaviour
         if (released)
             return;
 
-        if (owner == BulletOwner.Player)
+        if (owner == BulletOwner.Player || owner == BulletOwner.Ally)
         {
             enemyTest enemy = other.GetComponent<enemyTest>();
             if (enemy == null)
                 return;
 
-            enemy.GetDamage(10f);
+            enemy.GetDamage(owner == BulletOwner.Player ? 10f : 9f);
+            ReturnToPool();
+            return;
+        }
+
+        AllyTest ally = other.GetComponent<AllyTest>();
+        if (ally != null)
+        {
+            ally.GetDamage(8f);
             ReturnToPool();
             return;
         }

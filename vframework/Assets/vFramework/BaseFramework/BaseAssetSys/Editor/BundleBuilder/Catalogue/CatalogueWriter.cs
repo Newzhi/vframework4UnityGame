@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,12 +7,10 @@ using UnityEngine;
 
 public static class CatalogueWriter
 {
-    public const string CatalogueAssetPath = BundleBuilder.SystemRoot + "/BundleRuleConfig/Catalogue/AssetCatalog.json";
-    public const string RuntimeCatalogueFileName = "AssetCatalog.json";
+    public const string CatalogueAssetPath = BundlePlatformPaths.ProjectCatalogueRelativePath;
+    public const string RuntimeCatalogueFileName = BundlePlatformPaths.CatalogFileName;
 
     static AssetCatalog lastBuiltCatalog;
-
-    // TODO: 清单输出后续改二进制格式，见 MainRoadmap.md P3-12 / CatalogueReference.md §六。
 
     /// <summary>供 Pipeline 写 Manifest 时读取刚构建的 bundles[] 完整性字段。</summary>
     public static AssetCatalog LoadLastBuiltCatalog()
@@ -32,16 +30,18 @@ public static class CatalogueWriter
     public static bool Write(
         BuildSetting setting,
         AssetBundleBuild[] builds,
-        string bundleRoot,
+        string packageRoot,
+        string bundlesRoot,
         AssetBundleManifest manifest,
         string buildId,
         Dictionary<string, int> bundlePriorities,
-        BuildMode modeOverride)
+        BuildMode modeOverride,
+        string packageId)
     {
         if (!TryBuildCatalog(
                 setting,
                 builds,
-                bundleRoot,
+                bundlesRoot,
                 manifest,
                 buildId,
                 bundlePriorities,
@@ -54,23 +54,101 @@ public static class CatalogueWriter
         }
 
         lastBuiltCatalog = catalog;
-        string json = JsonUtility.ToJson(catalog, true);
 
         string projectRoot = Directory.GetParent(Application.dataPath).FullName;
         string catalogueFullPath = Path.GetFullPath(Path.Combine(projectRoot, CatalogueAssetPath));
-        string catalogueDir = Path.GetDirectoryName(catalogueFullPath);
-        if (!Directory.Exists(catalogueDir))
-            Directory.CreateDirectory(catalogueDir);
+        if (!AssetCatalogBinaryCodec.WriteToFile(catalogueFullPath, catalog))
+        {
+            Debug.LogError("Catalogue write failed: project catalogue");
+            return false;
+        }
 
-        File.WriteAllText(catalogueFullPath, json);
+        string versionDir = BundlePlatformPaths.ResolveVersionDir(packageRoot);
+        if (!Directory.Exists(versionDir))
+            Directory.CreateDirectory(versionDir);
 
-        string runtimeCatalogueDir = Path.Combine(bundleRoot, "Catalogue");
-        if (!Directory.Exists(runtimeCatalogueDir))
-            Directory.CreateDirectory(runtimeCatalogueDir);
+        string runtimeCatalogPath = Path.Combine(versionDir, BundlePlatformPaths.CatalogFileName);
+        if (!AssetCatalogBinaryCodec.WriteToFile(runtimeCatalogPath, catalog))
+        {
+            Debug.LogError("Catalogue write failed: runtime catalogue");
+            return false;
+        }
 
-        File.WriteAllText(Path.Combine(runtimeCatalogueDir, RuntimeCatalogueFileName), json);
+        if (modeOverride == BuildMode.DlcPackage)
+        {
+            string fragmentPath = Path.Combine(versionDir, BundlePlatformPaths.CatalogFragmentFileName);
+            if (!AssetCatalogBinaryCodec.WriteToFile(fragmentPath, catalog))
+            {
+                Debug.LogError("Catalogue write failed: DLC fragment");
+                return false;
+            }
+        }
+
         AssetDatabase.Refresh();
         return true;
+    }
+
+    public static bool Write(
+        BuildSetting setting,
+        AssetBundleBuild[] builds,
+        string bundleRoot,
+        AssetBundleManifest manifest,
+        string buildId,
+        Dictionary<string, int> bundlePriorities,
+        BuildMode modeOverride)
+    {
+        string bundlesRoot = BundlePlatformPaths.ResolveBundlesRoot(bundleRoot);
+        string packageId = BundlePlatformPaths.ResolvePackageId(modeOverride, setting);
+        return Write(setting, builds, bundleRoot, bundlesRoot, manifest, buildId, bundlePriorities, modeOverride, packageId);
+    }
+
+    /// <summary>将 Bundles 根目录下 flat 产物按 catalog 相对路径归位到子文件夹。</summary>
+    public static void FinalizeBundlesLayout(string bundlesRoot, AssetBundleBuild[] builds)
+    {
+        if (string.IsNullOrEmpty(bundlesRoot) || builds == null || !Directory.Exists(bundlesRoot))
+            return;
+
+        foreach (AssetBundleBuild build in builds)
+        {
+            string bundleName = BundlePlatformPaths.NormalizeBundleName(build.assetBundleName);
+            if (string.IsNullOrEmpty(bundleName) || bundleName.IndexOf('/') < 0)
+                continue;
+
+            string dest = Path.Combine(
+                bundlesRoot,
+                bundleName.Replace('/', Path.DirectorySeparatorChar));
+
+            if (File.Exists(dest))
+                continue;
+
+            string flatName = Path.GetFileName(bundleName);
+            string flatPath = Path.Combine(bundlesRoot, flatName);
+            if (!File.Exists(flatPath))
+                continue;
+
+            string destDir = Path.GetDirectoryName(dest);
+            if (!string.IsNullOrEmpty(destDir))
+                Directory.CreateDirectory(destDir);
+
+            File.Move(flatPath, dest);
+            MoveSiblingIfExists(flatPath + ".manifest", dest + ".manifest");
+            MoveSiblingIfExists(flatPath + ".meta", dest + ".meta");
+        }
+    }
+
+    static void MoveSiblingIfExists(string source, string dest)
+    {
+        if (!File.Exists(source))
+            return;
+
+        string destDir = Path.GetDirectoryName(dest);
+        if (!string.IsNullOrEmpty(destDir))
+            Directory.CreateDirectory(destDir);
+
+        if (File.Exists(dest))
+            File.Delete(dest);
+
+        File.Move(source, dest);
     }
 
     public static bool TryBuildCatalog(
@@ -182,8 +260,7 @@ public static class CatalogueWriter
             bundles = bundles
         };
 
-        string jsonWithoutHash = JsonUtility.ToJson(catalog, true);
-        catalog.catalogueHash = BuildHashCalculator.ComputeTextSha256(jsonWithoutHash);
+        catalog.catalogueHash = AssetCatalogBinaryCodec.ComputeCatalogueHash(catalog);
 
         return true;
     }
@@ -310,7 +387,7 @@ public static class CatalogueWriter
             if (dep == rawBundleName)
                 continue;
 
-            string depFileName = BundlePlatformPaths.NormalizeBundleName(Path.GetFileName(dep));
+            string depFileName = BundlePlatformPaths.NormalizeBundleName(dep.Replace("\\", "/"));
             if (string.IsNullOrEmpty(depFileName))
                 continue;
 

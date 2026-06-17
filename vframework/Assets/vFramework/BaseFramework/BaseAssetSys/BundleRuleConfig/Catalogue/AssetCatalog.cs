@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 #region 资源清单 - 单条资源
 
@@ -63,7 +63,7 @@ public class BundleCatalogInfo
 #region 资源清单 - 根结构
 
 /// <summary>
-/// 资源清单根结构（当前 JSON；后续可能改二进制，见 MainRoadmap.md P3-12）。
+/// 资源清单根结构（二进制 catalog.bytes）。
 /// </summary>
 [Serializable]
 public class AssetCatalog
@@ -92,7 +92,7 @@ public class AssetCatalog
     /// <summary>本次构建唯一 ID（GUID），用于增量 diff 关联</summary>
     public string buildId;
 
-    /// <summary>整份清单 JSON 内容哈希（SHA256），运行时比对是否需要拉新清单</summary>
+    /// <summary>整份清单内容哈希（SHA256），运行时比对是否需要拉新清单</summary>
     public string catalogueHash;
 
     /// <summary>本次 BuildPipeline 使用的压缩模式名（LZMA / LZ4Chunk / Uncompressed）</summary>

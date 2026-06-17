@@ -15,10 +15,9 @@ public class BundleManager
     {
         public AssetBundle Bundle;
         public int Ref;
-        /// <summary>最近一次 Acquire 或进入空闲队列的时刻（Time.realtimeSinceStartup）。</summary>
         public float LastUsedTime;
-        /// <summary>来自清单 bundles[].resourcePriority。</summary>
         public int ResourcePriority;
+        public string PackageId;
     }
 
     #endregion
@@ -49,6 +48,36 @@ public class BundleManager
     public static void SetPathResolver(IBundlePathResolver resolver)
     {
         pathResolver = resolver;
+    }
+
+    public static IBundlePathResolver GetPathResolver()
+    {
+        return pathResolver;
+    }
+
+    /// <summary>卸载指定内容包拥有的 bundle（ref&gt;0 时强制卸载并打 Warning）。</summary>
+    public static void UnloadPackageBundles(IReadOnlyList<string> bundleNames)
+    {
+        if (bundleNames == null)
+            return;
+
+        foreach (string rawName in bundleNames)
+        {
+            string bundleName = BundlePlatformPaths.NormalizeBundleName(rawName);
+            if (string.IsNullOrEmpty(bundleName))
+                continue;
+
+            if (!loadedBundles.TryGetValue(bundleName, out BundleEntry entry))
+                continue;
+
+            if (entry.Ref > 0)
+            {
+                Debug.LogWarning(
+                    "UnloadPackageBundles force unload with ref>0: " + bundleName + " ref=" + entry.Ref);
+            }
+
+            ForceUnloadBundle(bundleName, entry, "UnloadPackage");
+        }
     }
 
     #endregion
@@ -234,6 +263,10 @@ public class BundleManager
         {
             string bundleName = pair.Key;
             BundleEntry entry = pair.Value;
+
+            if (BundleLruUnloadPolicy.IsNeverUnload(entry.ResourcePriority))
+                continue;
+
             float elapsed = now - entry.LastUsedTime;
             float grace = BundleLruUnloadPolicy.GetGraceSeconds(entry.ResourcePriority);
             bool pastGrace = elapsed >= grace;
@@ -288,24 +321,10 @@ public class BundleManager
 
     static string ResolveBundleFilePath(string root, string bundleName)
     {
-        string path = StreamingAssetsIO.CombinePath(root, bundleName);
-        if (StreamingAssetsIO.IsNonFileProtocolPath(root))
+        if (BundlePlatformPaths.TryResolveBundleFilePath(root, bundleName, out string path))
             return path;
 
-        if (File.Exists(path))
-            return path;
-
-        if (!Directory.Exists(root))
-            return path;
-
-        string fileName = Path.GetFileName(bundleName);
-        foreach (string file in Directory.GetFiles(root, "*.bundle"))
-        {
-            if (string.Equals(Path.GetFileName(file), fileName, System.StringComparison.OrdinalIgnoreCase))
-                return file;
-        }
-
-        return path;
+        return StreamingAssetsIO.CombinePath(root, bundleName);
     }
 
 #if DEVELOPMENT_BUILD

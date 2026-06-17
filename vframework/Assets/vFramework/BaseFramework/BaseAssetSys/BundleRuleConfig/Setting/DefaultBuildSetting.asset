@@ -19,15 +19,31 @@ MonoBehaviour:
   cdnOutputPath: Bundles/CDN
   usePlatformSubfolders: 1
   buildMode: 1
-  packingRule: 2
+  packingRule: 0
   targetDirectory: Assets/AssetBundle
   customItems:
-  - assetPath: Assets/AssetBundle
+  - assetPath: Assets/AssetBundle/Atlas
     bundleName: bundle_1
     buildMode: 1
-    downloadPriority: 1
+    resourcePriority: 2
     folderPackingRule: 0
     note: 
+  - assetPath: Assets/AssetBundle/Common
+    bundleName: bundle_2
+    buildMode: 1
+    resourcePriority: 2
+    folderPackingRule: 0
+    note: 
+  compressionMode: 1
+  defaultBundlePriority: 2
+  enableAutoSharedBundle: 1
+  sharedBundleMinRefCount: 2
+  sharedBundleName: shared_auto.bundle
   useTopologicalSort: 1
   runBuildAnalyzer: 1
   loadPathDuplicateAsError: 0
+  useDirectDependenciesOnly: 0
+  cdnBaseUrl: 
+  dlcPackageId: 
+  configSourceDirectory: 
+  bundleCategoryMappings: []

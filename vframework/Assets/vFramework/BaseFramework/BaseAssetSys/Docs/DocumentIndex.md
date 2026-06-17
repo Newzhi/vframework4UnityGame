@@ -1,6 +1,7 @@
 # ABSystem_Beta 文档索引
 
 > **Docs/**：集中说明、验收标准、跨模块规划。  
+> **路径约定**：跨文档链接使用仓库根相对路径 `Assets/vFramework/BaseFramework/BaseAssetSys/Docs/...`（Cursor / VS Code 可 Ctrl+点击跳转）。
 > **各子文件夹/**：对应模块的详细设计，与代码同目录维护。  
 > **新建文档前**：必读本文 **§ 文档分类与合并规则** 与 [MainRoadmap.md §7](./MainRoadmap.md#7-文档地图)。
 
@@ -26,7 +27,7 @@
 | [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | AssetReference、统一池、Ref Trace **设计** | MainRoadmap **P1.5** |
 | [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步 **设计** | MainRoadmap **B-2**（inFlight 未做）；**阶段 C ✅** |
 | [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md) | 拓扑 + 构建优化 **设计** | MainRoadmap **P1 #6/#7** |
-| [CatalogueReference.md](./CatalogueReference.md) | 清单字段 | MainRoadmap **P3-12**（二进制） |
+| [CatalogueReference.md](./CatalogueReference.md) | 清单字段与二进制路径 | 已实现（VCAT v1）；加密见 **P3** |
 
 ### 新建文档检查清单
 
@@ -43,18 +44,18 @@ Cursor 自动化：见项目 `.cursor/rules/documentation-governance.mdc` 与 `.
 
 | 文档 | 用途 |
 |------|------|
-| **[MainRoadmap.md](./MainRoadmap.md)** | **方向 + 排期 + TODO + 测试门禁（唯一总纲）** |
-| [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md) | 设计基线（禁止区）+ 模块实现进度 |
-| [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步扩展设计（阶段 C 运行时 ✅） |
-| [StageCFreezeCR.md](./StageCFreezeCR.md) | 阶段 C 封板 Code Review 交付物 |
-| [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) | 业务侧加载/卸载范式（含 §5.6 Bundle LRU） |
-| [RefCountAppendix.md](./RefCountAppendix.md) | **引用计数附件**：API 逐步追踪、三层计数、代码链路 |
-| [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | 加载侧优化 **设计**（排期 → MainRoadmap P1.5） |
-| **本文 § 业务场景总结** | 模块/Prefab/Ref/依赖/路由 **场景速查** |
-| [CatalogueReference.md](./CatalogueReference.md) | 清单 `entries` / `bundles` |
-| [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md) | 依赖拓扑 + 构建优化 **设计** |
-| [BuilderEditorBlueprint.html](./BuilderEditorBlueprint.html) | 打包窗口 **Builder** 页签 UI 原型 |
-| [ReportEditorBlueprint.html](./ReportEditorBlueprint.html) | 打包窗口 **Reporter** 页签 UI 原型 |
+| **[MainRoadmap.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/MainRoadmap.md)** | **方向 + 排期 + TODO + 测试门禁（唯一总纲）** |
+| [DesignGoalsAndImplementation.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/DesignGoalsAndImplementation.md) | 设计基线（禁止区）+ 模块实现进度 |
+| [BusinessApiAndCdnPlanning.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiAndCdnPlanning.md) | CDN / 异步扩展设计（阶段 C 运行时 ✅） |
+| [StageCFreezeCR.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/StageCFreezeCR.md) | 阶段 C 封板 Code Review 交付物 |
+| [BusinessApiUsageGuide.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md) | 业务侧加载/卸载范式（含 [§5.6 Bundle LRU](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md#bundle-lru-unload)） |
+| [RefCountAppendix.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/RefCountAppendix.md) | **引用计数附件**：API 逐步追踪、三层计数、代码链路 |
+| [LoaderOptimizationPlan.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/LoaderOptimizationPlan.md) | 加载侧优化 **设计**（排期 → MainRoadmap P1.5） |
+| **本文 § 业务场景总结** | 模块/Prefab/Ref/依赖/路由 **场景速查** → [DesignGoals §业务场景总结](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/DesignGoalsAndImplementation.md#business-scenarios) |
+| [CatalogueReference.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/CatalogueReference.md) | 清单 `entries` / `bundles`、[`resourcePriority`](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/CatalogueReference.md#resource-priority) |
+| [BundleBuildOptimizationAndTopologyPlan.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BundleBuildOptimizationAndTopologyPlan.md) | 依赖拓扑 + 构建优化 **设计** |
+| [BuilderEditorBlueprint.html](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BuilderEditorBlueprint.html) | 打包窗口 **Builder** 页签 UI 原型 |
+| [ReportEditorBlueprint.html](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/ReportEditorBlueprint.html) | **Reporter** 页签 UI 设计原型（Editor 内无打开按钮，仅文档参考） |
 
 ---
 
@@ -63,12 +64,12 @@ Cursor 自动化：见项目 `.cursor/rules/documentation-governance.mdc` 与 `.
 | 目录 | 文档 | 代码入口 |
 |------|------|----------|
 | `AbstractAssets/` | [README.md](../AbstractAssets/README.md) | `AbstractResource.cs` |
-| `ResLoader/` | [README.md](../ResLoader/README.md)、[LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md) | `Business/` `Bundle/` `Catalogue/` `Router/` |
-| `BundleRuleConfig/` | [README.md](../BundleRuleConfig/README.md) | `BuildSetting`、`AssetCatalog` |
+| `ResLoader/` | [README.md](../ResLoader/README.md)、[LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md) | `Business/` `Bundle/` `Catalogue/` `ContentPackage/` `Router/` `Cdn/` |
+| `BundleRuleConfig/` | [README.md](../BundleRuleConfig/README.md) | `BuildSetting`、`AssetCatalog`、`AssetCatalogBinaryCodec` |
 | `Editor/` | [README.md](../Editor/README.md) | `BundlePacker`、`BundleBuilder`、`BundleReporter` |
 | `AssetPool/` | `PrefabPool.cs`、`PrefabPoolManager.cs` | [LoaderOptimizationPlan](./LoaderOptimizationPlan.md)、[业务API §5.4](./BusinessApiUsageGuide.md) |
 | `BaseLogSys/` | `AssetRefTraceLogger.cs` | Ref Trace；[LoaderOptimizationPlan §4](./LoaderOptimizationPlan.md) |
-| `ABSystemTester/` | [ABSystem_BetaTestCases.md](../../../../BaseLayer/AssetLayer/ABSystemTester/ABSystem_BetaTestCases.md) | `ABLoadSmokeTest.cs` |
+| `ABSystemTester/`（历史） | [ABSystem_BetaTestCases.md](../../../../BaseLayer/ToDelete/ABSystemTester/ABSystem_BetaTestCases.md) | [ABLoadSmokeTest.cs](../../../../BaseLayer/ToDelete/ABSystemTester/ABLoadSmokeTest.cs)（手测） |
 | `Assets/Test/AB_Test/` | [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md) | 双 Runner 门禁 |
 | `Assets/Test/comprehensiveTest/` | [综合测试归档.md](../../../../Test/comprehensiveTest/综合测试归档.md) | 池 / EventBus 手测 |
 

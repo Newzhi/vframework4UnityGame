@@ -48,7 +48,7 @@ public enum PackingRule
 /// </summary>
 public enum ResourcePriority
 {
-    /// <summary>关键资源（常驻 UI、核心玩法），最后卸载。</summary>
+    /// <summary>关键资源（常驻 UI、核心玩法），LRU 永不卸载。</summary>
     Critical = 0,
     /// <summary>高优先级热更/首包资源。</summary>
     High = 1,
@@ -113,6 +113,16 @@ public class BundleConfigItem
 
     /// <summary>配置说明（仅 Editor 展示）。</summary>
     public string note;
+}
+
+[Serializable]
+public class BundleCategoryMapping
+{
+    /// <summary>源资源一级文件夹名（如 UI、Model）。</summary>
+    public string sourceFolderName;
+
+    /// <summary>输出 Bundles 下分类目录（如 Core、Character）。</summary>
+    public string categoryFolder;
 }
 
 #endregion
@@ -184,6 +194,16 @@ public class BuildSetting : ScriptableObject
     [Header("CDN / 增量（运行时）")]
     /// <summary>CDN 清单与 AB 根 URL（末尾无斜杠）；CdnHotUpdate 运行时拉取对比用。</summary>
     public string cdnBaseUrl = "";
+
+    [Header("内容包 / DLC")]
+    /// <summary>DlcPackage 模式下的包 ID（如 Desert → DLC_Desert）。</summary>
+    public string dlcPackageId = "";
+
+    /// <summary>可选：*.bytes 配置表源目录，打包时拷贝到包内 Config/。</summary>
+    public string configSourceDirectory = "";
+
+    /// <summary>源一级文件夹 → Bundles 分类子目录；未配置则用小写文件夹名。</summary>
+    public List<BundleCategoryMapping> bundleCategoryMappings = new List<BundleCategoryMapping>();
 }
 
 #endregion

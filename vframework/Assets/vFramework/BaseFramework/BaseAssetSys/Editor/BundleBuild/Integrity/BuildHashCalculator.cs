@@ -11,5 +11,7 @@ public static class BuildHashCalculator
 
     public static string ComputeTextSha256(string text) => BundleIntegrityUtil.ComputeTextSha256(text);
 
+    public static string ComputeBytesSha256(byte[] bytes) => BundleIntegrityUtil.ComputeBytesSha256(bytes);
+
     public static uint ComputeCrc32(byte[] data) => BundleIntegrityUtil.ComputeCrc32(data);
 }

@@ -79,10 +79,10 @@ static class BundleBuilderTabView
         }
 
         setting.version = EditorGUILayout.TextField(
-            BundlePackerUiShared.Tip("版本号", "应用版本号（x.y.z），写入 AssetCatalog.json。"),
+            BundlePackerUiShared.Tip("版本号", "应用版本号（x.y.z），写入资源清单。"),
             setting.version);
         setting.buildNumber = EditorGUILayout.IntField(
-            BundlePackerUiShared.Tip("构建号", "递增构建编号，写入 AssetCatalog.json。"),
+            BundlePackerUiShared.Tip("构建号", "递增构建编号，写入资源清单。"),
             setting.buildNumber);
 
         BundlePackerUiShared.DrawOutputPathField(
@@ -305,7 +305,8 @@ static class BundleBuilderTabView
         string folder = BundlePlatformPaths.GetFolderName(setting.platform);
         string device = (setting.deviceOutputPath ?? "").Replace("\\", "/").TrimEnd('/');
         string cdn = (setting.cdnOutputPath ?? "").Replace("\\", "/").TrimEnd('/');
-        return "首包: " + device + "/" + folder + "  |  CDN: " + cdn + "/" + folder;
+        return "首包: " + device + "/" + folder + "/" + BundlePlatformPaths.BasePackageId
+            + "  |  CDN: " + cdn + "/" + folder + "/" + BundlePlatformPaths.BasePackageId;
     }
 
     static void BumpVersion(BuildSetting setting)
@@ -350,7 +351,7 @@ static class BundleBuilderTabView
             case BuildMode.CdnHotUpdate:
                 return "CDN联网：AB 输出到 CDN 输出路径。";
             case BuildMode.DlcPackage:
-                return "DLC分包：独立 DLC 目录（TODO）。";
+                return "DLC分包：输出到 {平台}/DLC_{dlcPackageId}/（Version + Bundles + Config）。";
             default:
                 return "编辑器测试：不生成 .bundle，仅更新清单。";
         }

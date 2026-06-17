@@ -1,0 +1,2148 @@
+﻿=== ComprehensiveTest Log Export ===
+Tag PoolTest退出
+Unity 2022.3.62f3c1
+Platform WindowsPlayer
+Package 
+Time 2026-06-17 02:16:51
+Scene PoolTest
+ExportDir F:\AQNU\test\winbao\vframework_Data\StreamingAssets\StandaloneWindows64\Logs
+persistentDataPath C:/Users/Lenovo/AppData/LocalLow/DefaultCompany/vframework
+streamingAssetsPath F:/AQNU/test/winbao/vframework_Data/StreamingAssets
+DeviceLogPath C:/Users/Lenovo/AppData/LocalLow/DefaultCompany/vframework\comprehensiveTest\Logs
+Memory mono=3.94MB heap=6.46MB res=149.83MB alloc=60.32MB ur=89.51MB gfx=0B gc=3.94MB g0=59 g1=59 g2=59
+
+[7.8s] 实体生成模式=AutoUnload
+[7.8s] Logger启动 schema=v3-entity-autounload-gc
+[7.8s] 导出:F:\AQNU\test\winbao\vframework_Data\StreamingAssets\StandaloneWindows64\Logs
+[7.8s] 真机:C:/Users/Lenovo/AppData/LocalLow/DefaultCompany/vframework\comprehensiveTest\Logs
+[7.8s] Windows: bundleRoot/Logs 或 C:/Users/Lenovo/AppData/LocalLow/DefaultCompany/vframework\comprehensiveTest\Logs
+[7.8s] EnsureReady OK
+[7.8s] MEM 基线 m=2.1M d+0B h=2.4M u=336K r=143.8M d+0B a=50.9M ur=92.9M g=0B gc=2.1M d+0B
+[7.8s] GC 基线 g0=19 d0 g1=19 d0 g2=19 d0
+[8.4s] 敌人生成
+[8.4s] 池ref[敌人生成后] 未注册 holders=0
+[8.4s] 敌人生成
+[8.4s] 池ref[敌人生成后] 未注册 holders=0
+[8.4s] 池ref[敌人GetOrCreatPool#-276] ref=1 max=48 holders=1 b=0 p=0
+[8.4s] 池ref[敌人GetOrCreatPool#-290] ref=2 max=96 holders=2 b=1 p=0
+[8.6s] 友军生成
+[8.6s] 池ref[友军生成后] ref=2 max=96 holders=2 b=2 p=0
+[8.6s] 友军生成
+[8.6s] 池ref[友军生成后] ref=2 max=96 holders=2 b=2 p=0
+[8.6s] 池ref[友军GetOrCreatPool#-340] ref=3 max=144 holders=3 b=2 p=0
+[8.6s] 池ref[友军GetOrCreatPool#-354] ref=4 max=192 holders=4 b=3 p=0
+[8.8s] DMG P -8
+[9.8s] DMG E -9
+[9.8s] 池 Bullet b=2 p=2 ref=4 max=192 holders=4
+[9.8s] 池 scene=PoolTest ch=1 rootInActive=True
+[9.8s] MEM 周期 m=2.8M d+716K h=4.6M u=1.8M r=147.8M d+4.0M a=57.4M ur=90.4M g=0B gc=2.8M d+716K
+[9.8s] GC 周期 g0=24 d5 g1=24 d5 g2=24 d5
+[9.8s] 敌人生成
+[9.8s] 池ref[敌人生成后] ref=4 max=192 holders=4 b=2 p=2
+[9.8s] 敌人生成
+[9.8s] 池ref[敌人生成后] ref=4 max=192 holders=4 b=2 p=2
+[9.9s] 池ref[敌人GetOrCreatPool#-410] ref=5 max=240 holders=5 b=2 p=2
+[10.1s] 池ref[敌人GetOrCreatPool#-396] ref=6 max=288 holders=6 b=2 p=2
+[11.1s] 友军生成
+[11.1s] 池ref[友军生成后] ref=6 max=288 holders=6 b=6 p=0
+[11.1s] 友军生成
+[11.1s] 池ref[友军生成后] ref=6 max=288 holders=6 b=6 p=0
+[11.2s] 池ref[友军GetOrCreatPool#-452] ref=7 max=336 holders=7 b=6 p=0
+[11.2s] 池ref[友军GetOrCreatPool#-466] ref=8 max=384 holders=8 b=7 p=0
+[11.2s] 敌人生成
+[11.2s] 池ref[敌人生成后] ref=8 max=384 holders=8 b=8 p=0
+[11.2s] 敌人生成
+[11.2s] 池ref[敌人生成后] ref=8 max=384 holders=8 b=8 p=0
+[11.3s] 池ref[敌人GetOrCreatPool#-508] ref=9 max=432 holders=9 b=8 p=0
+[11.3s] 池ref[敌人GetOrCreatPool#-522] ref=10 max=480 holders=10 b=9 p=0
+[11.3s] DMG E -8
+[12.3s] DMG E -9
+[12.6s] 敌人生成
+[12.6s] 池ref[敌人生成后] ref=10 max=480 holders=10 b=18 p=1
+[12.6s] 敌人生成
+[12.6s] 池ref[敌人生成后] ref=10 max=480 holders=10 b=18 p=1
+[13.0s] 池ref[敌人GetOrCreatPool#-690] ref=11 max=528 holders=11 b=20 p=0
+[13.5s] DMG E -9
+[13.7s] 友军生成
+[13.7s] 池ref[友军生成后] ref=11 max=528 holders=11 b=26 p=0
+[13.7s] 友军生成
+[13.7s] 池ref[友军生成后] ref=11 max=528 holders=11 b=26 p=0
+[13.7s] 池ref[友军GetOrCreatPool#-816] ref=12 max=576 holders=12 b=26 p=0
+[13.7s] 池ref[友军GetOrCreatPool#-830] ref=13 max=624 holders=13 b=27 p=0
+[14.0s] 敌人生成
+[14.0s] 池ref[敌人生成后] ref=13 max=624 holders=13 b=29 p=0
+[14.0s] 敌人生成
+[14.0s] 池ref[敌人生成后] ref=13 max=624 holders=13 b=29 p=0
+[14.1s] 池ref[敌人GetOrCreatPool#-900] ref=14 max=672 holders=14 b=29 p=0
+[14.5s] DMG E -9
+[14.8s] 池 Bullet b=26 p=4 ref=14 max=672 holders=14
+[14.8s] 池 scene=PoolTest ch=1 rootInActive=True
+[14.8s] MEM 周期 m=3.0M d+952K h=4.6M u=1.6M r=147.8M d+4.0M a=57.6M ur=90.2M g=0B gc=3.0M d+952K
+[14.8s] GC 周期 g0=24 d5 g1=24 d5 g2=24 d5
+[15.4s] 敌人生成
+[15.4s] 池ref[敌人生成后] ref=14 max=672 holders=14 b=29 p=1
+[15.4s] 敌人生成
+[15.4s] 池ref[敌人生成后] ref=14 max=672 holders=14 b=29 p=1
+[15.5s] 池ref[敌人GetOrCreatPool#-942] ref=15 max=720 holders=15 b=29 p=1
+[15.5s] DMG E -8
+[15.8s] 池ref[敌人GetOrCreatPool#-704] ref=16 max=768 holders=16 b=30 p=1
+[16.2s] 友军生成
+[16.2s] 池ref[友军生成后] ref=16 max=768 holders=16 b=31 p=1
+[16.2s] 友军生成
+[16.2s] 池ref[友军生成后] ref=16 max=768 holders=16 b=31 p=1
+[16.2s] 池ref[友军GetOrCreatPool#-984] ref=17 max=816 holders=17 b=30 p=2
+[16.2s] 池ref[友军GetOrCreatPool#-998] ref=18 max=864 holders=18 b=31 p=1
+[16.6s] DMG E -9
+[16.8s] 敌人生成
+[16.8s] 池ref[敌人生成后] ref=18 max=864 holders=18 b=32 p=2
+[16.8s] 敌人生成
+[16.8s] 池ref[敌人生成后] ref=18 max=864 holders=18 b=32 p=2
+[16.9s] 池ref[敌人GetOrCreatPool#-1040] ref=19 max=912 holders=19 b=32 p=2
+[16.9s] 池ref[敌人GetOrCreatPool#-1054] ref=20 max=960 holders=20 b=36 p=0
+[17.4s] 池ref[敌人GetOrCreatPool#-886] ref=21 max=1008 holders=21 b=35 p=6
+[17.6s] DMG E -9
+[18.2s] 敌人生成
+[18.2s] 池ref[敌人生成后] ref=21 max=1008 holders=21 b=44 p=1
+[18.2s] 敌人生成
+[18.2s] 池ref[敌人生成后] ref=21 max=1008 holders=21 b=44 p=1
+[18.3s] 池ref[敌人GetOrCreatPool#-928] ref=22 max=1056 holders=22 b=45 p=0
+[18.3s] 池ref[敌人GetOrCreatPool#-1222] ref=23 max=1104 holders=23 b=46 p=0
+[18.5s] 池ref[敌人GetOrCreatPool#-1236] ref=24 max=1152 holders=24 b=51 p=0
+[18.7s] 友军生成
+[18.7s] 池ref[友军生成后] ref=24 max=1152 holders=24 b=49 p=3
+[18.7s] 友军生成
+[18.7s] 池ref[友军生成后] ref=24 max=1152 holders=24 b=49 p=3
+[18.7s] 池ref[友军GetOrCreatPool#-1348] ref=25 max=1200 holders=25 b=49 p=3
+[18.7s] 池ref[友军GetOrCreatPool#-1362] ref=26 max=1248 holders=26 b=50 p=2
+[18.8s] DMG E -9
+[19.6s] 敌人生成
+[19.6s] 池ref[敌人生成后] ref=26 max=1248 holders=26 b=58 p=2
+[19.6s] 敌人生成
+[19.6s] 池ref[敌人生成后] ref=26 max=1248 holders=26 b=58 p=2
+[19.7s] 池ref[敌人GetOrCreatPool#-1488] ref=27 max=1296 holders=27 b=58 p=2
+[19.7s] 池ref[敌人GetOrCreatPool#-1502] ref=28 max=1344 holders=28 b=59 p=1
+[19.8s] DMG E -9
+[19.8s] 池 Bullet b=60 p=1 ref=28 max=1344 holders=28
+[19.8s] 池 scene=PoolTest ch=1 rootInActive=True
+[19.8s] MEM 周期 m=2.9M d+876K h=4.6M u=1.6M r=147.8M d+4.0M a=58.0M ur=89.9M g=0B gc=2.9M d+876K
+[19.8s] GC 周期 g0=25 d6 g1=25 d6 g2=25 d6
+[20.9s] DMG E -9
+[21.1s] 敌人生成
+[21.1s] 池ref[敌人生成后] ref=28 max=1344 holders=28 b=63 p=2
+[21.1s] 敌人生成
+[21.1s] 池ref[敌人生成后] ref=28 max=1344 holders=28 b=63 p=2
+[21.1s] 池ref[敌人GetOrCreatPool#-1586] ref=29 max=1392 holders=29 b=63 p=2
+[21.1s] 池ref[敌人GetOrCreatPool#-1600] ref=30 max=1440 holders=30 b=64 p=1
+[21.2s] 友军生成
+[21.2s] 池ref[友军生成后] ref=30 max=1440 holders=30 b=63 p=2
+[21.2s] 友军生成
+[21.2s] 池ref[友军生成后] ref=30 max=1440 holders=30 b=63 p=2
+[21.2s] 池ref[友军GetOrCreatPool#-1614] ref=31 max=1488 holders=31 b=63 p=2
+[21.2s] 池ref[友军GetOrCreatPool#-1628] ref=32 max=1536 holders=32 b=64 p=1
+[22.0s] DMG E -8
+[22.5s] 敌人生成
+[22.5s] 池ref[敌人生成后] ref=32 max=1536 holders=32 b=56 p=9
+[22.5s] 敌人生成
+[22.5s] 池ref[敌人生成后] ref=32 max=1536 holders=32 b=56 p=9
+[22.5s] 池ref[敌人GetOrCreatPool#-1656] ref=33 max=1584 holders=33 b=56 p=9
+[23.0s] DMG E -9
+[23.7s] 友军生成
+[23.7s] 池ref[友军生成后] ref=33 max=1584 holders=33 b=64 p=2
+[23.7s] 友军生成
+[23.7s] 池ref[友军生成后] ref=33 max=1584 holders=33 b=64 p=2
+[23.9s] 敌人生成
+[23.9s] 池ref[敌人生成后] ref=33 max=1584 holders=33 b=64 p=2
+[23.9s] 敌人生成
+[23.9s] 池ref[敌人生成后] ref=33 max=1584 holders=33 b=64 p=2
+[24.0s] DMG E -8
+[24.5s] 池ref[友军GetOrCreatPool#-1684] ref=34 max=1632 holders=34 b=74 p=0
+[24.8s] 池 Bullet b=74 p=1 ref=34 max=1632 holders=34
+[24.8s] 池 scene=PoolTest ch=1 rootInActive=True
+[24.8s] MEM 周期 m=3.1M d+1.0M h=4.6M u=1.5M r=147.8M d+4.0M a=58.0M ur=89.8M g=0B gc=3.1M d+1.0M
+[24.8s] GC 周期 g0=25 d6 g1=25 d6 g2=25 d6
+[24.9s] 池ref[友军GetOrCreatPool#-1698] ref=35 max=1680 holders=35 b=74 p=2
+[25.0s] DMG E -9
+[25.3s] 敌人生成
+[25.3s] 池ref[敌人生成后] ref=35 max=1680 holders=35 b=76 p=4
+[25.3s] 敌人生成
+[25.3s] 池ref[敌人生成后] ref=35 max=1680 holders=35 b=76 p=4
+[25.4s] 池ref[敌人GetOrCreatPool#-1936] ref=36 max=1728 holders=36 b=85 p=0
+[25.6s] 池ref[敌人GetOrCreatPool#-1642] ref=37 max=1776 holders=37 b=93 p=0
+[26.0s] DMG E -9
+[26.2s] 友军生成
+[26.2s] 池ref[友军生成后] ref=37 max=1776 holders=37 b=103 p=0
+[26.2s] 友军生成
+[26.2s] 池ref[友军生成后] ref=37 max=1776 holders=37 b=103 p=0
+[26.2s] 池ref[友军GetOrCreatPool#-2286] ref=38 max=1824 holders=38 b=103 p=0
+[26.2s] 池ref[友军GetOrCreatPool#-2300] ref=39 max=1872 holders=39 b=104 p=0
+[26.7s] 敌人生成
+[26.7s] 池ref[敌人生成后] ref=39 max=1872 holders=39 b=105 p=3
+[26.7s] 敌人生成
+[26.7s] 池ref[敌人生成后] ref=39 max=1872 holders=39 b=105 p=3
+[27.0s] DMG E -8
+[27.2s] 池ref[敌人GetOrCreatPool#-1712] ref=40 max=1920 holders=40 b=112 p=2
+[27.3s] 池ref[敌人GetOrCreatPool#-1726] ref=41 max=1968 holders=41 b=113 p=1
+[28.1s] 敌人生成
+[28.1s] 池ref[敌人生成后] ref=41 max=1968 holders=41 b=109 p=11
+[28.1s] 敌人生成
+[28.1s] 池ref[敌人生成后] ref=41 max=1968 holders=41 b=109 p=11
+[28.1s] DMG E -9
+[28.3s] 池ref[敌人GetOrCreatPool#-2594] ref=42 max=2016 holders=42 b=98 p=22
+[28.7s] 友军生成
+[28.7s] 池ref[友军生成后] ref=42 max=2016 holders=42 b=98 p=22
+[28.7s] 友军生成
+[28.7s] 池ref[友军生成后] ref=42 max=2016 holders=42 b=98 p=22
+[28.7s] 池ref[友军GetOrCreatPool#-2622] ref=43 max=2064 holders=43 b=98 p=22
+[29.1s] DMG E -9
+[29.2s] 池ref[敌人GetOrCreatPool#-1950] ref=44 max=2112 holders=44 b=83 p=37
+[29.5s] 敌人生成
+[29.5s] 池ref[敌人生成后] ref=44 max=2112 holders=44 b=81 p=39
+[29.5s] 敌人生成
+[29.5s] 池ref[敌人生成后] ref=44 max=2112 holders=44 b=81 p=39
+[29.5s] 池ref[友军GetOrCreatPool#-2608] ref=45 max=2160 holders=45 b=81 p=39
+[29.5s] 池ref[敌人GetOrCreatPool#-2636] ref=46 max=2208 holders=46 b=82 p=38
+[29.8s] 池 Bullet b=78 p=42 ref=46 max=2208 holders=46
+[29.8s] 池 scene=PoolTest ch=1 rootInActive=True
+[29.8s] MEM 周期 m=3.0M d+952K h=4.6M u=1.6M r=147.8M d+4.0M a=58.3M ur=89.5M g=0B gc=3.0M d+952K
+[29.8s] GC 周期 g0=26 d7 g1=26 d7 g2=26 d7
+[30.1s] DMG E -8
+[30.6s] 池ref[敌人GetOrCreatPool#-2398] ref=47 max=2256 holders=47 b=83 p=37
+[30.9s] 敌人生成
+[30.9s] 池ref[敌人生成后] ref=47 max=2256 holders=47 b=86 p=34
+[30.9s] 敌人生成
+[30.9s] 池ref[敌人生成后] ref=47 max=2256 holders=47 b=86 p=34
+[31.2s] DMG E -8
+[31.2s] 池ref[敌人GetOrCreatPool#-2384] ref=48 max=2304 holders=48 b=89 p=31
+[31.2s] 友军生成
+[31.2s] 池ref[友军生成后] ref=48 max=2304 holders=48 b=90 p=30
+[31.2s] 友军生成
+[31.2s] 池ref[友军生成后] ref=48 max=2304 holders=48 b=90 p=30
+[31.2s] 池ref[友军GetOrCreatPool#-2692] ref=49 max=2352 holders=49 b=90 p=30
+[31.5s] 池ref[敌人GetOrCreatPool#-2664] ref=50 max=2400 holders=50 b=85 p=35
+[31.7s] 池ref[友军GetOrCreatPool#-2706] ref=51 max=2448 holders=51 b=78 p=42
+[31.9s] 敌人死亡
+[31.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=51 max=2448 holders=51 b=78 p=42
+[31.9s] 池ref[敌人OnDestroy释池前#-276] ref=51 max=2448 holders=51 b=77 p=43
+[31.9s] 池ref[敌人OnDestroy释池后#-276] ref=50 max=2400 holders=50 b=77 p=43
+[32.2s] DMG E -9
+[32.3s] 敌人生成
+[32.3s] 池ref[敌人生成后] ref=50 max=2400 holders=50 b=89 p=31
+[32.3s] 敌人生成
+[32.3s] 池ref[敌人生成后] ref=50 max=2400 holders=50 b=89 p=31
+[32.5s] 池ref[敌人GetOrCreatPool#-2734] ref=51 max=2448 holders=51 b=94 p=26
+[32.5s] 池ref[敌人GetOrCreatPool#-2580] ref=52 max=2496 holders=52 b=97 p=23
+[33.2s] DMG E -8
+[33.3s] 池ref[敌人GetOrCreatPool#-2678] ref=53 max=2544 holders=53 b=105 p=17
+[33.4s] 池ref[敌人GetOrCreatPool#-2650] ref=54 max=2592 holders=54 b=106 p=16
+[33.7s] 敌人生成
+[33.7s] 池ref[敌人生成后] ref=54 max=2592 holders=54 b=109 p=13
+[33.7s] 敌人生成
+[33.7s] 池ref[敌人生成后] ref=54 max=2592 holders=54 b=109 p=13
+[33.7s] 池ref[敌人GetOrCreatPool#-2790] ref=55 max=2640 holders=55 b=109 p=13
+[33.7s] 友军生成
+[33.7s] 池ref[友军生成后] ref=55 max=2640 holders=55 b=112 p=10
+[33.7s] 友军生成
+[33.7s] 池ref[友军生成后] ref=55 max=2640 holders=55 b=112 p=10
+[33.7s] 池ref[友军GetOrCreatPool#-2804] ref=56 max=2688 holders=56 b=112 p=10
+[33.7s] 池ref[友军GetOrCreatPool#-2818] ref=57 max=2736 holders=57 b=113 p=9
+[33.9s] 池ref[敌人GetOrCreatPool#-2776] ref=58 max=2784 holders=58 b=114 p=8
+[34.2s] DMG E -9
+[34.9s] 池 Bullet b=103 p=19 ref=58 max=2784 holders=58
+[34.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[34.9s] MEM 周期 m=3.3M d+1.3M h=4.6M u=1.2M r=149.8M d+6.0M a=58.6M ur=91.3M g=0B gc=3.3M d+1.3M
+[34.9s] GC 周期 g0=27 d8 g1=27 d8 g2=27 d8
+[35.1s] 敌人生成
+[35.1s] 池ref[敌人生成后] ref=58 max=2784 holders=58 b=101 p=21
+[35.1s] 敌人生成
+[35.1s] 池ref[敌人生成后] ref=58 max=2784 holders=58 b=101 p=21
+[35.2s] DMG E -9
+[36.2s] DMG E -8
+[36.2s] 友军生成
+[36.2s] 池ref[友军生成后] ref=58 max=2784 holders=58 b=107 p=15
+[36.2s] 友军生成
+[36.2s] 池ref[友军生成后] ref=58 max=2784 holders=58 b=107 p=15
+[36.2s] 池ref[友军GetOrCreatPool#-2874] ref=59 max=2832 holders=59 b=106 p=16
+[36.4s] 池ref[友军GetOrCreatPool#-2860] ref=60 max=2880 holders=60 b=102 p=20
+[36.5s] 敌人生成
+[36.5s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=103 p=19
+[36.5s] 敌人生成
+[36.5s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=103 p=19
+[36.5s] 池ref[敌人GetOrCreatPool#-2720] ref=61 max=2928 holders=61 b=104 p=18
+[37.2s] DMG E -8
+[37.9s] 敌人生成
+[37.9s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=87 p=35
+[37.9s] 敌人生成
+[37.9s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=87 p=35
+[37.9s] 池ref[敌人GetOrCreatPool#-2916] ref=62 max=2976 holders=62 b=87 p=35
+[37.9s] 池ref[敌人GetOrCreatPool#-2930] ref=63 max=3024 holders=63 b=88 p=34
+[38.2s] DMG E -9
+[38.7s] 友军生成
+[38.7s] 池ref[友军生成后] ref=63 max=3024 holders=63 b=89 p=33
+[38.7s] 友军生成
+[38.7s] 池ref[友军生成后] ref=63 max=3024 holders=63 b=89 p=33
+[38.7s] 池ref[友军GetOrCreatPool#-2944] ref=64 max=3072 holders=64 b=90 p=32
+[38.7s] 池ref[友军GetOrCreatPool#-2958] ref=65 max=3120 holders=65 b=91 p=31
+[39.1s] 池ref[敌人GetOrCreatPool#-2832] ref=66 max=3168 holders=66 b=94 p=28
+[39.2s] DMG E -8
+[39.3s] 敌人生成
+[39.3s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=99 p=23
+[39.4s] 敌人死亡
+[39.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=97 p=25
+[39.4s] 池ref[友军OnDestroy释池前#-354] ref=66 max=3168 holders=66 b=96 p=26
+[39.4s] 池ref[友军OnDestroy释池后#-354] ref=65 max=3120 holders=65 b=96 p=26
+[39.5s] 敌人死亡
+[39.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=98 p=24
+[39.5s] 池ref[敌人OnDestroy释池前#-2720] ref=65 max=3120 holders=65 b=96 p=26
+[39.5s] 池ref[敌人OnDestroy释池后#-2720] ref=64 max=3072 holders=64 b=96 p=26
+[39.6s] 池ref[敌人GetOrCreatPool#-2846] ref=65 max=3120 holders=65 b=96 p=26
+[39.8s] 池ref[敌人GetOrCreatPool#-2888] ref=66 max=3168 holders=66 b=98 p=24
+[39.9s] 池 Bullet b=103 p=19 ref=66 max=3168 holders=66
+[39.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[39.9s] MEM 周期 m=3.3M d+1.2M h=4.6M u=1.3M r=149.8M d+6.0M a=58.7M ur=91.2M g=0B gc=3.3M d+1.2M
+[39.9s] GC 周期 g0=28 d9 g1=28 d9 g2=28 d9
+[40.2s] 池ref[敌人GetOrCreatPool#-2902] ref=67 max=3216 holders=67 b=105 p=17
+[40.2s] DMG E -8
+[40.7s] 敌人生成
+[40.7s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=99 p=23
+[40.9s] 敌人死亡
+[40.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=101 p=21
+[40.9s] 池ref[友军OnDestroy释池前#-830] ref=67 max=3216 holders=67 b=100 p=22
+[40.9s] 池ref[友军OnDestroy释池后#-830] ref=66 max=3168 holders=66 b=100 p=22
+[41.2s] 友军生成
+[41.2s] 池ref[友军生成后] ref=66 max=3168 holders=66 b=98 p=24
+[41.2s] 友军生成
+[41.2s] 池ref[友军生成后] ref=66 max=3168 holders=66 b=98 p=24
+[41.2s] 池ref[友军GetOrCreatPool#-3000] ref=67 max=3216 holders=67 b=94 p=28
+[41.2s] 池ref[友军GetOrCreatPool#-3014] ref=68 max=3264 holders=68 b=95 p=27
+[41.2s] DMG E -9
+[41.3s] 池ref[敌人GetOrCreatPool#-2986] ref=69 max=3312 holders=69 b=92 p=30
+[42.3s] DMG E -9
+[43.3s] DMG E -8
+[43.7s] 池ref[敌人GetOrCreatPool#-2972] ref=70 max=3360 holders=70 b=156 p=4
+[43.7s] 友军生成
+[43.7s] 池ref[友军生成后] ref=70 max=3360 holders=70 b=156 p=4
+[43.7s] 友军生成
+[43.7s] 池ref[友军生成后] ref=70 max=3360 holders=70 b=156 p=4
+[43.7s] 池ref[友军GetOrCreatPool#-3574] ref=71 max=3408 holders=71 b=157 p=3
+[44.3s] DMG E -9
+[44.5s] 敌人死亡
+[44.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=169 p=10
+[44.5s] 池ref[友军OnDestroy释池前#-466] ref=71 max=3408 holders=71 b=168 p=11
+[44.5s] 池ref[友军OnDestroy释池后#-466] ref=70 max=3360 holders=70 b=168 p=11
+[44.9s] 池 Bullet b=165 p=14 ref=70 max=3360 holders=70
+[44.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[44.9s] MEM 周期 m=3.8M d+1.7M h=6.5M u=2.7M r=149.8M d+6.0M a=58.9M ur=90.9M g=0B gc=3.8M d+1.7M
+[44.9s] GC 周期 g0=30 d11 g1=30 d11 g2=30 d11
+[44.9s] 池ref[友军GetOrCreatPool#-3560] ref=71 max=3408 holders=71 b=171 p=8
+[45.1s] 敌人死亡
+[45.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=192 p=1
+[45.1s] 池ref[友军OnDestroy释池前#-340] ref=71 max=3408 holders=71 b=189 p=4
+[45.1s] 池ref[友军OnDestroy释池后#-340] ref=70 max=3360 holders=70 b=189 p=4
+[45.1s] 池ref[玩家GetOrCreatPool] ref=71 max=3408 holders=71 b=189 p=4
+[45.3s] DMG E -8
+[45.8s] 敌人死亡
+[45.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=181 p=13
+[45.8s] 池ref[敌人OnDestroy释池前#-2398] ref=71 max=3408 holders=71 b=178 p=16
+[45.8s] 池ref[敌人OnDestroy释池后#-2398] ref=70 max=3360 holders=70 b=178 p=16
+[45.8s] 敌人生成
+[45.8s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=178 p=16
+[45.8s] 池ref[敌人GetOrCreatPool#-4064] ref=71 max=3408 holders=71 b=178 p=16
+[46.2s] 敌人死亡
+[46.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=153 p=41
+[46.2s] 池ref[友军OnDestroy释池前#-816] ref=71 max=3408 holders=71 b=150 p=44
+[46.2s] 池ref[友军OnDestroy释池后#-816] ref=70 max=3360 holders=70 b=150 p=44
+[46.2s] 友军生成
+[46.2s] 池ref[友军生成后] ref=70 max=3360 holders=70 b=150 p=44
+[46.2s] 友军生成
+[46.2s] 池ref[友军生成后] ref=70 max=3360 holders=70 b=150 p=44
+[46.2s] 池ref[友军GetOrCreatPool#-4078] ref=71 max=3408 holders=71 b=149 p=45
+[46.2s] 池ref[友军GetOrCreatPool#-4092] ref=72 max=3456 holders=72 b=150 p=44
+[46.3s] DMG E -8
+[47.3s] DMG E -10
+[47.6s] 敌人死亡
+[47.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=146 p=48
+[47.6s] 池ref[敌人OnDestroy释池前#-2832] ref=72 max=3456 holders=72 b=145 p=49
+[47.6s] 池ref[敌人OnDestroy释池后#-2832] ref=71 max=3408 holders=71 b=145 p=49
+[47.6s] 敌人生成
+[47.6s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=145 p=49
+[47.8s] 敌人死亡
+[47.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=146 p=48
+[47.8s] 池ref[友军OnDestroy释池前#-998] ref=71 max=3408 holders=71 b=145 p=49
+[47.8s] 池ref[友军OnDestroy释池后#-998] ref=70 max=3360 holders=70 b=145 p=49
+[48.3s] 池ref[敌人GetOrCreatPool#-4106] ref=71 max=3408 holders=71 b=142 p=52
+[48.3s] DMG E -9
+[48.7s] 友军生成
+[48.7s] 池ref[友军生成后] ref=71 max=3408 holders=71 b=145 p=49
+[48.7s] 友军生成
+[48.7s] 池ref[友军生成后] ref=71 max=3408 holders=71 b=145 p=49
+[48.7s] 池ref[友军GetOrCreatPool#-4120] ref=72 max=3456 holders=72 b=140 p=54
+[49.3s] DMG E -9
+[49.5s] 敌人死亡
+[49.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=129 p=65
+[49.5s] 池ref[敌人OnDestroy释池前#-2972] ref=72 max=3456 holders=72 b=127 p=67
+[49.5s] 池ref[敌人OnDestroy释池后#-2972] ref=71 max=3408 holders=71 b=127 p=67
+[49.5s] 敌人生成
+[49.5s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=127 p=67
+[49.5s] 池ref[友军GetOrCreatPool#-4134] ref=72 max=3456 holders=72 b=128 p=66
+[49.9s] 池 Bullet b=132 p=62 ref=72 max=3456 holders=72
+[49.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[49.9s] MEM 周期 m=3.1M d+1.0M h=6.5M u=3.4M r=149.8M d+6.0M a=59.1M ur=90.7M g=0B gc=3.1M d+1.0M
+[49.9s] GC 周期 g0=31 d12 g1=31 d12 g2=31 d12
+[50.0s] 敌人死亡
+[50.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=141 p=53
+[50.0s] 池ref[敌人OnDestroy释池前#-2930] ref=72 max=3456 holders=72 b=139 p=55
+[50.0s] 池ref[敌人OnDestroy释池后#-2930] ref=71 max=3408 holders=71 b=139 p=55
+[50.2s] 敌人死亡
+[50.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=143 p=51
+[50.2s] 池ref[敌人OnDestroy释池前#-2916] ref=71 max=3408 holders=71 b=140 p=54
+[50.2s] 池ref[敌人OnDestroy释池后#-2916] ref=70 max=3360 holders=70 b=140 p=54
+[50.3s] DMG E -8
+[50.9s] 敌人生成
+[50.9s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=113 p=81
+[50.9s] 敌人生成
+[50.9s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=113 p=81
+[51.2s] 友军生成
+[51.2s] 池ref[友军生成后] ref=70 max=3360 holders=70 b=93 p=101
+[51.2s] 友军生成
+[51.2s] 池ref[友军生成后] ref=70 max=3360 holders=70 b=93 p=101
+[51.2s] 池ref[友军GetOrCreatPool#-4190] ref=71 max=3408 holders=71 b=93 p=101
+[51.3s] DMG E -9
+[51.3s] 敌人死亡
+[51.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=93 p=101
+[51.3s] 池ref[敌人OnDestroy释池前#-1712] ref=71 max=3408 holders=71 b=92 p=102
+[51.3s] 池ref[敌人OnDestroy释池后#-1712] ref=70 max=3360 holders=70 b=92 p=102
+[51.4s] 池ref[友军GetOrCreatPool#-4204] ref=71 max=3408 holders=71 b=103 p=91
+[51.4s] 池ref[敌人GetOrCreatPool#-4162] ref=72 max=3456 holders=72 b=108 p=86
+[52.3s] 敌人生成
+[52.3s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=105 p=89
+[52.3s] DMG E -9
+[53.2s] 池ref[敌人GetOrCreatPool#-4148] ref=73 max=3504 holders=73 b=154 p=40
+[53.3s] DMG E -9
+[53.7s] 友军生成
+[53.7s] 池ref[友军生成后] ref=73 max=3504 holders=73 b=138 p=56
+[53.7s] 友军生成
+[53.7s] 池ref[友军生成后] ref=73 max=3504 holders=73 b=138 p=56
+[54.3s] DMG E -9
+[54.7s] 池ref[友军GetOrCreatPool#-4232] ref=74 max=3552 holders=74 b=156 p=38
+[54.8s] 池ref[友军GetOrCreatPool#-4246] ref=75 max=3600 holders=75 b=162 p=32
+[54.9s] 池 Bullet b=160 p=34 ref=75 max=3600 holders=75
+[54.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[54.9s] MEM 周期 m=3.5M d+1.5M h=6.5M u=2.9M r=149.8M d+6.0M a=59.1M ur=90.7M g=0B gc=3.5M d+1.5M
+[54.9s] GC 周期 g0=32 d13 g1=32 d13 g2=32 d13
+[55.0s] 敌人死亡
+[55.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=170 p=24
+[55.0s] 池ref[敌人OnDestroy释池前#-928] ref=75 max=3600 holders=75 b=168 p=26
+[55.0s] 池ref[敌人OnDestroy释池后#-928] ref=74 max=3552 holders=74 b=168 p=26
+[55.0s] 敌人生成
+[55.0s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=168 p=26
+[55.0s] 池ref[敌人GetOrCreatPool#-4260] ref=75 max=3600 holders=75 b=170 p=24
+[55.2s] 敌人死亡
+[55.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=163 p=31
+[55.2s] 池ref[敌人OnDestroy释池前#-4148] ref=75 max=3600 holders=75 b=161 p=33
+[55.2s] 池ref[敌人OnDestroy释池后#-4148] ref=74 max=3552 holders=74 b=161 p=33
+[55.3s] DMG E -8
+[55.3s] 敌人死亡
+[55.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=156 p=38
+[55.3s] 池ref[友军OnDestroy释池前#-2286] ref=74 max=3552 holders=74 b=154 p=40
+[55.3s] 池ref[友军OnDestroy释池后#-2286] ref=73 max=3504 holders=73 b=154 p=40
+[55.5s] 池ref[敌人GetOrCreatPool#-4176] ref=74 max=3552 holders=74 b=160 p=34
+[55.9s] 池ref[敌人GetOrCreatPool#-4218] ref=75 max=3600 holders=75 b=165 p=29
+[55.9s] 敌人死亡
+[55.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=159 p=35
+[55.9s] 池ref[敌人OnDestroy释池前#-704] ref=75 max=3600 holders=75 b=158 p=36
+[55.9s] 池ref[敌人OnDestroy释池后#-704] ref=74 max=3552 holders=74 b=158 p=36
+[56.1s] 敌人死亡
+[56.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=158 p=36
+[56.1s] 池ref[敌人OnDestroy释池前#-1642] ref=74 max=3552 holders=74 b=157 p=37
+[56.1s] 池ref[敌人OnDestroy释池后#-1642] ref=73 max=3504 holders=73 b=157 p=37
+[56.2s] 敌人死亡
+[56.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=162 p=32
+[56.2s] 池ref[敌人OnDestroy释池前#-2846] ref=73 max=3504 holders=73 b=161 p=33
+[56.2s] 池ref[敌人OnDestroy释池后#-2846] ref=72 max=3456 holders=72 b=161 p=33
+[56.2s] 友军生成
+[56.2s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=161 p=33
+[56.2s] 友军生成
+[56.2s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=161 p=33
+[56.2s] 池ref[友军GetOrCreatPool#-4274] ref=73 max=3504 holders=73 b=161 p=33
+[56.2s] 池ref[友军GetOrCreatPool#-4288] ref=74 max=3552 holders=74 b=162 p=32
+[56.3s] DMG E -9
+[56.4s] 敌人生成
+[56.4s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=148 p=46
+[56.4s] 敌人生成
+[56.4s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=148 p=46
+[56.4s] 池ref[敌人GetOrCreatPool#-4302] ref=75 max=3600 holders=75 b=147 p=47
+[56.6s] 池ref[敌人GetOrCreatPool#-4316] ref=76 max=3648 holders=76 b=142 p=52
+[57.4s] DMG E -9
+[57.8s] 敌人生成
+[57.8s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=179 p=15
+[57.8s] 敌人生成
+[57.8s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=179 p=15
+[57.8s] 池ref[敌人GetOrCreatPool#-4330] ref=77 max=3696 holders=77 b=180 p=14
+[58.1s] 敌人死亡
+[58.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=77 max=3696 holders=77 b=199 p=0
+[58.1s] 池ref[敌人OnDestroy释池前#-4176] ref=77 max=3696 holders=77 b=198 p=1
+[58.1s] 池ref[敌人OnDestroy释池后#-4176] ref=76 max=3648 holders=76 b=198 p=1
+[58.4s] DMG E -10
+[58.5s] 敌人死亡
+[58.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=200 p=10
+[58.5s] 池ref[敌人OnDestroy释池前#-4064] ref=76 max=3648 holders=76 b=199 p=11
+[58.5s] 池ref[敌人OnDestroy释池后#-4064] ref=75 max=3600 holders=75 b=199 p=11
+[58.7s] 友军生成
+[58.7s] 池ref[友军生成后] ref=75 max=3600 holders=75 b=202 p=8
+[58.7s] 友军生成
+[58.7s] 池ref[友军生成后] ref=75 max=3600 holders=75 b=202 p=8
+[58.7s] 池ref[友军GetOrCreatPool#-4582] ref=76 max=3648 holders=76 b=206 p=4
+[59.2s] 敌人死亡
+[59.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=203 p=12
+[59.2s] 池ref[敌人OnDestroy释池前#-4260] ref=76 max=3648 holders=76 b=200 p=15
+[59.2s] 池ref[敌人OnDestroy释池后#-4260] ref=75 max=3600 holders=75 b=200 p=15
+[59.2s] 敌人生成
+[59.2s] 池ref[敌人生成后] ref=75 max=3600 holders=75 b=200 p=15
+[59.2s] 敌人生成
+[59.2s] 池ref[敌人生成后] ref=75 max=3600 holders=75 b=200 p=15
+[59.2s] 池ref[友军GetOrCreatPool#-4596] ref=76 max=3648 holders=76 b=200 p=15
+[59.2s] 池ref[敌人GetOrCreatPool#-4680] ref=77 max=3696 holders=77 b=201 p=14
+[59.2s] 池ref[敌人GetOrCreatPool#-4694] ref=78 max=3744 holders=78 b=202 p=13
+[59.4s] DMG E -9
+[59.9s] 池 Bullet b=182 p=33 ref=78 max=3744 holders=78
+[59.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[59.9s] MEM 周期 m=4.0M d+2.0M h=6.5M u=2.4M r=149.8M d+6.0M a=59.6M ur=90.2M g=0B gc=4.0M d+2.0M
+[59.9s] GC 周期 g0=35 d16 g1=35 d16 g2=35 d16
+[59.9s] 敌人死亡
+[59.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=184 p=31
+[59.9s] 池ref[敌人OnDestroy释池前#-900] ref=78 max=3744 holders=78 b=183 p=32
+[59.9s] 池ref[敌人OnDestroy释池后#-900] ref=77 max=3696 holders=77 b=183 p=32
+[60.1s] 敌人死亡
+[60.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=77 max=3696 holders=77 b=185 p=30
+[60.1s] 池ref[敌人OnDestroy释池前#-2902] ref=77 max=3696 holders=77 b=183 p=32
+[60.1s] 池ref[敌人OnDestroy释池后#-2902] ref=76 max=3648 holders=76 b=183 p=32
+[60.4s] DMG E -9
+[60.6s] 敌人生成
+[60.6s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=154 p=61
+[60.6s] 敌人生成
+[60.6s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=154 p=61
+[60.6s] 池ref[敌人GetOrCreatPool#-4708] ref=77 max=3696 holders=77 b=154 p=61
+[61.2s] 友军生成
+[61.2s] 池ref[友军生成后] ref=77 max=3696 holders=77 b=115 p=100
+[61.2s] 池ref[友军GetOrCreatPool#-4736] ref=78 max=3744 holders=78 b=116 p=99
+[61.4s] DMG E -10
+[62.0s] 池ref[敌人GetOrCreatPool#-4722] ref=79 max=3792 holders=79 b=97 p=118
+[62.0s] 敌人生成
+[62.0s] 池ref[敌人生成后] ref=79 max=3792 holders=79 b=98 p=117
+[62.1s] 敌人死亡
+[62.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=79 max=3792 holders=79 b=87 p=128
+[62.1s] 池ref[敌人OnDestroy释池前#-690] ref=79 max=3792 holders=79 b=86 p=129
+[62.1s] 池ref[敌人OnDestroy释池后#-690] ref=78 max=3744 holders=78 b=86 p=129
+[62.3s] 池ref[敌人GetOrCreatPool#-4750] ref=79 max=3792 holders=79 b=78 p=137
+[62.5s] DMG E -9
+[63.1s] 敌人死亡
+[63.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=79 max=3792 holders=79 b=71 p=144
+[63.1s] 池ref[敌人OnDestroy释池前#-2580] ref=79 max=3792 holders=79 b=70 p=145
+[63.1s] 池ref[敌人OnDestroy释池后#-2580] ref=78 max=3744 holders=78 b=70 p=145
+[63.4s] 敌人生成
+[63.4s] 池ref[敌人生成后] ref=78 max=3744 holders=78 b=71 p=144
+[63.4s] 敌人生成
+[63.4s] 池ref[敌人生成后] ref=78 max=3744 holders=78 b=71 p=144
+[63.5s] DMG E -9
+[64.0s] 池ref[敌人GetOrCreatPool#-4778] ref=79 max=3792 holders=79 b=80 p=135
+[64.6s] DMG E -10
+[64.9s] 池 Bullet b=93 p=122 ref=79 max=3792 holders=79
+[64.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[64.9s] MEM 周期 m=4.3M d+2.2M h=6.5M u=2.2M r=149.8M d+6.0M a=59.6M ur=90.2M g=0B gc=4.3M d+2.2M
+[64.9s] GC 周期 g0=35 d16 g1=35 d16 g2=35 d16
+[65.1s] 敌人死亡
+[65.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=79 max=3792 holders=79 b=98 p=117
+[65.1s] 池ref[敌人OnDestroy释池前#-508] ref=79 max=3792 holders=79 b=97 p=118
+[65.1s] 池ref[敌人OnDestroy释池后#-508] ref=78 max=3744 holders=78 b=97 p=118
+[65.1s] 敌人生成
+[65.1s] 池ref[敌人生成后] ref=78 max=3744 holders=78 b=97 p=118
+[65.1s] 池ref[敌人GetOrCreatPool#-4792] ref=79 max=3792 holders=79 b=98 p=117
+[65.6s] DMG E -10
+[65.7s] 池ref[敌人GetOrCreatPool#-4764] ref=80 max=3840 holders=80 b=100 p=115
+[66.6s] DMG E -10
+[67.1s] 池ref[敌人GetOrCreatPool#-4344] ref=81 max=3888 holders=81 b=163 p=52
+[67.4s] 敌人死亡
+[67.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=81 max=3888 holders=81 b=167 p=48
+[67.4s] 池ref[敌人OnDestroy释池前#-4344] ref=81 max=3888 holders=81 b=166 p=49
+[67.4s] 池ref[敌人OnDestroy释池后#-4344] ref=80 max=3840 holders=80 b=166 p=49
+[67.4s] 敌人生成
+[67.4s] 池ref[敌人生成后] ref=80 max=3840 holders=80 b=166 p=49
+[67.6s] DMG E -8
+[67.9s] 敌人死亡
+[67.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=80 max=3840 holders=80 b=186 p=29
+[67.9s] 池ref[敌人OnDestroy释池前#-4162] ref=80 max=3840 holders=80 b=185 p=30
+[67.9s] 池ref[敌人OnDestroy释池后#-4162] ref=79 max=3792 holders=79 b=185 p=30
+[68.2s] 敌人死亡
+[68.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=79 max=3792 holders=79 b=193 p=22
+[68.2s] 池ref[敌人OnDestroy释池前#-4330] ref=79 max=3792 holders=79 b=191 p=24
+[68.2s] 池ref[敌人OnDestroy释池后#-4330] ref=78 max=3744 holders=78 b=191 p=24
+[68.4s] 敌人死亡
+[68.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=205 p=10
+[68.4s] 池ref[敌人OnDestroy释池前#-4106] ref=78 max=3744 holders=78 b=202 p=13
+[68.4s] 池ref[敌人OnDestroy释池后#-4106] ref=77 max=3696 holders=77 b=202 p=13
+[68.4s] 敌人死亡
+[68.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=77 max=3696 holders=77 b=205 p=10
+[68.4s] 池ref[敌人OnDestroy释池前#-1950] ref=77 max=3696 holders=77 b=203 p=12
+[68.4s] 池ref[敌人OnDestroy释池后#-1950] ref=76 max=3648 holders=76 b=203 p=12
+[68.6s] DMG E -8
+[68.8s] 敌人生成
+[68.8s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=171 p=44
+[68.8s] 敌人生成
+[68.8s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=171 p=44
+[69.3s] 敌人死亡
+[69.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=176 p=39
+[69.3s] 池ref[敌人OnDestroy释池前#-4316] ref=76 max=3648 holders=76 b=173 p=42
+[69.3s] 池ref[敌人OnDestroy释池后#-4316] ref=75 max=3600 holders=75 b=173 p=42
+[69.5s] 敌人死亡
+[69.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=159 p=56
+[69.5s] 池ref[敌人OnDestroy释池前#-2986] ref=75 max=3600 holders=75 b=156 p=59
+[69.5s] 池ref[敌人OnDestroy释池后#-2986] ref=74 max=3552 holders=74 b=156 p=59
+[69.7s] DMG E -9
+[69.9s] 池 Bullet b=187 p=28 ref=74 max=3552 holders=74
+[69.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[69.9s] MEM 周期 m=4.2M d+2.1M h=6.5M u=2.3M r=149.8M d+6.0M a=59.7M ur=90.1M g=0B gc=4.2M d+2.1M
+[69.9s] GC 周期 g0=36 d17 g1=36 d17 g2=36 d17
+[70.2s] 敌人死亡
+[70.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=191 p=24
+[70.2s] 敌人生成
+[70.2s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=190 p=25
+[70.2s] 敌人生成
+[70.2s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=190 p=25
+[70.2s] 池ref[敌人GetOrCreatPool#-4862] ref=75 max=3600 holders=75 b=188 p=27
+[70.5s] 池ref[敌人GetOrCreatPool#-4806] ref=76 max=3648 holders=76 b=163 p=52
+[70.7s] DMG E -10
+[70.9s] 池ref[敌人GetOrCreatPool#-4848] ref=77 max=3696 holders=77 b=162 p=53
+[71.6s] 敌人生成
+[71.6s] 池ref[敌人生成后] ref=77 max=3696 holders=77 b=183 p=32
+[71.6s] 敌人生成
+[71.6s] 池ref[敌人生成后] ref=77 max=3696 holders=77 b=183 p=32
+[71.6s] 池ref[敌人GetOrCreatPool#-4876] ref=78 max=3744 holders=78 b=183 p=32
+[71.7s] 敌人死亡
+[71.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=178 p=37
+[71.7s] 池ref[敌人OnDestroy释池前#-1054] ref=78 max=3744 holders=78 b=177 p=38
+[71.7s] 池ref[敌人OnDestroy释池后#-1054] ref=77 max=3696 holders=77 b=177 p=38
+[71.7s] DMG E -9
+[71.9s] 池ref[敌人GetOrCreatPool#-4890] ref=78 max=3744 holders=78 b=179 p=36
+[72.1s] 敌人死亡
+[72.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=182 p=33
+[72.1s] 池ref[敌人OnDestroy释池前#-2734] ref=78 max=3744 holders=78 b=181 p=34
+[72.1s] 池ref[敌人OnDestroy释池后#-2734] ref=77 max=3696 holders=77 b=181 p=34
+[72.8s] DMG E -9
+[73.0s] 敌人生成
+[73.0s] 池ref[敌人生成后] ref=77 max=3696 holders=77 b=218 p=2
+[73.0s] 敌人生成
+[73.0s] 池ref[敌人生成后] ref=77 max=3696 holders=77 b=218 p=2
+[73.0s] 池ref[敌人GetOrCreatPool#-4974] ref=78 max=3744 holders=78 b=218 p=2
+[73.3s] 池ref[敌人GetOrCreatPool#-4820] ref=79 max=3792 holders=79 b=237 p=5
+[73.5s] 敌人死亡
+[73.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=79 max=3792 holders=79 b=218 p=24
+[73.5s] 池ref[敌人OnDestroy释池前#-4876] ref=79 max=3792 holders=79 b=217 p=25
+[73.5s] 池ref[敌人OnDestroy释池后#-4876] ref=78 max=3744 holders=78 b=217 p=25
+[73.5s] 敌人死亡
+[73.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=218 p=24
+[73.5s] 池ref[友军OnDestroy释池前#-4736] ref=78 max=3744 holders=78 b=216 p=26
+[73.5s] 池ref[友军OnDestroy释池后#-4736] ref=77 max=3696 holders=77 b=216 p=26
+[73.5s] 友军生成
+[73.5s] 池ref[友军生成后] ref=77 max=3696 holders=77 b=216 p=26
+[73.5s] 池ref[友军GetOrCreatPool#-5310] ref=78 max=3744 holders=78 b=212 p=30
+[73.8s] DMG E -10
+[74.1s] 敌人死亡
+[74.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=189 p=53
+[74.1s] 池ref[敌人OnDestroy释池前#-4218] ref=78 max=3744 holders=78 b=187 p=55
+[74.1s] 池ref[敌人OnDestroy释池后#-4218] ref=77 max=3696 holders=77 b=187 p=55
+[74.2s] 敌人死亡
+[74.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=77 max=3696 holders=77 b=178 p=64
+[74.2s] 池ref[敌人OnDestroy释池前#-2790] ref=77 max=3696 holders=77 b=177 p=65
+[74.2s] 池ref[敌人OnDestroy释池后#-2790] ref=76 max=3648 holders=76 b=177 p=65
+[74.4s] 敌人生成
+[74.4s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=174 p=68
+[74.4s] 敌人生成
+[74.4s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=174 p=68
+[74.4s] 池ref[敌人GetOrCreatPool#-5338] ref=77 max=3696 holders=77 b=176 p=66
+[74.4s] 敌人死亡
+[74.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=77 max=3696 holders=77 b=177 p=65
+[74.4s] 池ref[友军OnDestroy释池前#-1614] ref=77 max=3696 holders=77 b=176 p=66
+[74.4s] 池ref[友军OnDestroy释池后#-1614] ref=76 max=3648 holders=76 b=176 p=66
+[74.5s] 敌人死亡
+[74.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=178 p=64
+[74.5s] 池ref[敌人OnDestroy释池前#-290] ref=76 max=3648 holders=76 b=177 p=65
+[74.5s] 池ref[敌人OnDestroy释池后#-290] ref=75 max=3600 holders=75 b=177 p=65
+[74.8s] DMG E -9
+[74.9s] 池 Bullet b=185 p=57 ref=75 max=3600 holders=75
+[74.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[74.9s] MEM 周期 m=4.2M d+2.1M h=6.5M u=2.3M r=149.8M d+6.0M a=60.0M ur=89.9M g=0B gc=4.2M d+2.1M
+[74.9s] GC 周期 g0=37 d18 g1=37 d18 g2=37 d18
+[75.1s] 敌人死亡
+[75.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=181 p=61
+[75.1s] 池ref[敌人OnDestroy释池前#-4820] ref=75 max=3600 holders=75 b=180 p=62
+[75.1s] 池ref[敌人OnDestroy释池后#-4820] ref=74 max=3552 holders=74 b=180 p=62
+[75.2s] 敌人死亡
+[75.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=182 p=60
+[75.2s] 池ref[敌人OnDestroy释池前#-4974] ref=74 max=3552 holders=74 b=181 p=61
+[75.2s] 池ref[敌人OnDestroy释池后#-4974] ref=73 max=3504 holders=73 b=181 p=61
+[75.4s] 池ref[敌人GetOrCreatPool#-5324] ref=74 max=3552 holders=74 b=180 p=62
+[75.8s] 敌人生成
+[75.8s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=184 p=58
+[75.8s] 敌人生成
+[75.8s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=184 p=58
+[75.9s] DMG E -9
+[76.0s] 友军生成
+[76.0s] 池ref[友军生成后] ref=74 max=3552 holders=74 b=184 p=58
+[76.0s] 池ref[友军GetOrCreatPool#-5380] ref=75 max=3600 holders=75 b=187 p=55
+[76.9s] DMG E -9
+[77.0s] 池ref[敌人GetOrCreatPool#-4988] ref=76 max=3648 holders=76 b=217 p=25
+[77.2s] 敌人生成
+[77.2s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=226 p=16
+[77.2s] 敌人生成
+[77.2s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=226 p=16
+[77.2s] 池ref[敌人GetOrCreatPool#-5394] ref=77 max=3696 holders=77 b=226 p=16
+[77.2s] 池ref[敌人GetOrCreatPool#-5408] ref=78 max=3744 holders=78 b=227 p=15
+[77.9s] DMG E -9
+[78.1s] 敌人死亡
+[78.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=273 p=1
+[78.1s] 池ref[敌人OnDestroy释池前#-4988] ref=78 max=3744 holders=78 b=272 p=2
+[78.1s] 池ref[敌人OnDestroy释池后#-4988] ref=77 max=3696 holders=77 b=272 p=2
+[78.6s] 敌人生成
+[78.6s] 池ref[敌人生成后] ref=77 max=3696 holders=77 b=222 p=52
+[78.6s] 敌人生成
+[78.6s] 池ref[敌人生成后] ref=77 max=3696 holders=77 b=222 p=52
+[78.6s] 池ref[敌人GetOrCreatPool#-5870] ref=78 max=3744 holders=78 b=226 p=48
+[78.7s] 敌人死亡
+[78.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=229 p=45
+[78.7s] 池ref[敌人OnDestroy释池前#-1222] ref=78 max=3744 holders=78 b=227 p=47
+[78.7s] 池ref[敌人OnDestroy释池后#-1222] ref=77 max=3696 holders=77 b=227 p=47
+[78.7s] 池ref[敌人GetOrCreatPool#-5884] ref=78 max=3744 holders=78 b=227 p=47
+[78.8s] 敌人死亡
+[78.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=78 max=3744 holders=78 b=237 p=37
+[78.8s] 池ref[敌人OnDestroy释池前#-4694] ref=78 max=3744 holders=78 b=235 p=39
+[78.8s] 池ref[敌人OnDestroy释池后#-4694] ref=77 max=3696 holders=77 b=235 p=39
+[78.9s] 敌人死亡
+[78.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=77 max=3696 holders=77 b=232 p=42
+[78.9s] 池ref[敌人OnDestroy释池前#-942] ref=77 max=3696 holders=77 b=230 p=44
+[78.9s] 池ref[敌人OnDestroy释池后#-942] ref=76 max=3648 holders=76 b=230 p=44
+[78.9s] DMG E -8
+[79.0s] 敌人死亡
+[79.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=219 p=55
+[79.0s] 池ref[友军OnDestroy释池前#-1628] ref=76 max=3648 holders=76 b=214 p=60
+[79.0s] 池ref[友军OnDestroy释池后#-1628] ref=75 max=3600 holders=75 b=214 p=60
+[79.0s] 友军生成
+[79.0s] 池ref[友军生成后] ref=75 max=3600 holders=75 b=214 p=60
+[79.0s] 池ref[友军GetOrCreatPool#-5898] ref=76 max=3648 holders=76 b=209 p=65
+[79.1s] 敌人死亡
+[79.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=199 p=75
+[79.1s] 池ref[友军OnDestroy释池前#-3000] ref=76 max=3648 holders=76 b=198 p=76
+[79.1s] 池ref[友军OnDestroy释池后#-3000] ref=75 max=3600 holders=75 b=198 p=76
+[79.5s] 敌人死亡
+[79.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=189 p=85
+[79.5s] 池ref[友军OnDestroy释池前#-984] ref=75 max=3600 holders=75 b=187 p=87
+[79.5s] 池ref[友军OnDestroy释池后#-984] ref=74 max=3552 holders=74 b=187 p=87
+[79.6s] 敌人死亡
+[79.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=176 p=98
+[79.6s] 池ref[友军OnDestroy释池前#-3574] ref=74 max=3552 holders=74 b=174 p=100
+[79.6s] 池ref[友军OnDestroy释池后#-3574] ref=73 max=3504 holders=73 b=174 p=100
+[79.7s] 敌人死亡
+[79.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=167 p=107
+[79.7s] 池ref[友军OnDestroy释池前#-4204] ref=73 max=3504 holders=73 b=162 p=112
+[79.7s] 池ref[友军OnDestroy释池后#-4204] ref=72 max=3456 holders=72 b=162 p=112
+[79.9s] 池 Bullet b=149 p=125 ref=72 max=3456 holders=72
+[79.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[79.9s] MEM 周期 m=4.2M d+2.2M h=6.5M u=2.2M r=149.8M d+6.0M a=60.2M ur=89.6M g=0B gc=4.2M d+2.2M
+[79.9s] GC 周期 g0=38 d19 g1=38 d19 g2=38 d19
+[79.9s] DMG E -10
+[79.9s] 敌人死亡
+[79.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=155 p=119
+[79.9s] 池ref[敌人OnDestroy释池前#-5394] ref=72 max=3456 holders=72 b=153 p=121
+[79.9s] 池ref[敌人OnDestroy释池后#-5394] ref=71 max=3408 holders=71 b=153 p=121
+[80.0s] 敌人生成
+[80.0s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=160 p=114
+[80.0s] 敌人生成
+[80.0s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=160 p=114
+[80.0s] 池ref[敌人GetOrCreatPool#-5912] ref=72 max=3456 holders=72 b=159 p=115
+[80.1s] 敌人死亡
+[80.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=160 p=114
+[80.1s] 池ref[友军OnDestroy释池前#-2300] ref=72 max=3456 holders=72 b=159 p=115
+[80.1s] 池ref[友军OnDestroy释池后#-2300] ref=71 max=3408 holders=71 b=159 p=115
+[80.2s] 敌人死亡
+[80.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=145 p=129
+[80.2s] 池ref[敌人OnDestroy释池前#-4890] ref=71 max=3408 holders=71 b=143 p=131
+[80.2s] 池ref[敌人OnDestroy释池后#-4890] ref=70 max=3360 holders=70 b=143 p=131
+[80.5s] 玩家死亡 lives=2
+[80.5s] 将复活
+[80.5s] 报告导出 tag=PoolTest玩家死亡_lives2...
+[80.5s] 池 Bullet b=105 p=169 ref=70 max=3360 holders=70
+[80.5s] 池 scene=PoolTest ch=1 rootInActive=True
+[80.5s] MEM PoolTest玩家死亡_lives2 m=4.4M d+2.3M h=6.5M u=2.1M r=149.8M d+6.0M a=60.1M ur=89.7M g=0B gc=4.4M d+2.3M
+[80.5s] GC PoolTest玩家死亡_lives2 g0=38 d19 g1=38 d19 g2=38 d19
+[80.5s] 已写入 F:\AQNU\test\winbao\vframework_Data\StreamingAssets\StandaloneWindows64\Logs\ComprehensiveTest_PoolTest玩家死亡_lives2_20260617_021513.log
+[80.5s] 玩家复活 -22,1,1 lives=2
+[80.6s] 池ref[敌人GetOrCreatPool#-5926] ref=71 max=3408 holders=71 b=103 p=171
+[80.9s] DMG E -8
+[81.1s] 池ref[敌人GetOrCreatPool#-5366] ref=72 max=3456 holders=72 b=73 p=201
+[81.4s] 敌人生成
+[81.4s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=75 p=199
+[81.4s] 敌人生成
+[81.4s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=75 p=199
+[81.4s] 池ref[敌人GetOrCreatPool#-5940] ref=73 max=3504 holders=73 b=69 p=205
+[81.5s] 友军生成
+[81.5s] 池ref[友军生成后] ref=73 max=3504 holders=73 b=60 p=214
+[81.5s] 友军生成
+[81.5s] 池ref[友军生成后] ref=73 max=3504 holders=73 b=60 p=214
+[81.5s] 池ref[敌人GetOrCreatPool#-5352] ref=74 max=3552 holders=74 b=61 p=213
+[81.5s] 池ref[友军GetOrCreatPool#-5968] ref=75 max=3600 holders=75 b=62 p=212
+[81.5s] 池ref[友军GetOrCreatPool#-5982] ref=76 max=3648 holders=76 b=63 p=211
+[81.5s] 敌人死亡
+[81.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=63 p=211
+[81.5s] 池ref[敌人OnDestroy释池前#-5338] ref=76 max=3648 holders=76 b=60 p=214
+[81.5s] 池ref[敌人OnDestroy释池后#-5338] ref=75 max=3600 holders=75 b=60 p=214
+[81.9s] DMG E -9
+[82.1s] 敌人死亡
+[82.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=50 p=224
+[82.1s] 池ref[友军OnDestroy释池前#-1362] ref=75 max=3600 holders=75 b=48 p=226
+[82.1s] 池ref[友军OnDestroy释池后#-1362] ref=74 max=3552 holders=74 b=48 p=226
+[82.1s] 池ref[敌人GetOrCreatPool#-5954] ref=75 max=3600 holders=75 b=49 p=225
+[82.8s] 敌人生成
+[82.8s] 池ref[敌人生成后] ref=75 max=3600 holders=75 b=102 p=172
+[82.8s] 敌人生成
+[82.8s] 池ref[敌人生成后] ref=75 max=3600 holders=75 b=102 p=172
+[82.9s] DMG P -8
+[83.1s] 敌人死亡
+[83.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=111 p=163
+[83.1s] 池ref[敌人OnDestroy释池前#-1656] ref=75 max=3600 holders=75 b=110 p=164
+[83.1s] 池ref[敌人OnDestroy释池后#-1656] ref=74 max=3552 holders=74 b=110 p=164
+[83.9s] DMG E -9
+[83.9s] 敌人死亡
+[83.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=159 p=115
+[83.9s] 池ref[敌人OnDestroy释池前#-5408] ref=74 max=3552 holders=74 b=158 p=116
+[83.9s] 池ref[敌人OnDestroy释池后#-5408] ref=73 max=3504 holders=73 b=158 p=116
+[84.0s] 友军生成
+[84.0s] 池ref[友军生成后] ref=73 max=3504 holders=73 b=163 p=111
+[84.0s] 友军生成
+[84.0s] 池ref[友军生成后] ref=73 max=3504 holders=73 b=163 p=111
+[84.0s] 池ref[友军GetOrCreatPool#-6038] ref=74 max=3552 holders=74 b=164 p=110
+[84.2s] 敌人生成
+[84.2s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=174 p=100
+[84.2s] 敌人生成
+[84.2s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=174 p=100
+[84.2s] 池ref[友军GetOrCreatPool#-6024] ref=75 max=3600 holders=75 b=174 p=100
+[84.2s] 池ref[敌人GetOrCreatPool#-6052] ref=76 max=3648 holders=76 b=175 p=99
+[84.3s] 敌人死亡
+[84.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=178 p=96
+[84.3s] 池ref[敌人OnDestroy释池前#-2664] ref=76 max=3648 holders=76 b=176 p=98
+[84.3s] 池ref[敌人OnDestroy释池后#-2664] ref=75 max=3600 holders=75 b=176 p=98
+[84.4s] 池ref[敌人GetOrCreatPool#-6066] ref=76 max=3648 holders=76 b=186 p=88
+[84.7s] 敌人死亡
+[84.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=202 p=72
+[84.7s] 池ref[敌人OnDestroy释池前#-1936] ref=76 max=3648 holders=76 b=200 p=74
+[84.7s] 池ref[敌人OnDestroy释池后#-1936] ref=75 max=3600 holders=75 b=200 p=74
+[84.7s] 敌人死亡
+[84.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=203 p=71
+[84.7s] 池ref[敌人OnDestroy释池前#-5324] ref=75 max=3600 holders=75 b=202 p=72
+[84.7s] 池ref[敌人OnDestroy释池后#-5324] ref=74 max=3552 holders=74 b=202 p=72
+[84.9s] 敌人死亡
+[84.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=210 p=64
+[84.9s] 池ref[敌人OnDestroy释池前#-2888] ref=74 max=3552 holders=74 b=208 p=66
+[84.9s] 池ref[敌人OnDestroy释池后#-2888] ref=73 max=3504 holders=73 b=208 p=66
+[84.9s] 池 Bullet b=208 p=66 ref=73 max=3504 holders=73
+[84.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[84.9s] MEM 周期 m=4.1M d+2.0M h=6.5M u=2.4M r=149.8M d+6.0M a=60.2M ur=89.6M g=0B gc=4.1M d+2.0M
+[84.9s] GC 周期 g0=39 d20 g1=39 d20 g2=39 d20
+[84.9s] 敌人死亡
+[84.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=206 p=68
+[84.9s] 池ref[敌人OnDestroy释池前#-886] ref=73 max=3504 holders=73 b=205 p=69
+[84.9s] 池ref[敌人OnDestroy释池后#-886] ref=72 max=3456 holders=72 b=205 p=69
+[84.9s] DMG E -9
+[85.2s] 敌人死亡
+[85.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=212 p=62
+[85.2s] 池ref[敌人OnDestroy释池前#-1236] ref=72 max=3456 holders=72 b=209 p=65
+[85.2s] 池ref[敌人OnDestroy释池后#-1236] ref=71 max=3408 holders=71 b=209 p=65
+[85.5s] 敌人死亡
+[85.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=209 p=65
+[85.5s] 池ref[敌人OnDestroy释池前#-5870] ref=71 max=3408 holders=71 b=208 p=66
+[85.5s] 池ref[敌人OnDestroy释池后#-5870] ref=70 max=3360 holders=70 b=208 p=66
+[85.6s] 敌人生成
+[85.6s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=205 p=69
+[85.6s] 敌人生成
+[85.6s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=205 p=69
+[85.6s] 池ref[敌人GetOrCreatPool#-6094] ref=71 max=3408 holders=71 b=207 p=67
+[85.7s] 敌人死亡
+[85.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=204 p=70
+[85.7s] 池ref[敌人OnDestroy释池前#-2636] ref=71 max=3408 holders=71 b=202 p=72
+[85.7s] 池ref[敌人OnDestroy释池后#-2636] ref=70 max=3360 holders=70 b=202 p=72
+[85.9s] DMG E -9
+[86.3s] 敌人死亡
+[86.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=169 p=105
+[86.3s] 池ref[友军OnDestroy释池前#-2874] ref=70 max=3360 holders=70 b=167 p=107
+[86.3s] 池ref[友军OnDestroy释池后#-2874] ref=69 max=3312 holders=69 b=167 p=107
+[86.5s] 敌人死亡
+[86.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=156 p=118
+[86.5s] 池ref[敌人OnDestroy释池前#-5912] ref=69 max=3312 holders=69 b=155 p=119
+[86.5s] 池ref[敌人OnDestroy释池后#-5912] ref=68 max=3264 holders=68 b=155 p=119
+[86.5s] 友军生成
+[86.5s] 池ref[友军生成后] ref=68 max=3264 holders=68 b=154 p=120
+[86.5s] 友军生成
+[86.5s] 池ref[友军生成后] ref=68 max=3264 holders=68 b=154 p=120
+[86.6s] 池ref[友军GetOrCreatPool#-6122] ref=69 max=3312 holders=69 b=149 p=125
+[86.6s] 敌人死亡
+[86.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=143 p=131
+[86.6s] 池ref[敌人OnDestroy释池前#-5884] ref=69 max=3312 holders=69 b=142 p=132
+[86.6s] 池ref[敌人OnDestroy释池后#-5884] ref=68 max=3264 holders=68 b=142 p=132
+[86.8s] 池ref[敌人GetOrCreatPool#-6010] ref=69 max=3312 holders=69 b=138 p=136
+[86.9s] DMG E -8
+[87.0s] 敌人生成
+[87.0s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=136 p=138
+[87.0s] 敌人生成
+[87.0s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=136 p=138
+[87.0s] 池ref[敌人GetOrCreatPool#-6136] ref=70 max=3360 holders=70 b=137 p=137
+[87.1s] 敌人死亡
+[87.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=140 p=134
+[87.1s] 池ref[友军OnDestroy释池前#-3560] ref=70 max=3360 holders=70 b=138 p=136
+[87.1s] 池ref[友军OnDestroy释池后#-3560] ref=69 max=3312 holders=69 b=138 p=136
+[87.2s] 池ref[敌人GetOrCreatPool#-5996] ref=70 max=3360 holders=70 b=138 p=136
+[87.5s] 敌人死亡
+[87.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=116 p=158
+[87.5s] 池ref[敌人OnDestroy释池前#-4806] ref=70 max=3360 holders=70 b=114 p=160
+[87.5s] 池ref[敌人OnDestroy释池后#-4806] ref=69 max=3312 holders=69 b=114 p=160
+[87.9s] DMG E -8
+[87.9s] 池ref[友军GetOrCreatPool#-6108] ref=70 max=3360 holders=70 b=101 p=173
+[87.9s] 敌人死亡
+[87.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=99 p=175
+[87.9s] 池ref[敌人OnDestroy释池前#-6010] ref=70 max=3360 holders=70 b=98 p=176
+[87.9s] 池ref[敌人OnDestroy释池后#-6010] ref=69 max=3312 holders=69 b=98 p=176
+[88.2s] 敌人死亡
+[88.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=91 p=183
+[88.2s] 池ref[友军OnDestroy释池前#-2706] ref=69 max=3312 holders=69 b=90 p=184
+[88.2s] 池ref[友军OnDestroy释池后#-2706] ref=68 max=3264 holders=68 b=90 p=184
+[88.4s] 敌人死亡
+[88.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=68 max=3264 holders=68 b=84 p=190
+[88.4s] 池ref[敌人OnDestroy释池前#-2384] ref=68 max=3264 holders=68 b=82 p=192
+[88.4s] 池ref[敌人OnDestroy释池后#-2384] ref=67 max=3216 holders=67 b=82 p=192
+[88.4s] 敌人生成
+[88.4s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=79 p=195
+[88.4s] 敌人生成
+[88.4s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=79 p=195
+[88.4s] 池ref[敌人GetOrCreatPool#-6164] ref=68 max=3264 holders=68 b=81 p=193
+[88.9s] DMG E -9
+[89.0s] 友军生成
+[89.0s] 池ref[友军生成后] ref=68 max=3264 holders=68 b=74 p=200
+[89.0s] 友军生成
+[89.0s] 池ref[友军生成后] ref=68 max=3264 holders=68 b=74 p=200
+[89.0s] 池ref[友军GetOrCreatPool#-6192] ref=69 max=3312 holders=69 b=76 p=198
+[89.4s] 池ref[敌人GetOrCreatPool#-6080] ref=70 max=3360 holders=70 b=86 p=188
+[89.7s] 池ref[友军GetOrCreatPool#-6206] ref=71 max=3408 holders=71 b=88 p=186
+[89.8s] 敌人生成
+[89.8s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=86 p=188
+[89.8s] 敌人生成
+[89.8s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=86 p=188
+[89.9s] 池 Bullet b=90 p=184 ref=71 max=3408 holders=71
+[89.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[89.9s] MEM 周期 m=4.2M d+2.2M h=6.5M u=2.2M r=149.8M d+6.0M a=60.1M ur=89.8M g=0B gc=4.2M d+2.2M
+[89.9s] GC 周期 g0=41 d22 g1=41 d22 g2=41 d22
+[89.9s] DMG E -8
+[90.2s] 池ref[敌人GetOrCreatPool#-6220] ref=72 max=3456 holders=72 b=102 p=172
+[91.0s] DMG E -9
+[91.2s] 敌人生成
+[91.2s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=120 p=154
+[91.2s] 敌人生成
+[91.2s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=120 p=154
+[91.2s] 池ref[敌人GetOrCreatPool#-6248] ref=73 max=3504 holders=73 b=121 p=153
+[91.4s] 敌人死亡
+[91.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=135 p=139
+[91.4s] 池ref[友军OnDestroy释池前#-4596] ref=73 max=3504 holders=73 b=133 p=141
+[91.4s] 池ref[友军OnDestroy释池后#-4596] ref=72 max=3456 holders=72 b=133 p=141
+[91.5s] 友军生成
+[91.5s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=129 p=145
+[91.5s] 友军生成
+[91.5s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=129 p=145
+[91.5s] 池ref[友军GetOrCreatPool#-6276] ref=73 max=3504 holders=73 b=129 p=145
+[91.5s] 池ref[友军GetOrCreatPool#-6290] ref=74 max=3552 holders=74 b=130 p=144
+[92.0s] DMG E -8
+[92.6s] 敌人生成
+[92.6s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=126 p=148
+[92.6s] 敌人生成
+[92.6s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=126 p=148
+[92.7s] 敌人死亡
+[92.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=146 p=128
+[92.7s] 池ref[敌人OnDestroy释池前#-522] ref=74 max=3552 holders=74 b=145 p=129
+[92.7s] 池ref[敌人OnDestroy释池后#-522] ref=73 max=3504 holders=73 b=145 p=129
+[93.0s] DMG E -9
+[93.0s] 池ref[敌人GetOrCreatPool#-6234] ref=74 max=3552 holders=74 b=140 p=134
+[93.3s] 敌人死亡
+[93.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=153 p=121
+[93.3s] 池ref[敌人OnDestroy释池前#-6136] ref=74 max=3552 holders=74 b=152 p=122
+[93.3s] 池ref[敌人OnDestroy释池后#-6136] ref=73 max=3504 holders=73 b=152 p=122
+[93.3s] 池ref[敌人GetOrCreatPool#-6150] ref=74 max=3552 holders=74 b=153 p=121
+[93.5s] 池ref[敌人GetOrCreatPool#-6304] ref=75 max=3600 holders=75 b=156 p=118
+[93.6s] 池ref[敌人GetOrCreatPool#-6178] ref=76 max=3648 holders=76 b=158 p=116
+[93.8s] 敌人死亡
+[93.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=158 p=116
+[93.8s] 池ref[敌人OnDestroy释池前#-5996] ref=76 max=3648 holders=76 b=156 p=118
+[93.8s] 池ref[敌人OnDestroy释池后#-5996] ref=75 max=3600 holders=75 b=156 p=118
+[93.9s] 敌人死亡
+[93.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=169 p=105
+[93.9s] 池ref[友军OnDestroy释池前#-4582] ref=75 max=3600 holders=75 b=166 p=108
+[93.9s] 池ref[友军OnDestroy释池后#-4582] ref=74 max=3552 holders=74 b=166 p=108
+[94.0s] DMG E -9
+[94.0s] 池ref[敌人GetOrCreatPool#-6262] ref=75 max=3600 holders=75 b=172 p=102
+[94.0s] 敌人生成
+[94.0s] 池ref[敌人生成后] ref=75 max=3600 holders=75 b=172 p=102
+[94.0s] 敌人生成
+[94.0s] 池ref[敌人生成后] ref=75 max=3600 holders=75 b=172 p=102
+[94.0s] 友军生成
+[94.0s] 池ref[友军生成后] ref=75 max=3600 holders=75 b=174 p=100
+[94.1s] 池ref[友军GetOrCreatPool#-6360] ref=76 max=3648 holders=76 b=175 p=99
+[94.2s] 池ref[敌人GetOrCreatPool#-6318] ref=77 max=3696 holders=77 b=169 p=105
+[94.4s] 敌人死亡
+[94.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=77 max=3696 holders=77 b=162 p=112
+[94.4s] 池ref[敌人OnDestroy释池前#-4722] ref=77 max=3696 holders=77 b=161 p=113
+[94.4s] 池ref[敌人OnDestroy释池后#-4722] ref=76 max=3648 holders=76 b=161 p=113
+[94.9s] 池 Bullet b=172 p=102 ref=76 max=3648 holders=76
+[94.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[94.9s] MEM 周期 m=4.2M d+2.1M h=6.5M u=2.3M r=149.8M d+6.0M a=60.2M ur=89.7M g=0B gc=4.2M d+2.1M
+[94.9s] GC 周期 g0=42 d23 g1=42 d23 g2=42 d23
+[94.9s] 敌人死亡
+[94.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=172 p=102
+[94.9s] 池ref[敌人OnDestroy释池前#-5940] ref=76 max=3648 holders=76 b=169 p=105
+[94.9s] 池ref[敌人OnDestroy释池后#-5940] ref=75 max=3600 holders=75 b=169 p=105
+[95.0s] DMG E -10
+[95.1s] 池ref[敌人GetOrCreatPool#-6332] ref=76 max=3648 holders=76 b=169 p=105
+[95.1s] 敌人死亡
+[95.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=171 p=103
+[95.1s] 池ref[敌人OnDestroy释池前#-2650] ref=76 max=3648 holders=76 b=169 p=105
+[95.1s] 池ref[敌人OnDestroy释池后#-2650] ref=75 max=3600 holders=75 b=169 p=105
+[95.2s] 敌人死亡
+[95.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=177 p=97
+[95.2s] 池ref[敌人OnDestroy释池前#-6150] ref=75 max=3600 holders=75 b=176 p=98
+[95.2s] 池ref[敌人OnDestroy释池后#-6150] ref=74 max=3552 holders=74 b=176 p=98
+[95.4s] 敌人生成
+[95.4s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=187 p=87
+[95.4s] 敌人生成
+[95.4s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=187 p=87
+[95.4s] 池ref[敌人GetOrCreatPool#-6374] ref=75 max=3600 holders=75 b=187 p=87
+[95.6s] 池ref[敌人GetOrCreatPool#-6346] ref=76 max=3648 holders=76 b=188 p=86
+[95.8s] 敌人死亡
+[95.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=195 p=79
+[95.8s] 池ref[敌人OnDestroy释池前#-1488] ref=76 max=3648 holders=76 b=192 p=82
+[95.8s] 池ref[敌人OnDestroy释池后#-1488] ref=75 max=3600 holders=75 b=192 p=82
+[96.0s] DMG E -9
+[96.0s] 敌人死亡
+[96.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=203 p=71
+[96.0s] 池ref[敌人OnDestroy释池前#-4302] ref=75 max=3600 holders=75 b=202 p=72
+[96.0s] 池ref[敌人OnDestroy释池后#-4302] ref=74 max=3552 holders=74 b=202 p=72
+[96.1s] 敌人死亡
+[96.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=200 p=74
+[96.1s] 池ref[敌人OnDestroy释池前#-1502] ref=74 max=3552 holders=74 b=198 p=76
+[96.1s] 池ref[敌人OnDestroy释池后#-1502] ref=73 max=3504 holders=73 b=198 p=76
+[96.2s] 敌人死亡
+[96.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=195 p=79
+[96.2s] 池ref[敌人OnDestroy释池前#-2678] ref=73 max=3504 holders=73 b=192 p=82
+[96.2s] 池ref[敌人OnDestroy释池后#-2678] ref=72 max=3456 holders=72 b=192 p=82
+[96.3s] 池ref[敌人GetOrCreatPool#-6388] ref=73 max=3504 holders=73 b=188 p=86
+[96.8s] 敌人死亡
+[96.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=195 p=79
+[96.8s] 池ref[敌人OnDestroy释池前#-2776] ref=73 max=3504 holders=73 b=190 p=84
+[96.8s] 池ref[敌人OnDestroy释池后#-2776] ref=72 max=3456 holders=72 b=190 p=84
+[96.8s] 敌人生成
+[96.8s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=190 p=84
+[96.8s] 敌人生成
+[96.8s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=190 p=84
+[96.9s] 敌人死亡
+[96.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=193 p=81
+[96.9s] 池ref[敌人OnDestroy释池前#-5954] ref=72 max=3456 holders=72 b=192 p=82
+[96.9s] 池ref[敌人OnDestroy释池后#-5954] ref=71 max=3408 holders=71 b=192 p=82
+[97.0s] DMG E -9
+[97.0s] 敌人死亡
+[97.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=192 p=82
+[97.0s] 池ref[敌人OnDestroy释池前#-2594] ref=71 max=3408 holders=71 b=191 p=83
+[97.0s] 池ref[敌人OnDestroy释池后#-2594] ref=70 max=3360 holders=70 b=191 p=83
+[97.1s] 敌人死亡
+[97.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=196 p=78
+[97.1s] 池ref[敌人OnDestroy释池前#-1600] ref=70 max=3360 holders=70 b=195 p=79
+[97.1s] 池ref[敌人OnDestroy释池后#-1600] ref=69 max=3312 holders=69 b=195 p=79
+[97.1s] 敌人死亡
+[97.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=192 p=82
+[97.1s] 池ref[敌人OnDestroy释池前#-4750] ref=69 max=3312 holders=69 b=190 p=84
+[97.1s] 池ref[敌人OnDestroy释池后#-4750] ref=68 max=3264 holders=68 b=190 p=84
+[97.2s] 池ref[敌人GetOrCreatPool#-6402] ref=69 max=3312 holders=69 b=191 p=83
+[97.7s] 敌人死亡
+[97.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=186 p=88
+[97.7s] 池ref[敌人OnDestroy释池前#-396] ref=69 max=3312 holders=69 b=184 p=90
+[97.7s] 池ref[敌人OnDestroy释池后#-396] ref=68 max=3264 holders=68 b=184 p=90
+[98.0s] DMG E -9
+[98.2s] 敌人生成
+[98.2s] 池ref[敌人生成后] ref=68 max=3264 holders=68 b=166 p=108
+[98.2s] 敌人生成
+[98.2s] 池ref[敌人生成后] ref=68 max=3264 holders=68 b=166 p=108
+[98.2s] 池ref[敌人GetOrCreatPool#-6444] ref=69 max=3312 holders=69 b=168 p=106
+[98.4s] 池ref[敌人GetOrCreatPool#-6430] ref=70 max=3360 holders=70 b=170 p=104
+[98.4s] 池ref[敌人GetOrCreatPool#-6416] ref=71 max=3408 holders=71 b=170 p=104
+[98.7s] 敌人死亡
+[98.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=168 p=106
+[98.7s] 池ref[敌人OnDestroy释池前#-4862] ref=71 max=3408 holders=71 b=165 p=109
+[98.7s] 池ref[敌人OnDestroy释池后#-4862] ref=70 max=3360 holders=70 b=165 p=109
+[98.8s] 敌人死亡
+[98.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=164 p=110
+[98.8s] 池ref[敌人OnDestroy释池前#-6080] ref=70 max=3360 holders=70 b=163 p=111
+[98.8s] 池ref[敌人OnDestroy释池后#-6080] ref=69 max=3312 holders=69 b=163 p=111
+[98.9s] 玩家死亡 lives=1
+[98.9s] 将复活
+[98.9s] 报告导出 tag=PoolTest玩家死亡_lives1...
+[98.9s] 池 Bullet b=164 p=110 ref=69 max=3312 holders=69
+[98.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[98.9s] MEM PoolTest玩家死亡_lives1 m=3.7M d+1.7M h=6.5M u=2.7M r=149.8M d+6.0M a=60.1M ur=89.7M g=0B gc=3.7M d+1.7M
+[98.9s] GC PoolTest玩家死亡_lives1 g0=43 d24 g1=43 d24 g2=43 d24
+[98.9s] 已写入 F:\AQNU\test\winbao\vframework_Data\StreamingAssets\StandaloneWindows64\Logs\ComprehensiveTest_PoolTest玩家死亡_lives1_20260617_021531.log
+[98.9s] 玩家复活 -27,1,17 lives=1
+[99.0s] DMG E -9
+[99.6s] 敌人生成
+[99.6s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=148 p=126
+[99.6s] 敌人生成
+[99.6s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=148 p=126
+[99.7s] 敌人死亡
+[99.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=147 p=127
+[99.7s] 池ref[敌人OnDestroy释池前#-5366] ref=69 max=3312 holders=69 b=146 p=128
+[99.7s] 池ref[敌人OnDestroy释池后#-5366] ref=68 max=3264 holders=68 b=146 p=128
+[99.8s] 敌人死亡
+[99.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=68 max=3264 holders=68 b=151 p=123
+[99.8s] 池ref[敌人OnDestroy释池前#-4764] ref=68 max=3264 holders=68 b=150 p=124
+[99.8s] 池ref[敌人OnDestroy释池后#-4764] ref=67 max=3216 holders=67 b=150 p=124
+[99.9s] 池 Bullet b=152 p=122 ref=67 max=3216 holders=67
+[99.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[99.9s] MEM 周期 m=3.7M d+1.6M h=6.5M u=2.8M r=149.8M d+6.0M a=60.1M ur=89.7M g=0B gc=3.7M d+1.6M
+[99.9s] GC 周期 g0=44 d25 g1=44 d25 g2=44 d25
+[100.0s] DMG E -9
+[100.0s] 敌人死亡
+[100.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=148 p=126
+[100.0s] 池ref[敌人OnDestroy释池前#-1586] ref=67 max=3216 holders=67 b=145 p=129
+[100.0s] 池ref[敌人OnDestroy释池后#-1586] ref=66 max=3168 holders=66 b=145 p=129
+[100.1s] 敌人死亡
+[100.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=144 p=130
+[100.1s] 池ref[友军OnDestroy释池前#-6276] ref=66 max=3168 holders=66 b=143 p=131
+[100.1s] 池ref[友军OnDestroy释池后#-6276] ref=65 max=3120 holders=65 b=143 p=131
+[100.1s] 友军生成
+[100.1s] 池ref[友军生成后] ref=65 max=3120 holders=65 b=143 p=131
+[100.1s] 池ref[友军GetOrCreatPool#-6486] ref=66 max=3168 holders=66 b=144 p=130
+[100.3s] 敌人死亡
+[100.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=133 p=141
+[100.3s] 池ref[敌人OnDestroy释池前#-6094] ref=66 max=3168 holders=66 b=132 p=142
+[100.3s] 池ref[敌人OnDestroy释池后#-6094] ref=65 max=3120 holders=65 b=132 p=142
+[100.6s] 敌人死亡
+[100.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=137 p=137
+[100.6s] 池ref[敌人OnDestroy释池前#-1726] ref=65 max=3120 holders=65 b=136 p=138
+[100.6s] 池ref[敌人OnDestroy释池后#-1726] ref=64 max=3072 holders=64 b=136 p=138
+[100.6s] 敌人死亡
+[100.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=64 max=3072 holders=64 b=130 p=144
+[100.6s] 池ref[敌人OnDestroy释池前#-6066] ref=64 max=3072 holders=64 b=128 p=146
+[100.6s] 池ref[敌人OnDestroy释池后#-6066] ref=63 max=3024 holders=63 b=128 p=146
+[100.7s] 敌人死亡
+[100.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=63 max=3024 holders=63 b=124 p=150
+[100.7s] 池ref[敌人OnDestroy释池前#-1040] ref=63 max=3024 holders=63 b=122 p=152
+[100.7s] 池ref[敌人OnDestroy释池后#-1040] ref=62 max=2976 holders=62 b=122 p=152
+[101.0s] 敌人死亡
+[101.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=126 p=148
+[101.0s] 池ref[敌人OnDestroy释池前#-4708] ref=62 max=2976 holders=62 b=125 p=149
+[101.0s] 池ref[敌人OnDestroy释池后#-4708] ref=61 max=2928 holders=61 b=125 p=149
+[101.0s] 敌人生成
+[101.0s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=127 p=147
+[101.0s] 敌人生成
+[101.0s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=127 p=147
+[101.0s] DMG E -9
+[101.0s] 池ref[敌人GetOrCreatPool#-6514] ref=62 max=2976 holders=62 b=127 p=147
+[101.6s] 敌人死亡
+[101.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=133 p=141
+[101.6s] 池ref[敌人OnDestroy释池前#-410] ref=62 max=2976 holders=62 b=129 p=145
+[101.6s] 池ref[敌人OnDestroy释池后#-410] ref=61 max=2928 holders=61 b=129 p=145
+[101.9s] 敌人死亡
+[101.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=61 max=2928 holders=61 b=121 p=153
+[101.9s] 池ref[友军OnDestroy释池前#-4274] ref=61 max=2928 holders=61 b=119 p=155
+[101.9s] 池ref[友军OnDestroy释池后#-4274] ref=60 max=2880 holders=60 b=119 p=155
+[102.0s] DMG E -8
+[102.4s] 敌人生成
+[102.4s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=109 p=165
+[102.4s] 敌人生成
+[102.4s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=109 p=165
+[102.4s] 池ref[敌人GetOrCreatPool#-6528] ref=61 max=2928 holders=61 b=109 p=165
+[102.4s] 池ref[敌人GetOrCreatPool#-6542] ref=62 max=2976 holders=62 b=110 p=164
+[102.5s] 敌人死亡
+[102.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=107 p=167
+[102.5s] 池ref[敌人OnDestroy释池前#-4848] ref=62 max=2976 holders=62 b=106 p=168
+[102.5s] 池ref[敌人OnDestroy释池后#-4848] ref=61 max=2928 holders=61 b=106 p=168
+[102.6s] 友军生成
+[102.6s] 池ref[友军生成后] ref=61 max=2928 holders=61 b=107 p=167
+[102.6s] 池ref[友军GetOrCreatPool#-6556] ref=62 max=2976 holders=62 b=107 p=167
+[102.8s] 敌人死亡
+[102.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=108 p=166
+[102.8s] 池ref[敌人OnDestroy释池前#-4778] ref=62 max=2976 holders=62 b=107 p=167
+[102.8s] 池ref[敌人OnDestroy释池后#-4778] ref=61 max=2928 holders=61 b=107 p=167
+[103.1s] DMG E -8
+[103.3s] 敌人死亡
+[103.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=61 max=2928 holders=61 b=99 p=175
+[103.3s] 池ref[敌人OnDestroy释池前#-6164] ref=61 max=2928 holders=61 b=98 p=176
+[103.3s] 池ref[敌人OnDestroy释池后#-6164] ref=60 max=2880 holders=60 b=98 p=176
+[103.3s] 池ref[敌人GetOrCreatPool#-6472] ref=61 max=2928 holders=61 b=98 p=176
+[103.5s] 敌人死亡
+[103.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=61 max=2928 holders=61 b=98 p=176
+[103.5s] 池ref[敌人OnDestroy释池前#-6052] ref=61 max=2928 holders=61 b=97 p=177
+[103.5s] 池ref[敌人OnDestroy释池后#-6052] ref=60 max=2880 holders=60 b=97 p=177
+[103.5s] 敌人死亡
+[103.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=60 max=2880 holders=60 b=95 p=179
+[103.5s] 池ref[敌人OnDestroy释池前#-4680] ref=60 max=2880 holders=60 b=94 p=180
+[103.5s] 池ref[敌人OnDestroy释池后#-4680] ref=59 max=2832 holders=59 b=94 p=180
+[103.8s] 敌人生成
+[103.8s] 池ref[敌人生成后] ref=59 max=2832 holders=59 b=96 p=178
+[103.8s] 敌人生成
+[103.8s] 池ref[敌人生成后] ref=59 max=2832 holders=59 b=96 p=178
+[103.8s] 池ref[敌人GetOrCreatPool#-6584] ref=60 max=2880 holders=60 b=97 p=177
+[103.9s] 池ref[敌人GetOrCreatPool#-6458] ref=61 max=2928 holders=61 b=95 p=179
+[104.1s] DMG E -9
+[104.5s] 池ref[敌人GetOrCreatPool#-6500] ref=62 max=2976 holders=62 b=101 p=173
+[104.9s] 池 Bullet b=98 p=176 ref=62 max=2976 holders=62
+[104.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[104.9s] MEM 周期 m=4.9M d+2.8M h=6.5M u=1.6M r=149.8M d+6.0M a=60.1M ur=89.7M g=0B gc=4.9M d+2.8M
+[104.9s] GC 周期 g0=46 d27 g1=46 d27 g2=46 d27
+[105.1s] DMG E -9
+[105.2s] 敌人生成
+[105.2s] 池ref[敌人生成后] ref=62 max=2976 holders=62 b=96 p=178
+[105.2s] 敌人生成
+[105.2s] 池ref[敌人生成后] ref=62 max=2976 holders=62 b=96 p=178
+[105.9s] 敌人死亡
+[105.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=118 p=156
+[105.9s] 池ref[敌人OnDestroy释池前#-5926] ref=62 max=2976 holders=62 b=117 p=157
+[105.9s] 池ref[敌人OnDestroy释池后#-5926] ref=61 max=2928 holders=61 b=117 p=157
+[106.1s] DMG E -10
+[106.6s] 敌人生成
+[106.6s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=141 p=133
+[106.6s] 敌人生成
+[106.6s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=141 p=133
+[107.1s] DMG E -10
+[108.0s] 敌人生成
+[108.0s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=130 p=144
+[108.0s] 敌人生成
+[108.0s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=130 p=144
+[108.0s] 池ref[敌人GetOrCreatPool#-6654] ref=62 max=2976 holders=62 b=130 p=144
+[108.0s] 池ref[敌人GetOrCreatPool#-6668] ref=63 max=3024 holders=63 b=131 p=143
+[108.1s] DMG E -8
+[108.1s] 池ref[敌人GetOrCreatPool#-6570] ref=64 max=3072 holders=64 b=130 p=144
+[108.2s] 敌人死亡
+[108.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=64 max=3072 holders=64 b=130 p=144
+[108.2s] 池ref[敌人OnDestroy释池前#-6528] ref=64 max=3072 holders=64 b=129 p=145
+[108.2s] 池ref[敌人OnDestroy释池后#-6528] ref=63 max=3024 holders=63 b=129 p=145
+[108.7s] 敌人死亡
+[108.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=63 max=3024 holders=63 b=112 p=162
+[108.7s] 池ref[敌人OnDestroy释池前#-6542] ref=63 max=3024 holders=63 b=111 p=163
+[108.7s] 池ref[敌人OnDestroy释池后#-6542] ref=62 max=2976 holders=62 b=111 p=163
+[109.1s] DMG E -9
+[109.4s] 池ref[敌人GetOrCreatPool#-6612] ref=63 max=3024 holders=63 b=104 p=170
+[109.4s] 敌人生成
+[109.4s] 池ref[敌人生成后] ref=63 max=3024 holders=63 b=108 p=166
+[109.4s] 敌人生成
+[109.4s] 池ref[敌人生成后] ref=63 max=3024 holders=63 b=108 p=166
+[109.4s] 池ref[敌人GetOrCreatPool#-6696] ref=64 max=3072 holders=64 b=108 p=166
+[109.6s] 敌人死亡
+[109.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=64 max=3072 holders=64 b=109 p=165
+[109.6s] 池ref[敌人OnDestroy释池前#-6514] ref=64 max=3072 holders=64 b=105 p=169
+[109.6s] 池ref[敌人OnDestroy释池后#-6514] ref=63 max=3024 holders=63 b=105 p=169
+[109.9s] 敌人死亡
+[109.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=63 max=3024 holders=63 b=97 p=177
+[109.9s] 池ref[敌人OnDestroy释池前#-6430] ref=63 max=3024 holders=63 b=96 p=178
+[109.9s] 池ref[敌人OnDestroy释池后#-6430] ref=62 max=2976 holders=62 b=96 p=178
+[109.9s] 池 Bullet b=97 p=177 ref=62 max=2976 holders=62
+[109.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[109.9s] MEM 周期 m=3.8M d+1.7M h=6.5M u=2.7M r=149.8M d+6.0M a=60.1M ur=89.7M g=0B gc=3.8M d+1.7M
+[109.9s] GC 周期 g0=47 d28 g1=47 d28 g2=47 d28
+[110.0s] 敌人死亡
+[110.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=94 p=180
+[110.0s] 池ref[敌人OnDestroy释池前#-6178] ref=62 max=2976 holders=62 b=93 p=181
+[110.0s] 池ref[敌人OnDestroy释池后#-6178] ref=61 max=2928 holders=61 b=93 p=181
+[110.0s] 池ref[敌人GetOrCreatPool#-6598] ref=62 max=2976 holders=62 b=92 p=182
+[110.1s] DMG E -9
+[110.4s] 敌人死亡
+[110.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=91 p=183
+[110.8s] 敌人生成
+[110.8s] 池ref[敌人生成后] ref=62 max=2976 holders=62 b=82 p=192
+[110.8s] 敌人生成
+[110.8s] 池ref[敌人生成后] ref=62 max=2976 holders=62 b=82 p=192
+[110.8s] 池ref[敌人GetOrCreatPool#-6710] ref=63 max=3024 holders=63 b=83 p=191
+[110.9s] 池ref[敌人GetOrCreatPool#-6626] ref=64 max=3072 holders=64 b=84 p=190
+[111.1s] DMG E -9
+[111.4s] 池ref[敌人GetOrCreatPool#-6724] ref=65 max=3120 holders=65 b=95 p=179
+[112.1s] DMG E -10
+[112.2s] 敌人生成
+[112.2s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=96 p=178
+[112.2s] 敌人生成
+[112.2s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=96 p=178
+[112.2s] 池ref[敌人GetOrCreatPool#-6752] ref=66 max=3168 holders=66 b=98 p=176
+[113.1s] DMG E -9
+[113.6s] 敌人生成
+[113.6s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=108 p=166
+[113.6s] 敌人生成
+[113.6s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=108 p=166
+[113.8s] 池ref[敌人GetOrCreatPool#-6780] ref=67 max=3216 holders=67 b=112 p=162
+[114.1s] 敌人死亡
+[114.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=103 p=171
+[114.1s] 池ref[敌人OnDestroy释池前#-6654] ref=67 max=3216 holders=67 b=102 p=172
+[114.1s] 池ref[敌人OnDestroy释池后#-6654] ref=66 max=3168 holders=66 b=102 p=172
+[114.1s] DMG E -8
+[114.3s] 敌人死亡
+[114.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=89 p=185
+[114.3s] 池ref[敌人OnDestroy释池前#-6626] ref=66 max=3168 holders=66 b=88 p=186
+[114.3s] 池ref[敌人OnDestroy释池后#-6626] ref=65 max=3120 holders=65 b=88 p=186
+[114.3s] 池ref[敌人GetOrCreatPool#-6682] ref=66 max=3168 holders=66 b=89 p=185
+[114.4s] 敌人死亡
+[114.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=87 p=187
+[114.4s] 池ref[敌人OnDestroy释池前#-6500] ref=66 max=3168 holders=66 b=84 p=190
+[114.4s] 池ref[敌人OnDestroy释池后#-6500] ref=65 max=3120 holders=65 b=84 p=190
+[114.8s] 敌人死亡
+[114.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=72 p=202
+[114.8s] 池ref[敌人OnDestroy释池前#-6724] ref=65 max=3120 holders=65 b=71 p=203
+[114.8s] 池ref[敌人OnDestroy释池后#-6724] ref=64 max=3072 holders=64 b=71 p=203
+[114.9s] 池 Bullet b=72 p=202 ref=64 max=3072 holders=64
+[114.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[114.9s] MEM 周期 m=4.1M d+2.0M h=6.5M u=2.4M r=149.8M d+6.0M a=60.1M ur=89.7M g=0B gc=4.1M d+2.0M
+[114.9s] GC 周期 g0=47 d28 g1=47 d28 g2=47 d28
+[115.0s] 敌人生成
+[115.0s] 池ref[敌人生成后] ref=64 max=3072 holders=64 b=76 p=198
+[115.0s] 敌人生成
+[115.0s] 池ref[敌人生成后] ref=64 max=3072 holders=64 b=76 p=198
+[115.0s] 池ref[敌人GetOrCreatPool#-6794] ref=65 max=3120 holders=65 b=78 p=196
+[115.0s] 池ref[敌人GetOrCreatPool#-6808] ref=66 max=3168 holders=66 b=79 p=195
+[115.2s] DMG E -9
+[115.4s] 敌人死亡
+[115.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=60 p=214
+[115.4s] 池ref[敌人OnDestroy释池前#-6668] ref=66 max=3168 holders=66 b=59 p=215
+[115.4s] 池ref[敌人OnDestroy释池后#-6668] ref=65 max=3120 holders=65 b=59 p=215
+[116.2s] 敌人死亡
+[116.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=62 p=212
+[116.2s] 池ref[敌人OnDestroy释池前#-4792] ref=65 max=3120 holders=65 b=61 p=213
+[116.2s] 池ref[敌人OnDestroy释池后#-4792] ref=64 max=3072 holders=64 b=61 p=213
+[116.2s] DMG E -8
+[116.4s] 池ref[敌人GetOrCreatPool#-6738] ref=65 max=3120 holders=65 b=62 p=212
+[116.4s] 敌人生成
+[116.4s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=68 p=206
+[116.4s] 敌人生成
+[116.4s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=68 p=206
+[116.4s] 池ref[敌人GetOrCreatPool#-6822] ref=66 max=3168 holders=66 b=70 p=204
+[116.7s] 池ref[敌人GetOrCreatPool#-6766] ref=67 max=3216 holders=67 b=76 p=198
+[116.7s] 敌人死亡
+[116.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=76 p=198
+[116.7s] 池ref[友军OnDestroy释池前#-5310] ref=67 max=3216 holders=67 b=75 p=199
+[116.7s] 池ref[友军OnDestroy释池后#-5310] ref=66 max=3168 holders=66 b=75 p=199
+[116.7s] 友军生成
+[116.7s] 池ref[友军生成后] ref=66 max=3168 holders=66 b=75 p=199
+[116.7s] 池ref[友军GetOrCreatPool#-6850] ref=67 max=3216 holders=67 b=76 p=198
+[117.2s] DMG E -9
+[117.8s] 敌人生成
+[117.8s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=64 p=210
+[117.8s] 敌人生成
+[117.8s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=64 p=210
+[117.8s] 池ref[敌人GetOrCreatPool#-6864] ref=68 max=3264 holders=68 b=67 p=207
+[117.8s] 池ref[敌人GetOrCreatPool#-6878] ref=69 max=3312 holders=69 b=68 p=206
+[118.1s] 敌人死亡
+[118.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=67 p=207
+[118.1s] 池ref[敌人OnDestroy释池前#-6346] ref=69 max=3312 holders=69 b=64 p=210
+[118.1s] 池ref[敌人OnDestroy释池后#-6346] ref=68 max=3264 holders=68 b=64 p=210
+[118.2s] 敌人死亡
+[118.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=68 max=3264 holders=68 b=63 p=211
+[118.2s] 池ref[敌人OnDestroy释池前#-6388] ref=68 max=3264 holders=68 b=62 p=212
+[118.2s] 池ref[敌人OnDestroy释池后#-6388] ref=67 max=3216 holders=67 b=62 p=212
+[118.2s] DMG E -8
+[118.7s] 敌人死亡
+[118.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=66 p=208
+[118.7s] 池ref[敌人OnDestroy释池前#-5352] ref=67 max=3216 holders=67 b=62 p=212
+[118.7s] 池ref[敌人OnDestroy释池后#-5352] ref=66 max=3168 holders=66 b=62 p=212
+[119.2s] 敌人生成
+[119.2s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=58 p=216
+[119.2s] 敌人生成
+[119.2s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=58 p=216
+[119.2s] 池ref[敌人GetOrCreatPool#-6892] ref=67 max=3216 holders=67 b=58 p=216
+[119.2s] DMG E -10
+[119.8s] 敌人死亡
+[119.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=69 p=205
+[119.8s] 池ref[敌人OnDestroy释池前#-6402] ref=67 max=3216 holders=67 b=68 p=206
+[119.8s] 池ref[敌人OnDestroy释池后#-6402] ref=66 max=3168 holders=66 b=68 p=206
+[119.9s] 池 Bullet b=71 p=203 ref=66 max=3168 holders=66
+[119.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[119.9s] MEM 周期 m=3.9M d+1.9M h=6.5M u=2.5M r=149.8M d+6.0M a=60.1M ur=89.7M g=0B gc=3.9M d+1.9M
+[119.9s] GC 周期 g0=48 d29 g1=48 d29 g2=48 d29
+[120.1s] 敌人死亡
+[120.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=72 p=202
+[120.1s] 池ref[敌人OnDestroy释池前#-6262] ref=66 max=3168 holders=66 b=71 p=203
+[120.1s] 池ref[敌人OnDestroy释池后#-6262] ref=65 max=3120 holders=65 b=71 p=203
+[120.3s] DMG E -10
+[120.3s] 敌人死亡
+[120.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=76 p=198
+[120.3s] 池ref[敌人OnDestroy释池前#-6780] ref=65 max=3120 holders=65 b=74 p=200
+[120.3s] 池ref[敌人OnDestroy释池后#-6780] ref=64 max=3072 holders=64 b=74 p=200
+[120.6s] 敌人生成
+[120.6s] 池ref[敌人生成后] ref=64 max=3072 holders=64 b=63 p=211
+[120.6s] 敌人生成
+[120.6s] 池ref[敌人生成后] ref=64 max=3072 holders=64 b=63 p=211
+[120.6s] 池ref[敌人GetOrCreatPool#-6934] ref=65 max=3120 holders=65 b=62 p=212
+[121.3s] DMG E -8
+[121.5s] 敌人死亡
+[121.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=68 p=206
+[121.5s] 池ref[敌人OnDestroy释池前#-6332] ref=65 max=3120 holders=65 b=67 p=207
+[121.5s] 池ref[敌人OnDestroy释池后#-6332] ref=64 max=3072 holders=64 b=67 p=207
+[121.9s] 敌人死亡
+[121.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=64 max=3072 holders=64 b=66 p=208
+[121.9s] 池ref[敌人OnDestroy释池前#-6794] ref=64 max=3072 holders=64 b=65 p=209
+[121.9s] 池ref[敌人OnDestroy释池后#-6794] ref=63 max=3024 holders=63 b=65 p=209
+[122.0s] 敌人生成
+[122.0s] 池ref[敌人生成后] ref=63 max=3024 holders=63 b=64 p=210
+[122.0s] 敌人生成
+[122.0s] 池ref[敌人生成后] ref=63 max=3024 holders=63 b=64 p=210
+[122.0s] 池ref[敌人GetOrCreatPool#-6948] ref=64 max=3072 holders=64 b=64 p=210
+[122.3s] DMG E -9
+[123.2s] 池ref[敌人GetOrCreatPool#-6836] ref=65 max=3120 holders=65 b=56 p=218
+[123.3s] DMG E -9
+[123.4s] 敌人生成
+[123.4s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=59 p=215
+[123.4s] 敌人生成
+[123.4s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=59 p=215
+[123.4s] 池ref[敌人GetOrCreatPool#-6976] ref=66 max=3168 holders=66 b=59 p=215
+[124.3s] 敌人死亡
+[124.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=42 p=232
+[124.3s] 池ref[敌人OnDestroy释池前#-6808] ref=66 max=3168 holders=66 b=41 p=233
+[124.3s] 池ref[敌人OnDestroy释池后#-6808] ref=65 max=3120 holders=65 b=41 p=233
+[124.3s] DMG E -9
+[124.8s] 敌人生成
+[124.8s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=33 p=241
+[124.8s] 敌人生成
+[124.8s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=33 p=241
+[124.8s] 池ref[敌人GetOrCreatPool#-7004] ref=66 max=3168 holders=66 b=32 p=242
+[124.8s] 池ref[敌人GetOrCreatPool#-7018] ref=67 max=3216 holders=67 b=33 p=241
+[124.9s] 池 Bullet b=35 p=239 ref=67 max=3216 holders=67
+[124.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[124.9s] MEM 周期 m=3.8M d+1.7M h=6.5M u=2.7M r=149.8M d+6.0M a=60.3M ur=89.6M g=0B gc=3.8M d+1.7M
+[124.9s] GC 周期 g0=49 d30 g1=49 d30 g2=49 d30
+[125.1s] 池ref[敌人GetOrCreatPool#-6906] ref=68 max=3264 holders=68 b=34 p=240
+[125.3s] DMG E -9
+[125.5s] 敌人死亡
+[125.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=68 max=3264 holders=68 b=34 p=240
+[125.5s] 池ref[敌人OnDestroy释池前#-6248] ref=68 max=3264 holders=68 b=33 p=241
+[125.5s] 池ref[敌人OnDestroy释池后#-6248] ref=67 max=3216 holders=67 b=33 p=241
+[125.6s] 敌人死亡
+[125.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=33 p=241
+[125.6s] 池ref[敌人OnDestroy释池前#-6570] ref=67 max=3216 holders=67 b=31 p=243
+[125.6s] 池ref[敌人OnDestroy释池后#-6570] ref=66 max=3168 holders=66 b=31 p=243
+[125.6s] 敌人死亡
+[125.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=31 p=243
+[125.6s] 池ref[敌人OnDestroy释池前#-6584] ref=66 max=3168 holders=66 b=29 p=245
+[125.6s] 池ref[敌人OnDestroy释池后#-6584] ref=65 max=3120 holders=65 b=29 p=245
+[126.2s] 敌人生成
+[126.2s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=34 p=240
+[126.2s] 敌人生成
+[126.2s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=34 p=240
+[126.2s] 池ref[敌人GetOrCreatPool#-7032] ref=66 max=3168 holders=66 b=35 p=239
+[126.4s] DMG E -9
+[126.4s] 池ref[敌人GetOrCreatPool#-6920] ref=67 max=3216 holders=67 b=40 p=234
+[126.5s] 敌人死亡
+[126.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=40 p=234
+[126.5s] 池ref[敌人OnDestroy释池前#-6752] ref=67 max=3216 holders=67 b=37 p=237
+[126.5s] 池ref[敌人OnDestroy释池后#-6752] ref=66 max=3168 holders=66 b=37 p=237
+[127.4s] DMG E -9
+[127.4s] 敌人死亡
+[127.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=53 p=221
+[127.4s] 池ref[敌人OnDestroy释池前#-6822] ref=66 max=3168 holders=66 b=50 p=224
+[127.4s] 池ref[敌人OnDestroy释池后#-6822] ref=65 max=3120 holders=65 b=50 p=224
+[127.6s] 敌人死亡
+[127.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=52 p=222
+[127.6s] 池ref[敌人OnDestroy释池前#-6234] ref=65 max=3120 holders=65 b=50 p=224
+[127.6s] 池ref[敌人OnDestroy释池后#-6234] ref=64 max=3072 holders=64 b=50 p=224
+[127.6s] 敌人生成
+[127.6s] 池ref[敌人生成后] ref=64 max=3072 holders=64 b=49 p=225
+[127.6s] 敌人生成
+[127.6s] 池ref[敌人生成后] ref=64 max=3072 holders=64 b=49 p=225
+[127.6s] 池ref[敌人GetOrCreatPool#-7060] ref=65 max=3120 holders=65 b=49 p=225
+[127.6s] 池ref[敌人GetOrCreatPool#-7074] ref=66 max=3168 holders=66 b=50 p=224
+[128.1s] 敌人死亡
+[128.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=51 p=223
+[128.1s] 池ref[敌人OnDestroy释池前#-6906] ref=66 max=3168 holders=66 b=49 p=225
+[128.1s] 池ref[敌人OnDestroy释池后#-6906] ref=65 max=3120 holders=65 b=49 p=225
+[128.4s] DMG E -9
+[129.0s] 敌人生成
+[129.0s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=47 p=227
+[129.0s] 敌人生成
+[129.0s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=47 p=227
+[129.0s] 池ref[敌人GetOrCreatPool#-7102] ref=66 max=3168 holders=66 b=48 p=226
+[129.2s] 池ref[敌人GetOrCreatPool#-7088] ref=67 max=3216 holders=67 b=52 p=222
+[129.2s] 池ref[敌人GetOrCreatPool#-6962] ref=68 max=3264 holders=68 b=55 p=219
+[129.4s] DMG E -9
+[129.6s] 敌人死亡
+[129.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=68 max=3264 holders=68 b=62 p=212
+[129.6s] 池ref[敌人OnDestroy释池前#-6710] ref=68 max=3264 holders=68 b=61 p=213
+[129.6s] 池ref[敌人OnDestroy释池后#-6710] ref=67 max=3216 holders=67 b=61 p=213
+[129.7s] 敌人死亡
+[129.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=60 p=214
+[129.7s] 池ref[敌人OnDestroy释池前#-6598] ref=67 max=3216 holders=67 b=59 p=215
+[129.7s] 池ref[敌人OnDestroy释池后#-6598] ref=66 max=3168 holders=66 b=59 p=215
+[129.9s] 池 Bullet b=59 p=215 ref=66 max=3168 holders=66
+[129.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[129.9s] MEM 周期 m=3.7M d+1.7M h=6.5M u=2.7M r=149.8M d+6.0M a=60.3M ur=89.5M g=0B gc=3.7M d+1.7M
+[129.9s] GC 周期 g0=50 d31 g1=50 d31 g2=50 d31
+[130.4s] DMG E -10
+[130.4s] 敌人生成
+[130.4s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=63 p=211
+[130.4s] 敌人生成
+[130.4s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=63 p=211
+[130.4s] 池ref[敌人GetOrCreatPool#-6990] ref=67 max=3216 holders=67 b=63 p=211
+[130.4s] 池ref[敌人GetOrCreatPool#-7116] ref=68 max=3264 holders=68 b=63 p=211
+[130.5s] 敌人死亡
+[130.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=68 max=3264 holders=68 b=68 p=206
+[130.5s] 池ref[敌人OnDestroy释池前#-6416] ref=68 max=3264 holders=68 b=65 p=209
+[130.5s] 池ref[敌人OnDestroy释池后#-6416] ref=67 max=3216 holders=67 b=65 p=209
+[131.4s] DMG E -9
+[131.8s] 敌人生成
+[131.8s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=49 p=225
+[131.8s] 敌人生成
+[131.8s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=49 p=225
+[132.0s] 池ref[敌人GetOrCreatPool#-7046] ref=68 max=3264 holders=68 b=52 p=222
+[132.3s] 池ref[敌人GetOrCreatPool#-7144] ref=69 max=3312 holders=69 b=57 p=217
+[132.4s] DMG E -9
+[132.8s] 敌人死亡
+[132.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=49 p=225
+[132.8s] 池ref[敌人OnDestroy释池前#-6990] ref=69 max=3312 holders=69 b=47 p=227
+[132.8s] 池ref[敌人OnDestroy释池后#-6990] ref=68 max=3264 holders=68 b=47 p=227
+[133.0s] 敌人死亡
+[133.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=68 max=3264 holders=68 b=48 p=226
+[133.0s] 池ref[敌人OnDestroy释池前#-7004] ref=68 max=3264 holders=68 b=47 p=227
+[133.0s] 池ref[敌人OnDestroy释池后#-7004] ref=67 max=3216 holders=67 b=47 p=227
+[133.2s] 敌人死亡
+[133.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=54 p=220
+[133.2s] 敌人死亡
+[133.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=53 p=221
+[133.2s] 池ref[友军OnDestroy释池前#-4120] ref=67 max=3216 holders=67 b=52 p=222
+[133.2s] 池ref[友军OnDestroy释池后#-4120] ref=66 max=3168 holders=66 b=52 p=222
+[133.2s] 池ref[敌人OnDestroy释池前#-6892] ref=66 max=3168 holders=66 b=52 p=222
+[133.2s] 池ref[敌人OnDestroy释池后#-6892] ref=65 max=3120 holders=65 b=52 p=222
+[133.2s] 友军生成
+[133.2s] 池ref[友军生成后] ref=65 max=3120 holders=65 b=52 p=222
+[133.2s] 池ref[友军GetOrCreatPool#-7172] ref=66 max=3168 holders=66 b=52 p=222
+[133.2s] 敌人生成
+[133.2s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=50 p=224
+[133.2s] 敌人生成
+[133.2s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=50 p=224
+[133.2s] 池ref[敌人GetOrCreatPool#-7200] ref=67 max=3216 holders=67 b=50 p=224
+[133.3s] 敌人死亡
+[133.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=49 p=225
+[133.3s] 池ref[敌人OnDestroy释池前#-6472] ref=67 max=3216 holders=67 b=46 p=228
+[133.3s] 池ref[敌人OnDestroy释池后#-6472] ref=66 max=3168 holders=66 b=46 p=228
+[133.4s] 敌人死亡
+[133.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=44 p=230
+[133.4s] 池ref[友军OnDestroy释池前#-2692] ref=66 max=3168 holders=66 b=43 p=231
+[133.4s] 池ref[友军OnDestroy释池后#-2692] ref=65 max=3120 holders=65 b=43 p=231
+[133.4s] DMG E -10
+[133.4s] 敌人死亡
+[133.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=44 p=230
+[133.4s] 池ref[敌人OnDestroy释池前#-6836] ref=65 max=3120 holders=65 b=43 p=231
+[133.4s] 池ref[敌人OnDestroy释池后#-6836] ref=64 max=3072 holders=64 b=43 p=231
+[133.4s] 池ref[敌人GetOrCreatPool#-7186] ref=65 max=3120 holders=65 b=44 p=230
+[133.5s] 敌人死亡
+[133.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=44 p=230
+[133.5s] 池ref[友军OnDestroy释池前#-2860] ref=65 max=3120 holders=65 b=42 p=232
+[133.5s] 池ref[友军OnDestroy释池后#-2860] ref=64 max=3072 holders=64 b=42 p=232
+[134.2s] 敌人死亡
+[134.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=64 max=3072 holders=64 b=44 p=230
+[134.2s] 池ref[敌人OnDestroy释池前#-6458] ref=64 max=3072 holders=64 b=43 p=231
+[134.2s] 池ref[敌人OnDestroy释池后#-6458] ref=63 max=3024 holders=63 b=43 p=231
+[134.2s] 敌人死亡
+[134.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=63 max=3024 holders=63 b=41 p=233
+[134.2s] 池ref[敌人OnDestroy释池前#-7032] ref=63 max=3024 holders=63 b=40 p=234
+[134.2s] 池ref[敌人OnDestroy释池后#-7032] ref=62 max=2976 holders=62 b=40 p=234
+[134.4s] DMG E -9
+[134.6s] 敌人生成
+[134.6s] 池ref[敌人生成后] ref=62 max=2976 holders=62 b=44 p=230
+[134.6s] 敌人生成
+[134.6s] 池ref[敌人生成后] ref=62 max=2976 holders=62 b=44 p=230
+[134.6s] 池ref[敌人GetOrCreatPool#-7214] ref=63 max=3024 holders=63 b=45 p=229
+[134.7s] 池ref[敌人GetOrCreatPool#-7228] ref=64 max=3072 holders=64 b=49 p=225
+[134.9s] 池 Bullet b=46 p=228 ref=64 max=3072 holders=64
+[134.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[134.9s] MEM 周期 m=3.8M d+1.7M h=6.5M u=2.7M r=149.8M d+6.0M a=60.3M ur=89.5M g=0B gc=3.8M d+1.7M
+[134.9s] GC 周期 g0=51 d32 g1=51 d32 g2=51 d32
+[135.0s] 敌人死亡
+[135.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=64 max=3072 holders=64 b=47 p=227
+[135.0s] 池ref[敌人OnDestroy释池前#-6612] ref=64 max=3072 holders=64 b=46 p=228
+[135.0s] 池ref[敌人OnDestroy释池后#-6612] ref=63 max=3024 holders=63 b=46 p=228
+[135.2s] 敌人死亡
+[135.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=63 max=3024 holders=63 b=58 p=216
+[135.2s] 池ref[敌人OnDestroy释池前#-6766] ref=63 max=3024 holders=63 b=56 p=218
+[135.2s] 池ref[敌人OnDestroy释池后#-6766] ref=62 max=2976 holders=62 b=56 p=218
+[135.3s] 池ref[敌人GetOrCreatPool#-7130] ref=63 max=3024 holders=63 b=64 p=210
+[135.4s] DMG E -9
+[135.7s] 友军生成
+[135.7s] 池ref[友军生成后] ref=63 max=3024 holders=63 b=68 p=206
+[135.7s] 友军生成
+[135.7s] 池ref[友军生成后] ref=63 max=3024 holders=63 b=68 p=206
+[135.7s] 池ref[友军GetOrCreatPool#-7242] ref=64 max=3072 holders=64 b=68 p=206
+[135.7s] 池ref[友军GetOrCreatPool#-7256] ref=65 max=3120 holders=65 b=69 p=205
+[136.0s] 敌人生成
+[136.0s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=76 p=198
+[136.0s] 敌人生成
+[136.0s] 池ref[敌人生成后] ref=65 max=3120 holders=65 b=76 p=198
+[136.0s] 池ref[敌人GetOrCreatPool#-7284] ref=66 max=3168 holders=66 b=76 p=198
+[136.2s] 池ref[敌人GetOrCreatPool#-7270] ref=67 max=3216 holders=67 b=72 p=202
+[136.4s] DMG E -9
+[136.9s] 敌人死亡
+[136.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=70 p=204
+[136.9s] 池ref[敌人OnDestroy释池前#-6934] ref=67 max=3216 holders=67 b=69 p=205
+[136.9s] 池ref[敌人OnDestroy释池后#-6934] ref=66 max=3168 holders=66 b=69 p=205
+[137.4s] DMG E -10
+[137.4s] 敌人生成
+[137.4s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=70 p=204
+[137.4s] 敌人生成
+[137.4s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=70 p=204
+[137.4s] 池ref[敌人GetOrCreatPool#-7312] ref=67 max=3216 holders=67 b=70 p=204
+[137.6s] 池ref[敌人GetOrCreatPool#-7158] ref=68 max=3264 holders=68 b=77 p=197
+[138.4s] DMG E -10
+[138.5s] 敌人死亡
+[138.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=68 max=3264 holders=68 b=69 p=205
+[138.5s] 池ref[敌人OnDestroy释池前#-6444] ref=68 max=3264 holders=68 b=68 p=206
+[138.5s] 池ref[敌人OnDestroy释池后#-6444] ref=67 max=3216 holders=67 b=68 p=206
+[138.5s] 敌人死亡
+[138.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=69 p=205
+[138.5s] 池ref[敌人OnDestroy释池前#-6864] ref=67 max=3216 holders=67 b=67 p=207
+[138.5s] 池ref[敌人OnDestroy释池后#-6864] ref=66 max=3168 holders=66 b=67 p=207
+[138.8s] 敌人生成
+[138.8s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=67 p=207
+[138.8s] 敌人生成
+[138.8s] 池ref[敌人生成后] ref=66 max=3168 holders=66 b=67 p=207
+[138.8s] 池ref[敌人GetOrCreatPool#-7326] ref=67 max=3216 holders=67 b=67 p=207
+[139.0s] 敌人死亡
+[139.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=74 p=200
+[139.0s] 池ref[敌人OnDestroy释池前#-6976] ref=67 max=3216 holders=67 b=73 p=201
+[139.0s] 池ref[敌人OnDestroy释池后#-6976] ref=66 max=3168 holders=66 b=73 p=201
+[139.0s] 池ref[敌人GetOrCreatPool#-7340] ref=67 max=3216 holders=67 b=73 p=201
+[139.4s] 敌人死亡
+[139.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=67 max=3216 holders=67 b=47 p=227
+[139.4s] 池ref[敌人OnDestroy释池前#-6220] ref=67 max=3216 holders=67 b=46 p=228
+[139.4s] 池ref[敌人OnDestroy释池后#-6220] ref=66 max=3168 holders=66 b=46 p=228
+[139.4s] DMG E -9
+[139.7s] 敌人死亡
+[139.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=66 max=3168 holders=66 b=55 p=219
+[139.7s] 池ref[敌人OnDestroy释池前#-7046] ref=66 max=3168 holders=66 b=54 p=220
+[139.7s] 池ref[敌人OnDestroy释池后#-7046] ref=65 max=3120 holders=65 b=54 p=220
+[139.8s] 敌人死亡
+[139.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=59 p=215
+[139.8s] 池ref[敌人OnDestroy释池前#-6696] ref=65 max=3120 holders=65 b=58 p=216
+[139.8s] 池ref[敌人OnDestroy释池后#-6696] ref=64 max=3072 holders=64 b=58 p=216
+[139.9s] 池 Bullet b=61 p=213 ref=64 max=3072 holders=64
+[139.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[139.9s] MEM 周期 m=4.2M d+2.1M h=6.5M u=2.3M r=149.8M d+6.0M a=60.3M ur=89.5M g=0B gc=4.2M d+2.1M
+[139.9s] GC 周期 g0=51 d32 g1=51 d32 g2=51 d32
+[140.2s] 敌人生成
+[140.2s] 池ref[敌人生成后] ref=64 max=3072 holders=64 b=50 p=224
+[140.2s] 敌人生成
+[140.2s] 池ref[敌人生成后] ref=64 max=3072 holders=64 b=50 p=224
+[140.3s] 池ref[敌人GetOrCreatPool#-7368] ref=65 max=3120 holders=65 b=50 p=224
+[140.3s] 敌人死亡
+[140.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=65 max=3120 holders=65 b=49 p=225
+[140.3s] 池ref[敌人OnDestroy释池前#-6318] ref=65 max=3120 holders=65 b=46 p=228
+[140.3s] 池ref[敌人OnDestroy释池后#-6318] ref=64 max=3072 holders=64 b=46 p=228
+[140.5s] DMG E -9
+[140.9s] 敌人死亡
+[140.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=64 max=3072 holders=64 b=57 p=217
+[140.9s] 池ref[敌人OnDestroy释池前#-7200] ref=64 max=3072 holders=64 b=56 p=218
+[140.9s] 池ref[敌人OnDestroy释池后#-7200] ref=63 max=3024 holders=63 b=56 p=218
+[141.1s] 敌人死亡
+[141.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=63 max=3024 holders=63 b=60 p=214
+[141.1s] 池ref[敌人OnDestroy释池前#-7144] ref=63 max=3024 holders=63 b=59 p=215
+[141.1s] 池ref[敌人OnDestroy释池后#-7144] ref=62 max=2976 holders=62 b=59 p=215
+[141.1s] 敌人死亡
+[141.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=59 p=215
+[141.1s] 池ref[友军OnDestroy释池前#-5898] ref=62 max=2976 holders=62 b=58 p=216
+[141.1s] 池ref[友军OnDestroy释池后#-5898] ref=61 max=2928 holders=61 b=58 p=216
+[141.1s] 友军生成
+[141.1s] 池ref[友军生成后] ref=61 max=2928 holders=61 b=58 p=216
+[141.1s] 池ref[友军GetOrCreatPool#-7382] ref=62 max=2976 holders=62 b=58 p=216
+[141.4s] 敌人死亡
+[141.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=57 p=217
+[141.4s] 池ref[友军OnDestroy释池前#-2622] ref=62 max=2976 holders=62 b=56 p=218
+[141.4s] 池ref[友军OnDestroy释池后#-2622] ref=61 max=2928 holders=61 b=56 p=218
+[141.5s] DMG E -8
+[141.5s] 敌人死亡
+[141.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=61 max=2928 holders=61 b=57 p=217
+[141.5s] 池ref[敌人OnDestroy释池前#-6738] ref=61 max=2928 holders=61 b=55 p=219
+[141.5s] 池ref[敌人OnDestroy释池后#-6738] ref=60 max=2880 holders=60 b=55 p=219
+[141.6s] 敌人生成
+[141.6s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=51 p=223
+[141.6s] 敌人生成
+[141.6s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=51 p=223
+[141.7s] 池ref[敌人GetOrCreatPool#-7410] ref=61 max=2928 holders=61 b=52 p=222
+[141.8s] 敌人死亡
+[141.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=61 max=2928 holders=61 b=58 p=216
+[141.8s] 池ref[敌人OnDestroy释池前#-7186] ref=61 max=2928 holders=61 b=56 p=218
+[141.8s] 池ref[敌人OnDestroy释池后#-7186] ref=60 max=2880 holders=60 b=56 p=218
+[141.8s] 敌人死亡
+[141.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=60 max=2880 holders=60 b=56 p=218
+[141.8s] 池ref[友军OnDestroy释池前#-4190] ref=60 max=2880 holders=60 b=55 p=219
+[141.8s] 池ref[友军OnDestroy释池后#-4190] ref=59 max=2832 holders=59 b=55 p=219
+[142.0s] 池ref[敌人GetOrCreatPool#-7396] ref=60 max=2880 holders=60 b=61 p=213
+[142.4s] 敌人死亡
+[142.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=60 max=2880 holders=60 b=56 p=218
+[142.4s] 池ref[敌人OnDestroy释池前#-6304] ref=60 max=2880 holders=60 b=54 p=220
+[142.4s] 池ref[敌人OnDestroy释池后#-6304] ref=59 max=2832 holders=59 b=54 p=220
+[142.5s] DMG E -10
+[142.5s] 敌人死亡
+[142.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=59 max=2832 holders=59 b=55 p=219
+[142.5s] 池ref[敌人OnDestroy释池前#-6374] ref=59 max=2832 holders=59 b=54 p=220
+[142.5s] 池ref[敌人OnDestroy释池后#-6374] ref=58 max=2784 holders=58 b=54 p=220
+[143.0s] 敌人死亡
+[143.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=58 max=2784 holders=58 b=51 p=223
+[143.0s] 池ref[敌人OnDestroy释池前#-7018] ref=58 max=2784 holders=58 b=50 p=224
+[143.0s] 池ref[敌人OnDestroy释池后#-7018] ref=57 max=2736 holders=57 b=50 p=224
+[143.0s] 敌人生成
+[143.0s] 池ref[敌人生成后] ref=57 max=2736 holders=57 b=50 p=224
+[143.0s] 敌人生成
+[143.0s] 池ref[敌人生成后] ref=57 max=2736 holders=57 b=50 p=224
+[143.1s] 池ref[敌人GetOrCreatPool#-7424] ref=58 max=2784 holders=58 b=49 p=225
+[143.5s] DMG E -9
+[143.6s] 敌人死亡
+[143.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=58 max=2784 holders=58 b=56 p=218
+[143.6s] 池ref[敌人OnDestroy释池前#-6682] ref=58 max=2784 holders=58 b=55 p=219
+[143.6s] 池ref[敌人OnDestroy释池后#-6682] ref=57 max=2736 holders=57 b=55 p=219
+[143.6s] 友军生成
+[143.6s] 池ref[友军生成后] ref=57 max=2736 holders=57 b=59 p=215
+[143.6s] 友军生成
+[143.6s] 池ref[友军生成后] ref=57 max=2736 holders=57 b=59 p=215
+[143.7s] 池ref[友军GetOrCreatPool#-7452] ref=58 max=2784 holders=58 b=60 p=214
+[143.7s] 池ref[友军GetOrCreatPool#-7466] ref=59 max=2832 holders=59 b=61 p=213
+[143.9s] 池ref[敌人GetOrCreatPool#-7298] ref=60 max=2880 holders=60 b=59 p=215
+[144.4s] 敌人生成
+[144.4s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=50 p=224
+[144.4s] 敌人生成
+[144.4s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=50 p=224
+[144.5s] 池ref[敌人GetOrCreatPool#-7480] ref=61 max=2928 holders=61 b=51 p=223
+[144.5s] DMG E -9
+[144.9s] 敌人死亡
+[144.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=61 max=2928 holders=61 b=54 p=220
+[144.9s] 池ref[敌人OnDestroy释池前#-6920] ref=61 max=2928 holders=61 b=53 p=221
+[144.9s] 池ref[敌人OnDestroy释池后#-6920] ref=60 max=2880 holders=60 b=53 p=221
+[144.9s] 池 Bullet b=53 p=221 ref=60 max=2880 holders=60
+[144.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[144.9s] MEM 周期 m=3.8M d+1.8M h=6.5M u=2.6M r=149.8M d+6.0M a=60.3M ur=89.6M g=0B gc=3.8M d+1.8M
+[144.9s] GC 周期 g0=53 d34 g1=53 d34 g2=53 d34
+[145.4s] 池ref[敌人GetOrCreatPool#-7354] ref=61 max=2928 holders=61 b=49 p=225
+[145.6s] DMG E -9
+[145.8s] 敌人生成
+[145.8s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=67 p=207
+[145.8s] 敌人生成
+[145.8s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=67 p=207
+[145.9s] 池ref[敌人GetOrCreatPool#-7522] ref=62 max=2976 holders=62 b=67 p=207
+[145.9s] 敌人死亡
+[145.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=67 p=207
+[145.9s] 池ref[敌人OnDestroy释池前#-7340] ref=62 max=2976 holders=62 b=66 p=208
+[145.9s] 池ref[敌人OnDestroy释池后#-7340] ref=61 max=2928 holders=61 b=66 p=208
+[146.6s] DMG E -10
+[146.9s] 敌人死亡
+[146.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=61 max=2928 holders=61 b=79 p=195
+[146.9s] 池ref[敌人OnDestroy释池前#-7368] ref=61 max=2928 holders=61 b=78 p=196
+[146.9s] 池ref[敌人OnDestroy释池后#-7368] ref=60 max=2880 holders=60 b=78 p=196
+[147.2s] 敌人生成
+[147.2s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=84 p=190
+[147.2s] 敌人生成
+[147.2s] 池ref[敌人生成后] ref=60 max=2880 holders=60 b=84 p=190
+[147.5s] 池ref[敌人GetOrCreatPool#-7438] ref=61 max=2928 holders=61 b=84 p=190
+[147.5s] 敌人死亡
+[147.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=61 max=2928 holders=61 b=90 p=184
+[147.5s] 池ref[敌人OnDestroy释池前#-7410] ref=61 max=2928 holders=61 b=88 p=186
+[147.5s] 池ref[敌人OnDestroy释池后#-7410] ref=60 max=2880 holders=60 b=88 p=186
+[147.5s] 池ref[敌人GetOrCreatPool#-7550] ref=61 max=2928 holders=61 b=89 p=185
+[147.6s] DMG E -9
+[147.7s] 池ref[敌人GetOrCreatPool#-7536] ref=62 max=2976 holders=62 b=84 p=190
+[147.7s] 敌人死亡
+[147.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=84 p=190
+[147.7s] 池ref[敌人OnDestroy释池前#-7228] ref=62 max=2976 holders=62 b=83 p=191
+[147.7s] 池ref[敌人OnDestroy释池后#-7228] ref=61 max=2928 holders=61 b=83 p=191
+[148.6s] DMG E -9
+[148.6s] 敌人生成
+[148.6s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=77 p=197
+[148.6s] 敌人生成
+[148.6s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=77 p=197
+[148.8s] 池ref[敌人GetOrCreatPool#-7578] ref=62 max=2976 holders=62 b=72 p=202
+[148.8s] 敌人死亡
+[148.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=62 max=2976 holders=62 b=70 p=204
+[148.8s] 池ref[敌人OnDestroy释池前#-7438] ref=62 max=2976 holders=62 b=69 p=205
+[148.8s] 池ref[敌人OnDestroy释池后#-7438] ref=61 max=2928 holders=61 b=69 p=205
+[149.6s] DMG E -9
+[149.9s] 池 Bullet b=54 p=220 ref=61 max=2928 holders=61
+[149.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[149.9s] MEM 周期 m=4.1M d+2.0M h=6.5M u=2.4M r=149.8M d+6.0M a=60.3M ur=89.6M g=0B gc=4.1M d+2.0M
+[149.9s] GC 周期 g0=53 d34 g1=53 d34 g2=53 d34
+[150.0s] 敌人生成
+[150.0s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=52 p=222
+[150.0s] 敌人生成
+[150.0s] 池ref[敌人生成后] ref=61 max=2928 holders=61 b=52 p=222
+[150.1s] 池ref[敌人GetOrCreatPool#-7592] ref=62 max=2976 holders=62 b=52 p=222
+[150.1s] 池ref[敌人GetOrCreatPool#-7606] ref=63 max=3024 holders=63 b=53 p=221
+[150.4s] 敌人死亡
+[150.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=63 max=3024 holders=63 b=56 p=218
+[150.4s] 池ref[敌人OnDestroy释池前#-7354] ref=63 max=3024 holders=63 b=54 p=220
+[150.4s] 池ref[敌人OnDestroy释池后#-7354] ref=62 max=2976 holders=62 b=54 p=220
+[150.6s] DMG E -9
+[151.4s] 敌人生成
+[151.4s] 池ref[敌人生成后] ref=62 max=2976 holders=62 b=56 p=218
+[151.4s] 敌人生成
+[151.4s] 池ref[敌人生成后] ref=62 max=2976 holders=62 b=56 p=218
+[151.5s] 池ref[敌人GetOrCreatPool#-7620] ref=63 max=3024 holders=63 b=57 p=217
+[151.5s] 池ref[敌人GetOrCreatPool#-7634] ref=64 max=3072 holders=64 b=58 p=216
+[151.7s] DMG E -9
+[152.4s] 敌人死亡
+[152.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=64 max=3072 holders=64 b=65 p=209
+[152.4s] 池ref[敌人OnDestroy释池前#-6878] ref=64 max=3072 holders=64 b=64 p=210
+[152.4s] 池ref[敌人OnDestroy释池后#-6878] ref=63 max=3024 holders=63 b=64 p=210
+[152.7s] DMG E -9
+[152.9s] 敌人生成
+[152.9s] 池ref[敌人生成后] ref=63 max=3024 holders=63 b=69 p=205
+[152.9s] 敌人生成
+[152.9s] 池ref[敌人生成后] ref=63 max=3024 holders=63 b=69 p=205
+[152.9s] 池ref[敌人GetOrCreatPool#-7648] ref=64 max=3072 holders=64 b=69 p=205
+[152.9s] 池ref[敌人GetOrCreatPool#-7662] ref=65 max=3120 holders=65 b=70 p=204
+[153.5s] 池ref[敌人GetOrCreatPool#-7508] ref=66 max=3168 holders=66 b=83 p=191
+[153.6s] 池ref[敌人GetOrCreatPool#-7494] ref=67 max=3216 holders=67 b=86 p=188
+[153.7s] DMG E -9
+[154.3s] 敌人生成
+[154.3s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=111 p=163
+[154.3s] 敌人生成
+[154.3s] 池ref[敌人生成后] ref=67 max=3216 holders=67 b=111 p=163
+[154.5s] 池ref[敌人GetOrCreatPool#-7676] ref=68 max=3264 holders=68 b=113 p=161
+[154.6s] 池ref[敌人GetOrCreatPool#-7690] ref=69 max=3312 holders=69 b=114 p=160
+[154.7s] DMG E -9
+[154.9s] 池 Bullet b=118 p=156 ref=69 max=3312 holders=69
+[154.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[154.9s] MEM 周期 m=3.9M d+1.8M h=6.5M u=2.6M r=149.8M d+6.0M a=60.3M ur=89.6M g=0B gc=3.9M d+1.8M
+[154.9s] GC 周期 g0=54 d35 g1=54 d35 g2=54 d35
+[155.5s] 池ref[敌人GetOrCreatPool#-7564] ref=70 max=3360 holders=70 b=114 p=160
+[155.7s] 敌人生成
+[155.7s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=114 p=160
+[155.7s] 敌人生成
+[155.7s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=114 p=160
+[155.8s] DMG E -9
+[155.8s] 敌人死亡
+[155.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=115 p=159
+[155.8s] 池ref[敌人OnDestroy释池前#-7550] ref=70 max=3360 holders=70 b=114 p=160
+[155.8s] 池ref[敌人OnDestroy释池后#-7550] ref=69 max=3312 holders=69 b=114 p=160
+[156.8s] DMG E -9
+[157.1s] 敌人生成
+[157.1s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=87 p=187
+[157.1s] 敌人生成
+[157.1s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=87 p=187
+[157.1s] 池ref[敌人GetOrCreatPool#-7732] ref=70 max=3360 holders=70 b=86 p=188
+[157.4s] 敌人死亡
+[157.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=75 p=199
+[157.4s] 池ref[敌人OnDestroy释池前#-7564] ref=70 max=3360 holders=70 b=72 p=202
+[157.4s] 池ref[敌人OnDestroy释池后#-7564] ref=69 max=3312 holders=69 b=72 p=202
+[157.5s] 敌人死亡
+[157.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=69 p=205
+[157.5s] 池ref[敌人OnDestroy释池前#-7508] ref=69 max=3312 holders=69 b=68 p=206
+[157.5s] 池ref[敌人OnDestroy释池后#-7508] ref=68 max=3264 holders=68 b=68 p=206
+[157.8s] DMG E -9
+[157.9s] 池ref[敌人GetOrCreatPool#-7746] ref=69 max=3312 holders=69 b=66 p=208
+[158.0s] 敌人死亡
+[158.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=70 p=204
+[158.0s] 池ref[敌人OnDestroy释池前#-7690] ref=69 max=3312 holders=69 b=69 p=205
+[158.0s] 池ref[敌人OnDestroy释池后#-7690] ref=68 max=3264 holders=68 b=69 p=205
+[158.2s] 池ref[敌人GetOrCreatPool#-7704] ref=69 max=3312 holders=69 b=69 p=205
+[158.5s] 敌人生成
+[158.5s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=61 p=213
+[158.5s] 敌人生成
+[158.5s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=61 p=213
+[158.7s] 敌人死亡
+[158.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=53 p=221
+[158.7s] 池ref[友军OnDestroy释池前#-6192] ref=69 max=3312 holders=69 b=52 p=222
+[158.7s] 池ref[友军OnDestroy释池后#-6192] ref=68 max=3264 holders=68 b=52 p=222
+[158.7s] 友军生成
+[158.7s] 池ref[友军生成后] ref=68 max=3264 holders=68 b=52 p=222
+[158.7s] 池ref[友军GetOrCreatPool#-7788] ref=69 max=3312 holders=69 b=53 p=221
+[158.8s] DMG E -8
+[159.8s] DMG E -9
+[159.8s] 敌人死亡
+[159.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=40 p=234
+[159.8s] 池ref[敌人OnDestroy释池前#-7284] ref=69 max=3312 holders=69 b=39 p=235
+[159.8s] 池ref[敌人OnDestroy释池后#-7284] ref=68 max=3264 holders=68 b=39 p=235
+[159.9s] 敌人生成
+[159.9s] 池ref[敌人生成后] ref=68 max=3264 holders=68 b=40 p=234
+[159.9s] 敌人生成
+[159.9s] 池ref[敌人生成后] ref=68 max=3264 holders=68 b=40 p=234
+[159.9s] 池ref[敌人GetOrCreatPool#-7816] ref=69 max=3312 holders=69 b=40 p=234
+[159.9s] 池 Bullet b=41 p=233 ref=69 max=3312 holders=69
+[159.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[159.9s] MEM 周期 m=4.2M d+2.1M h=6.5M u=2.3M r=149.8M d+6.0M a=60.3M ur=89.6M g=0B gc=4.2M d+2.1M
+[159.9s] GC 周期 g0=54 d35 g1=54 d35 g2=54 d35
+[160.8s] DMG E -9
+[160.9s] 池ref[敌人GetOrCreatPool#-7718] ref=70 max=3360 holders=70 b=64 p=210
+[161.3s] 敌人生成
+[161.3s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=78 p=196
+[161.3s] 敌人生成
+[161.3s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=78 p=196
+[161.3s] 池ref[敌人GetOrCreatPool#-7844] ref=71 max=3408 holders=71 b=77 p=197
+[161.3s] 敌人死亡
+[161.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=77 p=197
+[161.3s] 池ref[敌人OnDestroy释池前#-7130] ref=71 max=3408 holders=71 b=76 p=198
+[161.3s] 池ref[敌人OnDestroy释池后#-7130] ref=70 max=3360 holders=70 b=76 p=198
+[161.8s] DMG E -9
+[162.2s] 池ref[敌人GetOrCreatPool#-7760] ref=71 max=3408 holders=71 b=90 p=184
+[162.7s] 敌人生成
+[162.7s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=100 p=174
+[162.7s] 敌人生成
+[162.7s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=100 p=174
+[162.7s] 池ref[敌人GetOrCreatPool#-7858] ref=72 max=3456 holders=72 b=100 p=174
+[162.8s] DMG E -9
+[162.8s] 敌人死亡
+[162.8s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=103 p=171
+[162.8s] 池ref[敌人OnDestroy释池前#-6948] ref=72 max=3456 holders=72 b=102 p=172
+[162.8s] 池ref[敌人OnDestroy释池后#-6948] ref=71 max=3408 holders=71 b=102 p=172
+[162.8s] 池ref[敌人GetOrCreatPool#-7872] ref=72 max=3456 holders=72 b=102 p=172
+[163.2s] 池ref[敌人GetOrCreatPool#-7774] ref=73 max=3504 holders=73 b=118 p=156
+[163.5s] 敌人死亡
+[163.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=120 p=154
+[163.5s] 池ref[友军OnDestroy释池前#-2944] ref=73 max=3504 holders=73 b=117 p=157
+[163.5s] 池ref[友军OnDestroy释池后#-2944] ref=72 max=3456 holders=72 b=117 p=157
+[163.5s] 友军生成
+[163.5s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=117 p=157
+[163.5s] 池ref[友军GetOrCreatPool#-7886] ref=73 max=3504 holders=73 b=118 p=156
+[163.5s] 敌人死亡
+[163.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=120 p=154
+[163.5s] 池ref[友军OnDestroy释池前#-2804] ref=73 max=3504 holders=73 b=119 p=155
+[163.5s] 池ref[友军OnDestroy释池后#-2804] ref=72 max=3456 holders=72 b=119 p=155
+[163.6s] 敌人死亡
+[163.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=120 p=154
+[163.6s] 池ref[友军OnDestroy释池前#-6108] ref=72 max=3456 holders=72 b=117 p=157
+[163.6s] 池ref[友军OnDestroy释池后#-6108] ref=71 max=3408 holders=71 b=117 p=157
+[163.8s] DMG E -8
+[164.0s] 敌人死亡
+[164.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=108 p=166
+[164.0s] 池ref[敌人OnDestroy释池前#-7760] ref=71 max=3408 holders=71 b=107 p=167
+[164.0s] 池ref[敌人OnDestroy释池后#-7760] ref=70 max=3360 holders=70 b=107 p=167
+[164.1s] 敌人生成
+[164.1s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=106 p=168
+[164.1s] 敌人生成
+[164.1s] 池ref[敌人生成后] ref=70 max=3360 holders=70 b=106 p=168
+[164.1s] 池ref[敌人GetOrCreatPool#-7900] ref=71 max=3408 holders=71 b=104 p=170
+[164.2s] 敌人死亡
+[164.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=104 p=170
+[164.2s] 池ref[友军OnDestroy释池前#-1348] ref=71 max=3408 holders=71 b=102 p=172
+[164.2s] 池ref[友军OnDestroy释池后#-1348] ref=70 max=3360 holders=70 b=102 p=172
+[164.8s] DMG E -8
+[164.9s] 敌人死亡
+[164.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=100 p=174
+[164.9s] 池ref[友军OnDestroy释池前#-1684] ref=70 max=3360 holders=70 b=98 p=176
+[164.9s] 池ref[友军OnDestroy释池后#-1684] ref=69 max=3312 holders=69 b=98 p=176
+[164.9s] 池 Bullet b=94 p=180 ref=69 max=3312 holders=69
+[164.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[164.9s] MEM 周期 m=4.2M d+2.1M h=6.5M u=2.3M r=149.8M d+6.0M a=60.3M ur=89.5M g=0B gc=4.2M d+2.1M
+[164.9s] GC 周期 g0=55 d36 g1=55 d36 g2=55 d36
+[164.9s] 敌人死亡
+[164.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=88 p=186
+[164.9s] 池ref[敌人OnDestroy释池前#-7704] ref=69 max=3312 holders=69 b=84 p=190
+[164.9s] 池ref[敌人OnDestroy释池后#-7704] ref=68 max=3264 holders=68 b=84 p=190
+[165.3s] 池ref[敌人GetOrCreatPool#-7802] ref=69 max=3312 holders=69 b=72 p=202
+[165.5s] 敌人生成
+[165.5s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=73 p=201
+[165.5s] 敌人生成
+[165.5s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=73 p=201
+[165.8s] DMG E -9
+[165.9s] 敌人死亡
+[165.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=84 p=190
+[165.9s] 池ref[友军OnDestroy释池前#-6038] ref=69 max=3312 holders=69 b=83 p=191
+[165.9s] 池ref[友军OnDestroy释池后#-6038] ref=68 max=3264 holders=68 b=83 p=191
+[166.0s] 友军生成
+[166.0s] 池ref[友军生成后] ref=68 max=3264 holders=68 b=72 p=202
+[166.0s] 友军生成
+[166.0s] 池ref[友军生成后] ref=68 max=3264 holders=68 b=72 p=202
+[166.0s] 池ref[友军GetOrCreatPool#-7956] ref=69 max=3312 holders=69 b=73 p=201
+[166.0s] 池ref[友军GetOrCreatPool#-7970] ref=70 max=3360 holders=70 b=74 p=200
+[166.0s] 敌人死亡
+[166.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=70 p=204
+[166.0s] 池ref[友军OnDestroy释池前#-2608] ref=70 max=3360 holders=70 b=69 p=205
+[166.0s] 池ref[友军OnDestroy释池后#-2608] ref=69 max=3312 holders=69 b=69 p=205
+[166.6s] 池ref[敌人GetOrCreatPool#-7942] ref=70 max=3360 holders=70 b=69 p=205
+[166.7s] 敌人死亡
+[166.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=74 p=200
+[166.7s] 池ref[敌人OnDestroy释池前#-7298] ref=70 max=3360 holders=70 b=73 p=201
+[166.7s] 池ref[敌人OnDestroy释池后#-7298] ref=69 max=3312 holders=69 b=73 p=201
+[166.7s] 敌人死亡
+[166.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=69 max=3312 holders=69 b=77 p=197
+[166.7s] 池ref[敌人OnDestroy释池前#-7774] ref=69 max=3312 holders=69 b=74 p=200
+[166.7s] 池ref[敌人OnDestroy释池后#-7774] ref=68 max=3264 holders=68 b=74 p=200
+[166.7s] 池ref[敌人GetOrCreatPool#-7928] ref=69 max=3312 holders=69 b=74 p=200
+[166.8s] DMG E -9
+[166.9s] 敌人生成
+[166.9s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=67 p=207
+[166.9s] 敌人生成
+[166.9s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=67 p=207
+[166.9s] 池ref[敌人GetOrCreatPool#-7984] ref=70 max=3360 holders=70 b=67 p=207
+[166.9s] 池ref[敌人GetOrCreatPool#-7998] ref=71 max=3408 holders=71 b=68 p=206
+[167.8s] 池ref[敌人GetOrCreatPool#-7830] ref=72 max=3456 holders=72 b=93 p=181
+[167.9s] DMG E -9
+[168.3s] 敌人生成
+[168.3s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=116 p=158
+[168.3s] 敌人生成
+[168.3s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=116 p=158
+[168.3s] 池ref[敌人GetOrCreatPool#-8012] ref=73 max=3504 holders=73 b=117 p=157
+[168.4s] 敌人死亡
+[168.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=121 p=153
+[168.4s] 池ref[友军OnDestroy释池前#-6206] ref=73 max=3504 holders=73 b=120 p=154
+[168.4s] 池ref[友军OnDestroy释池后#-6206] ref=72 max=3456 holders=72 b=120 p=154
+[168.5s] 友军生成
+[168.5s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=120 p=154
+[168.5s] 友军生成
+[168.5s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=120 p=154
+[168.5s] 池ref[友军GetOrCreatPool#-8040] ref=73 max=3504 holders=73 b=121 p=153
+[168.5s] 池ref[友军GetOrCreatPool#-8054] ref=74 max=3552 holders=74 b=122 p=152
+[168.5s] 敌人死亡
+[168.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=122 p=152
+[168.5s] 池ref[敌人OnDestroy释池前#-7214] ref=74 max=3552 holders=74 b=121 p=153
+[168.5s] 池ref[敌人OnDestroy释池后#-7214] ref=73 max=3504 holders=73 b=121 p=153
+[168.5s] 池ref[敌人GetOrCreatPool#-7914] ref=74 max=3552 holders=74 b=123 p=151
+[168.7s] 敌人死亡
+[168.7s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=133 p=141
+[168.7s] 池ref[敌人OnDestroy释池前#-7326] ref=74 max=3552 holders=74 b=132 p=142
+[168.7s] 池ref[敌人OnDestroy释池后#-7326] ref=73 max=3504 holders=73 b=132 p=142
+[168.9s] DMG E -9
+[169.2s] 敌人死亡
+[169.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=143 p=131
+[169.2s] 池ref[友军OnDestroy释池前#-6360] ref=73 max=3504 holders=73 b=141 p=133
+[169.2s] 池ref[友军OnDestroy释池后#-6360] ref=72 max=3456 holders=72 b=141 p=133
+[169.7s] 敌人生成
+[169.7s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=161 p=113
+[169.7s] 敌人生成
+[169.7s] 池ref[敌人生成后] ref=72 max=3456 holders=72 b=161 p=113
+[169.8s] 池ref[敌人GetOrCreatPool#-8068] ref=73 max=3504 holders=73 b=158 p=116
+[169.9s] DMG E -8
+[169.9s] 池 Bullet b=147 p=127 ref=73 max=3504 holders=73
+[169.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[169.9s] MEM 周期 m=4.2M d+2.1M h=6.5M u=2.3M r=149.8M d+6.0M a=60.3M ur=89.5M g=0B gc=4.2M d+2.1M
+[169.9s] GC 周期 g0=56 d37 g1=56 d37 g2=56 d37
+[170.0s] 池ref[敌人GetOrCreatPool#-8082] ref=74 max=3552 holders=74 b=146 p=128
+[170.0s] 敌人死亡
+[170.0s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=143 p=131
+[170.0s] 池ref[敌人OnDestroy释池前#-7816] ref=74 max=3552 holders=74 b=142 p=132
+[170.0s] 池ref[敌人OnDestroy释池后#-7816] ref=73 max=3504 holders=73 b=142 p=132
+[170.3s] 敌人死亡
+[170.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=154 p=120
+[170.3s] 池ref[友军OnDestroy释池前#-5968] ref=73 max=3504 holders=73 b=153 p=121
+[170.3s] 池ref[友军OnDestroy释池后#-5968] ref=72 max=3456 holders=72 b=153 p=121
+[170.5s] 敌人死亡
+[170.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=161 p=113
+[170.5s] 池ref[敌人OnDestroy释池前#-7116] ref=72 max=3456 holders=72 b=158 p=116
+[170.5s] 池ref[敌人OnDestroy释池后#-7116] ref=71 max=3408 holders=71 b=158 p=116
+[170.9s] DMG E -9
+[171.0s] 友军生成
+[171.0s] 池ref[友军生成后] ref=71 max=3408 holders=71 b=140 p=134
+[171.0s] 友军生成
+[171.0s] 池ref[友军生成后] ref=71 max=3408 holders=71 b=140 p=134
+[171.0s] 池ref[友军GetOrCreatPool#-8096] ref=72 max=3456 holders=72 b=140 p=134
+[171.0s] 池ref[友军GetOrCreatPool#-8110] ref=73 max=3504 holders=73 b=141 p=133
+[171.1s] 敌人生成
+[171.1s] 池ref[敌人生成后] ref=73 max=3504 holders=73 b=145 p=129
+[171.1s] 敌人生成
+[171.1s] 池ref[敌人生成后] ref=73 max=3504 holders=73 b=145 p=129
+[171.1s] 池ref[敌人GetOrCreatPool#-8124] ref=74 max=3552 holders=74 b=149 p=125
+[171.1s] 池ref[敌人GetOrCreatPool#-8138] ref=75 max=3600 holders=75 b=150 p=124
+[171.3s] 敌人死亡
+[171.3s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=130 p=144
+[171.3s] 池ref[友军OnDestroy释池前#-7172] ref=75 max=3600 holders=75 b=128 p=146
+[171.3s] 池ref[友军OnDestroy释池后#-7172] ref=74 max=3552 holders=74 b=128 p=146
+[171.6s] 敌人死亡
+[171.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=106 p=168
+[171.6s] 池ref[友军OnDestroy释池前#-6122] ref=74 max=3552 holders=74 b=104 p=170
+[171.6s] 池ref[友军OnDestroy释池后#-6122] ref=73 max=3504 holders=73 b=104 p=170
+[171.9s] 敌人死亡
+[171.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=111 p=163
+[171.9s] 敌人死亡
+[171.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=109 p=165
+[171.9s] 池ref[友军OnDestroy释池前#-5982] ref=73 max=3504 holders=73 b=108 p=166
+[171.9s] 池ref[友军OnDestroy释池后#-5982] ref=72 max=3456 holders=72 b=108 p=166
+[171.9s] 池ref[敌人OnDestroy释池前#-7830] ref=72 max=3456 holders=72 b=108 p=166
+[171.9s] 池ref[敌人OnDestroy释池后#-7830] ref=71 max=3408 holders=71 b=108 p=166
+[171.9s] DMG P -8
+[172.2s] 敌人死亡
+[172.2s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=71 max=3408 holders=71 b=97 p=177
+[172.2s] 池ref[敌人OnDestroy释池前#-7088] ref=71 max=3408 holders=71 b=96 p=178
+[172.2s] 池ref[敌人OnDestroy释池后#-7088] ref=70 max=3360 holders=70 b=96 p=178
+[172.4s] 敌人死亡
+[172.4s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=70 max=3360 holders=70 b=108 p=166
+[172.4s] 池ref[敌人OnDestroy释池前#-7270] ref=70 max=3360 holders=70 b=107 p=167
+[172.4s] 池ref[敌人OnDestroy释池后#-7270] ref=69 max=3312 holders=69 b=107 p=167
+[172.5s] 敌人生成
+[172.5s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=102 p=172
+[172.5s] 敌人生成
+[172.5s] 池ref[敌人生成后] ref=69 max=3312 holders=69 b=102 p=172
+[172.5s] 池ref[敌人GetOrCreatPool#-8152] ref=70 max=3360 holders=70 b=103 p=171
+[172.5s] 池ref[敌人GetOrCreatPool#-8166] ref=71 max=3408 holders=71 b=104 p=170
+[172.8s] 池ref[敌人GetOrCreatPool#-8026] ref=72 max=3456 holders=72 b=87 p=187
+[173.0s] DMG E -9
+[173.5s] 友军生成
+[173.5s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=83 p=191
+[173.5s] 友军生成
+[173.5s] 池ref[友军生成后] ref=72 max=3456 holders=72 b=83 p=191
+[173.5s] 池ref[友军GetOrCreatPool#-8194] ref=73 max=3504 holders=73 b=83 p=191
+[173.9s] 敌人生成
+[173.9s] 池ref[敌人生成后] ref=73 max=3504 holders=73 b=84 p=190
+[173.9s] 敌人生成
+[173.9s] 池ref[敌人生成后] ref=73 max=3504 holders=73 b=84 p=190
+[173.9s] 池ref[友军GetOrCreatPool#-8180] ref=74 max=3552 holders=74 b=84 p=190
+[173.9s] 池ref[敌人GetOrCreatPool#-8222] ref=75 max=3600 holders=75 b=85 p=189
+[174.0s] DMG E -9
+[174.0s] 池ref[敌人GetOrCreatPool#-8208] ref=76 max=3648 holders=76 b=86 p=188
+[174.9s] 池 Bullet b=93 p=181 ref=76 max=3648 holders=76
+[174.9s] 池 scene=PoolTest ch=1 rootInActive=True
+[174.9s] MEM 周期 m=4.6M d+2.5M h=6.5M u=1.9M r=149.8M d+6.0M a=60.3M ur=89.5M g=0B gc=4.6M d+2.5M
+[174.9s] GC 周期 g0=58 d39 g1=58 d39 g2=58 d39
+[175.0s] DMG E -8
+[175.3s] 敌人生成
+[175.3s] 池ref[敌人生成后] ref=76 max=3648 holders=76 b=123 p=151
+[175.3s] 池ref[敌人GetOrCreatPool#-8236] ref=77 max=3696 holders=77 b=124 p=150
+[175.5s] 敌人死亡
+[175.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=77 max=3696 holders=77 b=126 p=148
+[175.5s] 池ref[敌人OnDestroy释池前#-7858] ref=77 max=3696 holders=77 b=125 p=149
+[175.5s] 池ref[敌人OnDestroy释池后#-7858] ref=76 max=3648 holders=76 b=125 p=149
+[175.5s] 敌人死亡
+[175.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=126 p=148
+[175.5s] 敌人死亡
+[175.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=76 max=3648 holders=76 b=124 p=150
+[175.5s] 池ref[敌人OnDestroy释池前#-7914] ref=76 max=3648 holders=76 b=123 p=151
+[175.5s] 池ref[敌人OnDestroy释池后#-7914] ref=75 max=3600 holders=75 b=123 p=151
+[175.5s] 池ref[友军OnDestroy释池前#-6024] ref=75 max=3600 holders=75 b=123 p=151
+[175.5s] 池ref[友军OnDestroy释池后#-6024] ref=74 max=3552 holders=74 b=123 p=151
+[175.9s] 敌人死亡
+[175.9s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=74 max=3552 holders=74 b=115 p=159
+[175.9s] 池ref[敌人OnDestroy释池前#-7074] ref=74 max=3552 holders=74 b=114 p=160
+[175.9s] 池ref[敌人OnDestroy释池后#-7074] ref=73 max=3504 holders=73 b=114 p=160
+[176.0s] 友军生成
+[176.0s] 池ref[友军生成后] ref=73 max=3504 holders=73 b=115 p=159
+[176.0s] 友军生成
+[176.0s] 池ref[友军生成后] ref=73 max=3504 holders=73 b=115 p=159
+[176.0s] DMG P -8
+[176.5s] 敌人死亡
+[176.5s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=73 max=3504 holders=73 b=97 p=177
+[176.5s] 池ref[敌人OnDestroy释池前#-7648] ref=73 max=3504 holders=73 b=95 p=179
+[176.5s] 池ref[敌人OnDestroy释池后#-7648] ref=72 max=3456 holders=72 b=95 p=179
+[176.6s] 敌人死亡
+[176.6s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=72 max=3456 holders=72 b=96 p=178
+[176.6s] 池ref[敌人OnDestroy释池前#-7060] ref=72 max=3456 holders=72 b=95 p=179
+[176.6s] 池ref[敌人OnDestroy释池后#-7060] ref=71 max=3408 holders=71 b=95 p=179
+[176.7s] 敌人生成
+[176.7s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=96 p=178
+[176.7s] 敌人生成
+[176.7s] 池ref[敌人生成后] ref=71 max=3408 holders=71 b=96 p=178
+[176.7s] 池ref[友军GetOrCreatPool#-8250] ref=72 max=3456 holders=72 b=96 p=178
+[176.7s] 池ref[友军GetOrCreatPool#-8264] ref=73 max=3504 holders=73 b=97 p=177
+[176.7s] 池ref[敌人GetOrCreatPool#-8292] ref=74 max=3552 holders=74 b=97 p=177
+[177.0s] 池ref[敌人GetOrCreatPool#-8278] ref=75 max=3600 holders=75 b=105 p=169
+[177.1s] DMG E -9
+[177.1s] 敌人死亡
+[177.1s] 池ref[敌人死亡Destroy+AssetReference释prefab句柄] ref=75 max=3600 holders=75 b=105 p=169
+[177.1s] 池ref[敌人OnDestroy释池前#-7102] ref=75 max=3600 holders=75 b=104 p=170
+[177.1s] 池ref[敌人OnDestroy释池后#-7102] ref=74 max=3552 holders=74 b=104 p=170
+[178.1s] 敌人生成
+[178.1s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=116 p=158
+[178.1s] 敌人生成
+[178.1s] 池ref[敌人生成后] ref=74 max=3552 holders=74 b=116 p=158
+[178.1s] DMG E -9
+[178.2s] 池ref[敌人GetOrCreatPool#-8306] ref=75 max=3600 holders=75 b=127 p=147
+[178.3s] 报告导出 tag=PoolTest退出...
+[178.3s] 池 Bullet b=136 p=138 ref=75 max=3600 holders=75
+[178.3s] 池 scene=PoolTest ch=1 rootInActive=True
+[178.3s] MEM PoolTest退出 m=3.9M d+1.8M h=6.5M u=2.6M r=149.8M d+6.0M a=60.3M ur=89.5M g=0B gc=3.9M d+1.8M
+[178.3s] GC PoolTest退出 g0=59 d40 g1=59 d40 g2=59 d40

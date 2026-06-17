@@ -1,7 +1,7 @@
 # 引用计数附件（RefCount Appendix）
 
 > **文档性质**：`BusinessApiUsageGuide.md` 的 **引用计数附件** — 按 API 指南常见写法逐步追踪三层计数如何变化，并对应代码入口与链路。  
-> **主文档**：规则速查见 [业务API §6](./BusinessApiUsageGuide.md#6-引用计数与规范用法)；抄代码见 [§7](./BusinessApiUsageGuide.md#7-场景范例)。  
+> **主文档**：规则速查见 [业务API §6](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md#sec-refcount-rules)；抄代码见 [§7](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md#sec-scenarios)。  
 > **代码入口**：`AbstractResource.cs`、`BundleResLoader.cs`、`BundleManager.cs`、`PrefabPool.cs`、`PrefabPoolManager.cs`
 
 ---

@@ -1,4 +1,4 @@
-﻿# 业务 API 与 CDN 规划
+# 业务 API 与 CDN 规划
 
 > 对照 [MainRoadmap.md](./MainRoadmap.md) 阶段 B/C；实现细节见 [ResLoader/LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md)。
 
@@ -32,7 +32,7 @@
 |----------|------------|------------|
 | **DeviceDebug / 首包** | `deviceOutputPath`（默认 StreamingAssets） | 安装包内置，离线可用 |
 | **CdnHotUpdate / CDN联网** | `cdnOutputPath`（默认 `Bundles/CDN`） | CI 上传到 **`CDN/{平台}/`**，如 `CDN/Android/`、`CDN/StandaloneWindows64/` |
-| **DlcPackage** | 规划独立目录 | 按需下载（TODO） |
+| **DlcPackage** | `{deviceOutputPath}/{平台}/DLC_{id}/`（`Bundles/` + `Version/catalog.fragment.bytes`） | `ContentPackageService.TryMount` + `IContentPackageGate`（默认无 Gate 拒绝；Steam TODO） |
 
 打包器只负责 **打出文件 + 写清单**；**下载与运行时选路** 属于加载侧扩展。
 
@@ -70,7 +70,7 @@ IRemoteBundleProvider    清单 hash 比对、HTTP 下载、CRC 校验       ←
 ### 2.4 CDN 接入步骤（实施 checklist）
 
 1. **配置**：`BuildSetting.cdnBaseUrl` 写入清单根字段 `cdnBaseUrl` + **`{Platform}/`** 子路径（与 `usePlatformSubfolders` 产出一致）。  
-2. **启动**：`CdnCatalogueSyncService` 拉远程 `AssetCatalog.json`，`catalogueHash` 变化时写入 `ABCache/Catalogue/` 并重载 Reader。  
+2. **启动**：`CdnCatalogueSyncService` 拉远程 `catalog.bytes`，`catalogueHash` 变化时写入 `ABCache/Catalogue/` 并重载 Reader。  
 3. **下载**：`HttpRemoteBundleProvider` + `BundleDownloadQueue`；`fileHash` / `crc32` 校验后写入 `persistentDataPath/ABCache/{平台}/`。  
 4. **Init**：`BundleResLoader.Init` 自动 `DefaultBundlePathResolver` + RemoteProvider（无需业务手动 Init cacheRoot）。  
 5. **Load**：同步 `Load(loadPath)` 与 `PreLoadBundles` 不变；异步入口仍为 **LoadUniTaskAsync**（内部 Yield + 同步 Load，B-2 inFlight 未做）。
@@ -83,7 +83,7 @@ IRemoteBundleProvider    清单 hash 比对、HTTP 下载、CRC 校验       ←
 
 **已实现（2026-06-13 阶段 C 封板）**：`CdnCatalogueSyncService` 清单热更；`BundleDownloadQueue`；`PreLoadBundles`；Reporter `BundleDependencyExplorer` + `DependencyGraph.json`。  
 **已实现（2026-06-08）**：`AssetRouter` 四源统一入口；EditorTest 走 AssetDatabase；`Resources/` 前缀走 Resources。  
-**已实现（2026-06-13）**：Bundle **LRU 延迟卸包**（见 [BusinessApiUsageGuide.md §5.6](./BusinessApiUsageGuide.md#56-bundle-lru-延迟卸载业务无感)）。
+**已实现（2026-06-13）**：Bundle **LRU 延迟卸包**（见 [BusinessApiUsageGuide.md §5.6](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md#bundle-lru-unload)）。
 
 ---
 
@@ -92,7 +92,7 @@ IRemoteBundleProvider    清单 hash 比对、HTTP 下载、CRC 校验       ←
 | 设计目标场景 | 依赖能力 |
 |--------------|----------|
 | 边玩边下、300MB 以下首包 | CDN 下载 + 清单版本 + 按需 Load |
-| 玩家自选关卡/DLC | DLC 分包模式 + `IRemoteBundleProvider` |
+| 玩家自选关卡/DLC | `DLC_{id}/` 打包 + `ContentPackageService` + Gate（Steam TODO） |
 | 单机可玩老版本 | 本地缓存清单世代 ≤ 远程失败时回退首包 |
 | MOD 上传下载 | 独立 Package / CDN 路径（远期） |
 
@@ -103,4 +103,4 @@ IRemoteBundleProvider    清单 hash 比对、HTTP 下载、CRC 校验       ←
 - [MainRoadmap.md](./MainRoadmap.md) — 阶段 B/C 排期  
 - [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md) — 首包 / CDN / persistentDataPath 目录约定  
 - [CatalogueReference.md](./CatalogueReference.md) — 清单字段与版本号  
-- [ResLoader/LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md) — 双层加载与 API 现状  
+- [ResLoader/ContentPackage/ContentPackageService.cs](../ResLoader/ContentPackage/ContentPackageService.cs) — DLC/Mod 挂载  

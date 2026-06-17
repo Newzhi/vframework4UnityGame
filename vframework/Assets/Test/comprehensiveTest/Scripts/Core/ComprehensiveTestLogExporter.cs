@@ -72,9 +72,22 @@ public static class ComprehensiveTestLogExporter
     public static string BuildMemorySummary()
     {
         long monoUsed = Profiler.GetMonoUsedSizeLong();
+        long monoHeap = Profiler.GetMonoHeapSizeLong();
         long reserved = Profiler.GetTotalReservedMemoryLong();
+        long allocated = Profiler.GetTotalAllocatedMemoryLong();
+        long unusedReserved = Profiler.GetTotalUnusedReservedMemoryLong();
+        long gfx = Profiler.GetAllocatedMemoryForGraphicsDriver();
         long gcManaged = GC.GetTotalMemory(false);
-        return "mono=" + FormatBytes(monoUsed) + " res=" + FormatBytes(reserved) + " gc=" + FormatBytes(gcManaged);
+        return "mono=" + FormatBytes(monoUsed) +
+               " heap=" + FormatBytes(monoHeap) +
+               " res=" + FormatBytes(reserved) +
+               " alloc=" + FormatBytes(allocated) +
+               " ur=" + FormatBytes(unusedReserved) +
+               " gfx=" + FormatBytes(gfx) +
+               " gc=" + FormatBytes(gcManaged) +
+               " g0=" + GC.CollectionCount(0) +
+               " g1=" + GC.CollectionCount(1) +
+               " g2=" + GC.CollectionCount(2);
     }
 
     static string BuildHeader(string tag, IReadOnlyList<string> lines)

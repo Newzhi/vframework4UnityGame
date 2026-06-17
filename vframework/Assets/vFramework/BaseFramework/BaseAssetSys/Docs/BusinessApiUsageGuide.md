@@ -1,10 +1,10 @@
-﻿# 业务 API 调用指南（ABSystem_Beta）
+# 业务 API 调用指南（ABSystem_Beta）
 
 > 入口：`BundleResLoader.Instance`  
 > 句柄：`IAssetHandle`  
 > 详细排期与能力边界：[BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md)、[MainRoadmap.md](./MainRoadmap.md)  
 > **引用计数附件**：常见写法逐步模拟见 **[RefCountAppendix.md](./RefCountAppendix.md)**。  
-> **加载侧扩展**：`LoadGameObject` / `AssetReference`、Bundle **LRU 延迟卸包**（§5.6）已实现；架构排期见 **[LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)**（引用计数 **Trace 日志**为调试能力，不在本文业务 API 范围）。
+> **加载侧扩展**：`LoadGameObject` / `AssetReference`、Bundle **LRU 延迟卸包**（[§5.6](#bundle-lru-unload)）已实现；架构排期见 **[LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md)**（引用计数 **Trace 日志**为调试能力，不在本文业务 API 范围）。
 
 ---
 
@@ -275,6 +275,8 @@ BundleResLoader.Instance.UnloadAll();
 
 综合测试：`PlayerTest` + 各 `enemyTest` 各自 `GetOrCreatPool` 子弹池（共享 `refCount`）；`enemyManager` 仅敌人池；`ComprehensiveTestSceneFlow` 切场景收尾。
 
+<a id="bundle-lru-unload"></a>
+
 ### 5.6 Bundle LRU 延迟卸载（业务无感）
 
 业务 **只** 调用 `Release` / `Unload`；Bundle 容器何时从内存卸掉由框架按清单优先级调度，**无需**业务调用额外 API。
@@ -290,17 +292,19 @@ BundleResLoader.Instance.UnloadAll();
 
 | `ResourcePriority` | Ref=0 后约保留 |
 |--------------------|----------------|
-| Critical | 300s |
-| High | 120s |
-| Normal | 60s（Default/Detailed 打包默认） |
-| Low | 30s |
-| Optional | 15s |
+| Critical | **永不** LRU 卸载（仅 `UnloadAll`） |
+| High | 20s |
+| Normal | 15s（Default/Detailed 打包默认） |
+| Low | 10s |
+| Optional | 5s |
 
-- 空闲包总数超过 **32** 时，按「优先级低者优先、同优先级 LRU」强制淘汰（Trace：`LruEvict` / `LruEvictCap`）。  
-- **打包期**配置：自定义打包规则下可在 Editor 为每项设 `resourcePriority`；Default/Detailed 规则写入 `Normal`。详见 [CatalogueReference.md](./CatalogueReference.md)。  
+- 空闲包总数超过 **32** 时，按「优先级低者优先、同优先级 LRU」强制淘汰（**不含 Critical**；Trace：`LruEvict` / `LruEvictCap`）。  
+- **打包期**配置：自定义打包规则下可在 Editor 为每项设 `resourcePriority`；Default/Detailed 规则写入 `Normal`。详见 [CatalogueReference.md §P1-B](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/CatalogueReference.md#resource-priority)。
 - **注意**：Resource Ref=0 后若场上仍有实例引用包内资源，仍可能材质变粉；与是否 LRU 无关。**有活实例时不要 Release 到 0。**
 
 ---
+
+<a id="sec-refcount-rules"></a>
 
 ## 6. 引用计数与规范用法
 
@@ -463,6 +467,8 @@ UnloadAll();  // 其它模块仍持有的句柄已失效
 - 实例先于模块 Destroy 时，模块 `OnDestroy` 仍须 `Release`；GO 已为 null 时用 `Unload(handle, null)` 或 `handle?.Release()`。
 
 ---
+
+<a id="sec-scenarios"></a>
 
 ## 7. 场景范例
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -23,7 +23,7 @@ static class BundleReporterTabView
         if (!BundleBuildAnalyzer.TryLoadReport(bundleRoot, out BundleBuildReport report))
         {
             EditorGUILayout.HelpBox("未找到报告文件。", MessageType.Warning);
-            DrawOpenReportActions(setting, reportBrowseMode, null);
+            DrawOpenReportActions(setting, reportBrowseMode);
             return;
         }
 
@@ -42,7 +42,7 @@ static class BundleReporterTabView
             item.loadPath + " : " + item.firstAssetPath + " / " + item.secondAssetPath);
 
         EditorGUILayout.Space(8);
-        DrawOpenReportActions(setting, reportBrowseMode, report);
+        DrawOpenReportActions(setting, reportBrowseMode);
 
         EditorGUILayout.Space(12);
         BundleDependencyExplorer.Draw(setting, reportBrowseMode);
@@ -77,7 +77,7 @@ static class BundleReporterTabView
         EditorGUILayout.EndVertical();
     }
 
-    static void DrawOpenReportActions(BuildSetting setting, BuildMode reportBrowseMode, BundleBuildReport report)
+    static void DrawOpenReportActions(BuildSetting setting, BuildMode reportBrowseMode)
     {
         EditorGUILayout.BeginHorizontal();
 
@@ -94,16 +94,6 @@ static class BundleReporterTabView
                 EditorUtility.RevealInFinder(openPath);
             else
                 Debug.LogWarning("报告目录不存在: " + reportPath);
-        }
-
-        if (report != null && GUILayout.Button(BundlePackerUiShared.Tip("打开 HTML 蓝图", "在浏览器中打开 Reporter 界面原型。")))
-        {
-            string htmlPath = BundlePlatformPaths.ResolveBaseOutputPath(
-                BundlePlatformPaths.ReportEditorBlueprintRelativePath);
-            if (File.Exists(htmlPath))
-                Application.OpenURL("file:///" + htmlPath.Replace("\\", "/"));
-            else
-                Debug.LogWarning("未找到: " + htmlPath);
         }
 
         EditorGUILayout.EndHorizontal();

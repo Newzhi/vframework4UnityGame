@@ -101,10 +101,12 @@
 | [../AbstractAssets/README.md](../AbstractAssets/README.md) | 抽象资源与 Ref |
 | [../BundleRuleConfig/README.md](../BundleRuleConfig/README.md) | BuildSetting、AssetCatalog |
 | [../Editor/README.md](../Editor/README.md) | 打包 Editor 模块 |
-| [../../../../BaseLayer/AssetLayer/ABSystemTester/ABSystem_BetaTestCases.md](../../../../BaseLayer/AssetLayer/ABSystemTester/ABSystem_BetaTestCases.md) | 测试用例 |
+| [../../../../BaseLayer/ToDelete/ABSystemTester/ABSystem_BetaTestCases.md](../../../../BaseLayer/ToDelete/ABSystemTester/ABSystem_BetaTestCases.md) | 测试用例（历史表） |
 | [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) | **Load/Release 抄用范式**（与本节场景配套） |
 
 ---
+
+<a id="business-scenarios"></a>
 
 ### 业务场景总结
 
@@ -130,7 +132,7 @@
 | **跨包 UI** | `Load<GameObject>("UI/UIRoot")`；依赖包由清单 `bundles[]` 自动 Acquire | 同模块卸载 | Case 5 Cross UI |
 | **同 Prefab 多实例（刷怪/列表）** | **`Load` 一次**，循环 `handle.Instantiate()`；列表保存 `GameObject` | 先 `Destroy` 全部实例，再 **`Release` 一次** | ReLoad 测 Ref++，非实例数 |
 | **对象池** | 各模块 `GetOrCreatPool`（同 Active Scene 同路径共享 `refCount`）；借方 `TryGetPool` | 各建池方 `OnDestroy` `DestroyPoolByLoadPath`；切场景 `UnloadAll`；`sceneUnloaded` 兜底 | comprehensiveTest `PlayerTest` / `enemyManager` / `enemyTest` |
-| **Common / 常驻资源** | 启动时 `Load` 一次，**不 Release**（或等 `PreLoad` P2） | 仅 `UnloadAll` 或关游戏 | 主路线 §5 |
+| **Common / 常驻资源** | 启动时 `Load` 一次或 `PreLoadBundles` | 仅 `UnloadAll` 或关游戏 | 主路线 §5 |
 | **切场景 / 关游戏** | `BundleResLoader.Instance.UnloadAll()`（进程级，慎用） | 独占 Runner 收尾 | Case 8 UnloadAll |
 | **Resources 路径** | `Load<T>("Resources/子路径/名")`（无扩展名） | 同 AB，`Release` | Router 套系 Case 2 |
 | **Editor 联调无 AB** | 打包 **EditorTest** + Editor Play → AssetDatabase | 同 Release | Router Case 5 |
@@ -185,7 +187,7 @@ Load("UI/UIRoot")
   → LoadAsset(UIRoot)
 ```
 
-- 依赖关系 **打包时** 写入 `AssetCatalog.json` 的 `bundles[]`（来自 `AssetBundleManifest.GetAllDependencies`）。  
+- 依赖关系 **打包时** 写入 `catalog.bytes` 的 `bundles[]`（来自 `AssetBundleManifest.GetAllDependencies`）。  
 - **EditorTest** 无真 AB 时 `bundles[]` 常为空，**不会**预加载依赖。  
 - Release 时按 `acquiredBundleNames` **对称** `ReleaseBundle`；业务仍只对 **句柄** `Release`，不必手动卸依赖包。
 
@@ -205,8 +207,9 @@ Load("UI/UIRoot")
 | 打包模式 | 业务在 Editor / Player 的预期 |
 |----------|-------------------------------|
 | **EditorTest** | Editor Play 可无 StreamingAssets AB；清单 `buildMode=EditorTest` |
-| **DeviceDebug（首包）** | AB 在 `StreamingAssets/{平台}/`；真机/Player 走 ABUNDLE |
-| **CdnHotUpdate** | 产出在 `cdnOutputPath`；**运行时 HTTP 下载未做**，仍读本地首包 |
+| **DeviceDebug（首包）** | AB 在 `StreamingAssets/{平台}/Base/Bundles/`；真机/Player 走 ABUNDLE |
+| **CdnHotUpdate** | 产出在 `cdnOutputPath/{平台}/Base/`；运行时 **CDN 下载 + 清单热更** 已接（阶段 C） |
+| **DlcPackage** | 产出在 `{deviceOutputPath}/{平台}/DLC_{id}/`；运行时 `ContentPackageService.TryMount`（需 Gate 放行） |
 
 Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，仅 [StreamingAssetsPlatformBuildFilter](../Editor/StreamingAssetsPlatformBuildFilter.cs) **临时移走**非目标平台，构建后还原。
 
@@ -223,8 +226,8 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 
 | 产品目标（设计基线 §9–14） | 当前业务可怎么做 |
 |----------------------------|----------------|
-| 边玩边下 / 300MB 首包 | 等阶段 C CDN + 清单 version 比对；现仅首包 AB + 本地 Load |
-| 自选关卡 / DLC | 等 DLC 输出路径 + 远程 Provider；Custom 可按项 `buildMode` 分组打包 |
+| 边玩边下 / 300MB 首包 | CDN + `catalogueHash` 热更已可用；首包 subset 策略与业务门控仍待产品定稿 |
+| 自选关卡 / DLC | 打包至 `DLC_{id}/` + `ContentPackageService` 已接；商店 SDK Gate（Steam 等）TODO |
 | 离线玩老版本 | 等 persistentDataPath 缓存 + 清单世代策略 |
 | MOD / 分工程 | 远期；现按模块 **Load/Release** 组织即可 |
 
@@ -272,7 +275,7 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 |----------|--------------|------------------------------|-----------|------|
 | **1. 打包规则制定器** | ✅ | **约 76%** | 9/12 | 同窗口 + SO；Custom + `BundleFolderRule` 三档；缺树状 UI、XML、自动 AB 标签 |
 | **2. 打包器** | ✅ | **约 73%** | 10/14 | Build/Clean/Validate、三规则、Player 平台过滤；缺增量 UI、Bundle 分析、DLC 路径、分模式清单策略 |
-| **中间桥梁 · 资源清单** | ✅ | **约 76%** | 7/10 | JSON 双份 + `entries` + `bundles[]` 三端已验；`version`/`buildNumber` **仅写入**；二进制/运行时版本对比未做 |
+| **中间桥梁 · 资源清单** | ✅ | **约 85%** | 8/10 | 二进制双份 + `entries` + `bundles[]`；`catalogueHash` CDN 比对已用；运行时 **version/buildNumber 比对** 未做 |
 | **3. 抽象资源** | ✅ | **约 68%** | — | 双层 Ref + 依赖 Acquire；三端并发 PASS；无 MOD/远程资源抽象 |
 | **4. 加载器 + 路由器** | ✅ | **约 85%** | — | CDN 运行时 + PreLoad 已接；B-2 真异步/inFlight 仍拉低加权 |
 
@@ -326,7 +329,7 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | Player 构建平台子目录过滤（`StreamingAssetsPlatformBuildFilter`） | ✅ |
 | 增量打包（显式 UI/策略） | ❌（依赖 Unity `BuildAssetBundles` 自带增量） |
 | 打包后分析（`BundleBuildAnalyzer`） | ✅ `{bundleRoot}/Reports/BundleBuildReport.json` + Packer 报告 Tab |
-| DLC 专用输出路径 | ❌ 临时走 CDN 路径 + Warning |
+| DLC 专用输出路径 | ✅ `{平台}/DLC_{id}/`（`dlcPackageId`）；Custom 独立 `dlcOutputPath` 字段仍 TODO |
 | 按打包模式差异化清单策略 | ❌ `BuildByMode` 内 TODO |
 
 **职责划分（与设计一致）**
@@ -348,15 +351,15 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | 能力 | 状态 |
 |------|------|
 | 数据结构 `AssetCatalog`（`AssetCatalog.cs`，#region 分区） | ✅ |
-| `entries[]`：`assetPath` → `bundleName` + `assetName` | ✅ 已写入 JSON |
-| 工程内 + `{bundleRoot}/Catalogue/` 双份 JSON | ✅ |
+| `entries[]`：`assetPath` → `bundleName` + `assetName` | ✅ 已写入二进制清单 |
+| 工程内 `AssetCatalog.bytes` + `{平台}/Base/Version/catalog.bytes` 双份 | ✅ |
 | 版本 / 平台 / 打包模式等元数据 | ✅ |
-| `bundles[]` 包依赖表 | ✅ 从 `AssetBundleManifest` 写入 JSON（三端 Load 已验） |
+| `bundles[]` 包依赖表 | ✅ 从 `AssetBundleManifest` 写入（三端 Load 已验） |
 | `bundles[]` **拓扑排序** + 环检测 | ✅ `BundleDependencyTopology` + `CatalogueWriter` |
 | 构建后 **Bundle 冗余/包体分析** | ✅ `BundleBuildAnalyzer` → `Reports/BundleBuildReport.json` |
 | `loadPath` 重复构建期校验 | ✅ `CatalogueValidator`（Warning/Error 可配） |
 | 运行时读取 `version` / `buildNumber` 做热更决策 | ❌ 仅打包写入 |
-| 清单改二进制（性能/加密） | 📋 仅 TODO / 文档 |
+| 清单二进制 `catalog.bytes`（VCAT v1） | ✅ `AssetCatalogBinaryCodec` |
 | `CatalogueReader`、运行时读清单 | ✅ |
 
 详见 [CatalogueReference.md](./CatalogueReference.md)。
@@ -369,7 +372,7 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 |------|------|
 | `AbstractResource` / `IAssetHandle` | Resource 层 Ref；`LoadAsset` / Release 经 `AssetRouter` |
 | `BundleManager` | `LoadFromFile` + `IBundlePathResolver`；`AcquireBundleWithDependencies` 读清单 `bundles[]` |
-| `CatalogueReader` + `StreamingAssetsIO` | 读 JSON；Editor 可 `LoadFromProjectCatalogue`；Android `jar:` 已验 |
+| `CatalogueReader` + `StreamingAssetsIO` | 读 `catalog.bytes`；Editor 可 `LoadFromProjectCatalogue`；Android `jar:` 已验 |
 | `BundleResLoader` | 同步 `Load` ✅；`LoadUniTaskAsync` + 回调 ✅；`PreLoadBundles` ✅ |
 | `AssetPool` | ✅ `PrefabPool` + `PrefabPoolManager` + `PoolSceneRootsUtil` |
 | `BaseLogSys` | 🟡 `AssetRefTraceLogger`（Ref Trace）；`DebugLogger` 占位 |
@@ -428,9 +431,9 @@ Assets/vFramework/BaseFramework/BaseAssetSys/
 
 | 模式 | UI | AB | 清单 |
 |------|-----|-----|------|
-| EditorTest | 编辑器测试 | 不调用 BuildPipeline | 仍写 JSON |
-| DeviceDebug | 首包（真机模式） | `{deviceOutputPath}/{平台}/` | 仍写 JSON |
-| CdnHotUpdate | CDN联网 | `{cdnOutputPath}/{平台}/` | 仍写 JSON |
+| EditorTest | 编辑器测试 | 不调用 BuildPipeline | 仍写 `catalog.bytes` |
+| DeviceDebug | 首包（真机模式） | `{deviceOutputPath}/{平台}/Base/` | 仍写 `catalog.bytes` |
+| CdnHotUpdate | CDN联网 | `{cdnOutputPath}/{平台}/Base/` | 仍写 `catalog.bytes` |
 
 Default / Detailed 用规则区全局 `buildMode`（**默认首包（真机模式）**）；Custom 每项可指定不同模式。
 
@@ -440,10 +443,10 @@ Default / Detailed 用规则区全局 `buildMode`（**默认首包（真机模�
 
 - 显式增量打包策略 UI（`BundleBuildAnalyzer` 报告已接入 Reporter 页签）
 - 按模式差异化清单策略、EditorTest 纯模拟目录  
-- 清单 JSON → 二进制；运行时 **version/buildNumber 比对**  
+- 运行时 **version/buildNumber 比对**  
 - Custom 树状 UI、XML 规则、打包前自动 AB 标签  
 - **Custom 规则 / 异步双 Runner** 的集成测试 JSON（`UniConcurrentLoad_*` 待归档）  
-- DLC 独立 `dlcOutputPath`（当前 Warning + 走 CDN 路径）
+- Custom 项独立 `dlcOutputPath` 配置字段（当前 Custom DLC 仍复用 `cdnOutputPath` 占位校验）
 
 细节与接入步骤见 [CatalogueReference.md](./CatalogueReference.md) 及代码内 `TODO`。
 
@@ -453,7 +456,7 @@ Default / Detailed 用规则区全局 `buildMode`（**默认首包（真机模�
 
 1. 在目标目录（默认 `Assets/AssetBundle`）下建子文件夹并放入资源  
 2. 打开 **vFramework → AssetBundle Packer**，选规则与打包模式，**开始打包**  
-3. 确认 AB 输出路径与 `BundleRuleConfig/Catalogue/AssetCatalog.json`（编辑器测试无新 AB，仅有清单）  
+3. 确认 AB 输出路径与 `BundleRuleConfig/Catalogue/AssetCatalog.bytes`（编辑器测试无新 AB，仅有清单）  
 4. **Play 加载**：`Init` → 同步 `Load("Atlas/Role/xxx")`；或跑 `TestABScene` 双 Runner（目标 `ConcurrentLoad_*` **19/0**）  
 5. **清理打包** 验证两输出路径与 Catalogue 已清理、无 orphan `.meta`  
 6. **Build Player** 时确认 `StreamingAssets` 仅含目标平台子目录（`StreamingAssetsPlatformBuildFilter`）
@@ -462,7 +465,7 @@ Default / Detailed 用规则区全局 `buildMode`（**默认首包（真机模�
 
 ## 下一步测试依据：打包与清单是否正常
 
-> 本节说明「编辑器模拟」与「真机构建」的差异，作为验收 **AB 包** 与 **AssetCatalog.json** 是否生成正确的对照标准。  
+> 本节说明「编辑器模拟」与「真机构建」的差异，作为验收 **AB 包** 与 **`catalog.bytes`** 是否生成正确的对照标准。  
 > 当前 **ABSystem_Beta** 的 **编辑器测试 / 首包（真机模式） / CDN联网** 三种模式，长期应对齐下表路径约定；现阶段可按模式分别验证输出路径。
 
 > **⚠️ 核心注意点**  
@@ -480,7 +483,7 @@ Default / Detailed 用规则区全局 `buildMode`（**默认首包（真机模�
 
 | ABSystem_Beta 模式 | 应对齐的概念 | 当前实现（测试时预期） |
 |--------------|-------------|------------------------|
-| 编辑器测试 | 编辑器模拟 + 本地快速验证 | **不** 调用 `BuildPipeline`，无新 `.bundle`；仍写 JSON 清单 |
+| 编辑器测试 | 编辑器模拟 + 本地快速验证 | **不** 调用 `BuildPipeline`，无新 `.bundle`；仍写 `catalog.bytes` |
 | 首包（真机模式） | 真机构建 | AB 输出到 `deviceOutputPath`（默认 StreamingAssets） |
 | CDN联网 | Host 热更 | AB 输出到 `cdnOutputPath`（默认 `Bundles/CDN`） |
 
@@ -595,10 +598,10 @@ persistentDataPath：玩家买了 / 下了哪个 DLC，就缓存哪个
 
 **与 ABSystem_Beta 的关系**
 
-- **编辑器测试**：不生成 `.bundle`，仅更新 JSON 清单。  
-- **首包（真机模式）**：AB 输出到 `deviceOutputPath`（默认 StreamingAssets）。  
-- **CDN联网**：AB 输出到 `cdnOutputPath`（默认 `Bundles/CDN`）。  
-- **Catalogue**：打包侧双份 JSON；加载侧读取与热更策略后续实现。
+- **编辑器测试**：不生成 `.bundle`，仅更新 `catalog.bytes`。  
+- **首包（真机模式）**：AB 输出到 `{deviceOutputPath}/{平台}/Base/Bundles/`。  
+- **CDN联网**：AB 输出到 `{cdnOutputPath}/{平台}/Base/Bundles/`。  
+- **Catalogue**：打包侧双份 `.bytes`；加载侧 `CdnCatalogueSyncService` 热更已接。
 
 **一句话**
 
@@ -634,7 +637,7 @@ YooAsset/EditorSimulate/...
 - 产物以 **清单 / 元数据** 为主，不是给真机用的 AB
 - 改资源后通常 **重新 Simulate 即可**，很快
 
-**ABSystem_Beta 现阶段说明**：**编辑器测试** 已跳过 `BuildPipeline`，仅更新 JSON 清单；**首包（真机模式）** / **CDN联网** 打出真实 `.bundle` 并写清单。
+**ABSystem_Beta 现阶段说明**：**编辑器测试** 已跳过 `BuildPipeline`，仅更新 `catalog.bytes`；**首包（真机模式）** / **CDN联网** 打出真实 `.bundle` 并写清单。
 
 ---
 
@@ -664,12 +667,12 @@ YooAsset/EditorSimulate/...
 
 | 产物 | 路径 |
 |------|------|
-| AB 包（首包（真机模式）） | `{deviceOutputPath}/{平台}/`，如 `Assets/StreamingAssets/StandaloneWindows64/` |
-| AB 包（CDN联网） | `{cdnOutputPath}/{平台}/`，如 `Bundles/CDN/Android/` |
-| AB 包（编辑器测试） | **不生成** `.bundle`（仅清单，TODO 阶段） |
-| 平台 manifest | 真机/CDN 输出目录下 Unity 生成的平台名文件及 `*.manifest` |
-| 资源清单 | `BaseAssetSys/BundleRuleConfig/Catalogue/AssetCatalog.json` |
-| 运行时清单副本 | `{bundleRoot}/Catalogue/AssetCatalog.json` |
+| AB 包（首包（真机模式）） | `{deviceOutputPath}/{平台}/Base/Bundles/`，如 `Assets/StreamingAssets/StandaloneWindows64/Base/Bundles/` |
+| AB 包（CDN联网） | `{cdnOutputPath}/{平台}/Base/Bundles/`，如 `Bundles/CDN/Android/Base/Bundles/` |
+| AB 包（编辑器测试） | **不生成** `.bundle`（仅 `catalog.bytes`） |
+| 平台 manifest | `Base/Bundles/` 下 Unity 平台 manifest 及 `*.manifest` |
+| 资源清单（工程内） | `BundleRuleConfig/Catalogue/AssetCatalog.bytes` |
+| 资源清单（运行时） | `{平台根}/Base/Version/catalog.bytes` |
 
 > 正式上线时：全部 AB 不应都进 `StreamingAssets`，仅首包 subset 进入；其余见上文「注意点：首包、热更包与本地缓存」。
 #### 2. 部署到设备（Deploy 阶段）
@@ -744,12 +747,12 @@ https://cdn.example.com/bundles/Android/[PackageName]/
 
 打包完成后，按下列项逐项确认即视为 **打包 + 清单生成正常**：
 
-- [ ] **编辑器测试**：无新增 `.bundle`（或 StreamingAssets 无新增），但 `AssetCatalog.json` 已更新
-- [ ] **首包（真机模式）**：`deviceOutputPath`（默认 StreamingAssets）下存在预期数量的 `*.bundle`
-- [ ] **CDN联网**：`cdnOutputPath`（默认 `Bundles/CDN`）下存在预期数量的 `*.bundle`
+- [ ] **编辑器测试**：无新增 `.bundle`（或 StreamingAssets 无新增），但 `AssetCatalog.bytes` 已更新
+- [ ] **首包（真机模式）**：`{deviceOutputPath}/{平台}/Base/Bundles/` 下存在预期数量的 `*.bundle`
+- [ ] **CDN联网**：`{cdnOutputPath}/{平台}/Base/Bundles/` 下存在预期数量的 `*.bundle`
 - [ ] 每个 bundle 有对应 `.manifest`（Unity 自动生成，编辑器测试模式除外）
-- [ ] `BundleRuleConfig/Catalogue/AssetCatalog.json` 存在且 JSON 可解析
-- [ ] `{bundleRoot}/Catalogue/AssetCatalog.json` 与工程内 Catalogue 内容一致
+- [ ] `BundleRuleConfig/Catalogue/AssetCatalog.bytes` 存在且可被 `AssetCatalogBinaryCodec` 解析
+- [ ] `{平台根}/Base/Version/catalog.bytes` 与工程内副本 `catalogueHash` 一致
 - [ ] 清单中每条 `entries` 含 `assetPath`、`bundleName`、`assetName`，且与 Default/Detailed/Custom 规则一致
 - [ ] 清单 `version` / `buildNumber` / `platform` / `packingRule` 与 BuildSetting 窗口一致
 - [ ] 清理打包后，两输出路径 + Catalogue 被清理，**无 orphan `.meta` 警告**

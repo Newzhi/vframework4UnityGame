@@ -39,7 +39,7 @@ public static class BuildManifestService
         string buildId,
         BuildMode mode,
         BundleCatalogInfo[] bundleInfos,
-        string bundleRoot)
+        string bundlesRoot)
     {
         var entries = new List<BuildManifestBundleEntry>();
         if (bundleInfos != null)
@@ -49,7 +49,7 @@ public static class BuildManifestService
                 if (info == null || string.IsNullOrEmpty(info.bundleName))
                     continue;
 
-                string filePath = ResolveBundleFilePath(bundleRoot, info.bundleName);
+                string filePath = ResolveBundleFilePath(bundlesRoot, info.bundleName);
                 entries.Add(new BuildManifestBundleEntry
                 {
                     bundleName = info.bundleName,
@@ -74,20 +74,56 @@ public static class BuildManifestService
         };
     }
 
-    public static void WriteManifestAndDiff(string bundleRoot, BuildManifest current)
+    public static void WriteManifestAndDiff(string packageRoot, BuildManifest current)
     {
-        string reportsDir = GetReportsDir(bundleRoot);
+        string reportsDir = GetReportsDir(packageRoot);
         if (!Directory.Exists(reportsDir))
             Directory.CreateDirectory(reportsDir);
 
-        string manifestPath = GetManifestPath(bundleRoot);
+        string manifestPath = GetManifestPath(packageRoot);
         BuildManifest previous = TryLoadManifest(manifestPath);
 
         string json = JsonUtility.ToJson(current, true);
         File.WriteAllText(manifestPath, json);
 
+        string versionDir = BundlePlatformPaths.ResolveVersionDir(packageRoot);
+        if (!Directory.Exists(versionDir))
+            Directory.CreateDirectory(versionDir);
+
+        File.WriteAllText(Path.Combine(versionDir, BundlePlatformPaths.ManifestFileName), json);
+
         BuildManifestDiff diff = ComputeDiff(previous, current);
-        File.WriteAllText(GetDiffPath(bundleRoot), JsonUtility.ToJson(diff, true));
+        File.WriteAllText(GetDiffPath(packageRoot), JsonUtility.ToJson(diff, true));
+    }
+
+    public static void WriteVersionPackageFiles(
+        string packageRoot,
+        string packageId,
+        BuildSetting setting,
+        AssetCatalog catalog,
+        BuildManifest manifest)
+    {
+        if (string.IsNullOrEmpty(packageRoot))
+            return;
+
+        string versionDir = BundlePlatformPaths.ResolveVersionDir(packageRoot);
+        if (!Directory.Exists(versionDir))
+            Directory.CreateDirectory(versionDir);
+
+        var versionInfo = new PackageVersionInfo
+        {
+            packageId = packageId,
+            version = setting?.version ?? catalog?.version,
+            buildNumber = setting?.buildNumber ?? catalog?.buildNumber ?? 0,
+            platform = setting?.platform.ToString() ?? catalog?.platform,
+            buildId = manifest?.buildId ?? catalog?.buildId,
+            catalogueHash = catalog?.catalogueHash,
+            buildMode = manifest?.buildMode ?? catalog?.buildMode
+        };
+
+        File.WriteAllText(
+            Path.Combine(versionDir, BundlePlatformPaths.VersionFileName),
+            JsonUtility.ToJson(versionInfo, true));
     }
 
     public static BuildManifestDiff ComputeDiff(BuildManifest previous, BuildManifest current)
@@ -293,31 +329,20 @@ public static class BuildManifestService
         }
     }
 
-    static string ResolveBundleFilePath(string bundleRoot, string bundleName)
+    static string ResolveBundleFilePath(string bundlesRoot, string bundleName)
     {
-        string path = Path.Combine(bundleRoot, bundleName);
-        if (File.Exists(path))
+        if (BundlePlatformPaths.TryResolveBundleFilePath(bundlesRoot, bundleName, out string path))
             return path;
 
-        if (!Directory.Exists(bundleRoot))
-            return path;
-
-        string fileName = Path.GetFileName(bundleName);
-        foreach (string file in Directory.GetFiles(bundleRoot, "*.bundle"))
-        {
-            if (string.Equals(Path.GetFileName(file), fileName, StringComparison.OrdinalIgnoreCase))
-                return file;
-        }
-
-        return path;
+        return Path.Combine(bundlesRoot, BundlePlatformPaths.NormalizeBundleName(bundleName));
     }
 
-    public static void FillBundleIntegrity(string bundleRoot, BundleCatalogInfo info)
+    public static void FillBundleIntegrity(string bundlesRoot, BundleCatalogInfo info)
     {
         if (info == null || string.IsNullOrEmpty(info.bundleName))
             return;
 
-        string filePath = ResolveBundleFilePath(bundleRoot, info.bundleName);
+        string filePath = ResolveBundleFilePath(bundlesRoot, info.bundleName);
         if (!File.Exists(filePath))
             return;
 

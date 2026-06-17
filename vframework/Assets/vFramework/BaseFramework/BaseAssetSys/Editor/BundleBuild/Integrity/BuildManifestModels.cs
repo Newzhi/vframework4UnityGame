@@ -113,3 +113,16 @@ public class BuildCacheBundleEntry
     /// <summary>输出 .bundle 的 SHA256</summary>
     public string outputHash;
 }
+
+/// <summary>内容包 Version/version.json 元数据。</summary>
+[Serializable]
+public class PackageVersionInfo
+{
+    public string packageId;
+    public string version;
+    public int buildNumber;
+    public string platform;
+    public string buildId;
+    public string catalogueHash;
+    public string buildMode;
+}

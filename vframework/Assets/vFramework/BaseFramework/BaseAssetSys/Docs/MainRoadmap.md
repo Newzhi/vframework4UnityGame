@@ -1,7 +1,8 @@
 # ABSystem_Beta 主路线
 
 > **唯一排期与方向文档**（2026-06-08 定稿）  
-> 进度细节见 [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md)；集成测试见 [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md)。
+> 文档目录：`Assets/vFramework/BaseFramework/BaseAssetSys/Docs/`（下文跨文档链接均相对 **仓库根**）。  
+> 进度细节见 [DesignGoalsAndImplementation.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/DesignGoalsAndImplementation.md)；集成测试见 [集成测试归档.md](Assets/Test/AB_Test/集成测试归档.md)。
 
 ---
 
@@ -20,18 +21,21 @@
 【阶段 A · 已完成】打包 + 清单 + 同步 Load + 三端双 Runner 19/19
         │
         ▼
-【阶段 B · 进行中】TestABScene 异步双 Runner 验收 → 真异步 / inFlight 合并
+【阶段 B-1 · 已完成】TestABScene 异步双 Runner 19/19（三端）
         │
         ▼
-【阶段 B-Pool · 已完成】PrefabPoolManager + 按 Scene 分池 + comprehensiveTest
+【阶段 B-2 · 进行中】真异步 / inFlight 合并
         │
         ▼
-【阶段 P1.5 · 已完成】AssetReference / Ref Trace / LRU 卸包 / 池路径 Lint
-【阶段 P1-B · 已完成】打包 Pipeline / 增量 hash / 公共包 / B4 依赖 Explorer
-【阶段 C · 已完成】CDN 运行时（路径解析 + 下载 + 缓存 + 清单热更 + PreLoad）
+【阶段 B-Pool · 已完成】PrefabPoolManager + 按 Scene 分池
+【阶段 P1.5 · 已完成】AssetReference / Ref Trace / LRU 卸包
+【阶段 P1-B · 已完成】BundleBuildPipeline / 增量 / 公共包 / 依赖 Explorer
+【阶段 C · 已完成】CDN 运行时 + 清单热更 + PreLoad
+【P3-12 · 已完成】清单二进制 catalog.bytes（VCAT v1）+ Base/Version 布局
+【P1 内容包 · 基础已完成】DLC_{id}/ 打包 + ContentPackageService；Steam Gate TODO
         │
         ▼
-【远期 · 禁止区产品场景】边玩边下 / DLC / MOD / 分工程（依赖阶段 C）
+【远期】边玩边下策略细化 / MOD 上传 / 分工程 / 清单加密
 ```
 
 | 阶段 | 目标 | 验收 |
@@ -101,6 +105,8 @@
 | Bundle **LRU 延迟卸载** | ✅ Ref=0 入空闲队列；按 `resourcePriority` + 时长淘汰；`UnloadAll` 立即全卸 |
 | Bundle **构建优化分析**（冗余报告） | ✅ `BundleBuildAnalyzer` + Packer「上次构建报告」 |
 | **P1-B 打包侧优化**（Pipeline / 增量 / hash / 公共包） | ✅ B0–B4 + 阶段 C 封板 |
+| **清单二进制** `catalog.bytes`（VCAT v1） | ✅ `AssetCatalogBinaryCodec` |
+| **DLC 目录布局** `{平台}/DLC_{id}/` + `ContentPackageService` | ✅ 挂载/卸载；`IContentPackageGate` 默认拒绝，Steam TODO |
 
 ---
 
@@ -185,7 +191,7 @@
 | # | 项 |
 |---|-----|
 | 11 | CI 解析 JSON，failCount==0 |
-| 12 | 清单二进制 / 加密（可选） |
+| 12 | 清单加密（可选）；**二进制 `catalog.bytes`（VCAT v1）已实现** |
 
 ### 延后（不阻塞主路线）
 
@@ -215,9 +221,9 @@ h?.Release();  // Resource 立即卸原型；Bundle Ref=0 进入 LRU 空闲队�
 BundleResLoader.Instance.UnloadAll();  // 仅切场景/关游戏；立即全卸 Resource + Bundle
 ```
 
-Bundle 层 LRU 策略见 [BusinessApiUsageGuide.md §5.6](./BusinessApiUsageGuide.md#56-bundle-lru-延迟卸载业务无感)；打包期 `resourcePriority` 见 [CatalogueReference.md](./CatalogueReference.md)。
+Bundle 层 LRU 策略见 [BusinessApiUsageGuide.md §5.6](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md#bundle-lru-unload)；打包期 `resourcePriority` 见 [CatalogueReference.md §P1-B](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/CatalogueReference.md#resource-priority)。
 
-详见 [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md)。
+完整业务 API 见 [BusinessApiUsageGuide.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md)。
 
 **Common 等资源**：无单独常驻策略；需长期占用则 **`PreLoadBundles`** 或 **Load 一次且不 Release**。
 
@@ -241,18 +247,19 @@ Bundle 层 LRU 策略见 [BusinessApiUsageGuide.md §5.6](./BusinessApiUsageGuid
 | 文档 | 角色 |
 |------|------|
 | **本文（MainRoadmap.md）** | 方向 + 排期 + 门禁 |
-| [DesignGoalsAndImplementation.md](./DesignGoalsAndImplementation.md) | 禁止区基线 + 模块进度 checklist |
-| [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步扩展设计细节 |
-| [BusinessApiUsageGuide.md](./BusinessApiUsageGuide.md) | 业务抄用范式 |
-| [CatalogueReference.md](./CatalogueReference.md) | 清单字段 |
-| [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md) | 拓扑 + 构建优化 **设计**（排期见 §4 P1） |
-| [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | 加载侧优化 **设计**（排期见 §4 P1.5） |
-| [RefCountAppendix.md](./RefCountAppendix.md) | 引用计数附件 / Trace 对照 |
-| [DocumentIndex.md](./DocumentIndex.md) | 文档索引 + **新建文档门禁** |
-| [ResLoader/README.md](../ResLoader/README.md) | 加载侧架构图 + 子目录索引 |
-| [LoaderDesignGuide.md](../ResLoader/LoaderDesignGuide.md) | 双层架构 + Router 细节 |
-| [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md) | Case + JSON 基准 |
-| [ResourceSystemDesignGuide.md](../../../Resources/ResourceSystemDesignGuide.md) | 外部通用参考（**不驱动本项目改方向**） |
+| [DesignGoalsAndImplementation.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/DesignGoalsAndImplementation.md) | 禁止区基线 + 模块进度 checklist |
+| [BusinessApiAndCdnPlanning.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiAndCdnPlanning.md) | CDN / 异步扩展设计细节 |
+| [BusinessApiUsageGuide.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md) | 业务抄用范式 |
+| [CatalogueReference.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/CatalogueReference.md) | 清单字段、二进制路径（VCAT v1） |
+| [StageCFreezeCR.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/StageCFreezeCR.md) | 阶段 C 封板交付物 |
+| [BundleBuildOptimizationAndTopologyPlan.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/BundleBuildOptimizationAndTopologyPlan.md) | 拓扑 + 构建优化 **设计**（排期见 §4 P1） |
+| [LoaderOptimizationPlan.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/LoaderOptimizationPlan.md) | 加载侧优化 **设计**（排期见 §4 P1.5） |
+| [RefCountAppendix.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/RefCountAppendix.md) | 引用计数附件 / Trace 对照 |
+| [DocumentIndex.md](Assets/vFramework/BaseFramework/BaseAssetSys/Docs/DocumentIndex.md) | 文档索引 + **新建文档门禁** |
+| [ResLoader/README.md](Assets/vFramework/BaseFramework/BaseAssetSys/ResLoader/README.md) | 加载侧架构图 + 子目录索引 |
+| [LoaderDesignGuide.md](Assets/vFramework/BaseFramework/BaseAssetSys/ResLoader/LoaderDesignGuide.md) | 双层架构 + Router 细节 |
+| [集成测试归档.md](Assets/Test/AB_Test/集成测试归档.md) | Case + JSON 基准 |
+| [ResourceSystemDesignGuide.md](Assets/vFramework/Resources/ResourceSystemDesignGuide.md) | 外部通用参考（**不驱动本项目改方向**） |
 
 **维护约定**：**排期、阶段状态、代码 TODO 登记** 只改 **MainRoadmap.md**（§4、§8）与 **DesignGoals 实现细节区**；专题 Plan 只写设计不写状态表；子模块 `README.md` 只链主路线。
 
@@ -267,9 +274,9 @@ Bundle 层 LRU 策略见 [BusinessApiUsageGuide.md §5.6](./BusinessApiUsageGuid
 | `BundleResLoader.PreLoad` / `PreLoadBundles` | 包级预加载 | ✅ P2-10 |
 | `BundleResLoader.LoadWithAutoUnLoad` | 实例绑定自动卸 | ✅ → `LoadGameObject` |
 | `BundleResLoader.LoadUniTaskAsynWithAutoUnLoad` | 异步版 | ✅ |
-| `BundleBuilder` / `BundleBuilderTabView` | DLC 分包输出、`dlcOutputPath`、按模式清单策略 | 远期 / 阶段 C 后 |
-| `CatalogueWriter` | 清单 JSON → 二进制 | P3-12 |
-| `AssetCatalog` 注释 | 清单二进制 | P3-12 |
+| `BundleBuilder` / `BundleBuilderTabView` | Custom 项独立 `dlcOutputPath` 字段；Steam/TapTap Gate 配置 | 远期 |
+| `ContentPackageService` | `IContentPackageGate` 第三方 SDK 门控 | Steam / TapTap TODO |
+| `CatalogueWriter` / `AssetCatalogBinaryCodec` | 清单二进制 | ✅ P3-12 |
 | `BundleManager` / `CdnBundleAssetProvider` | CDN 下载队列、本地 Catalogue 热更 | ✅ 阶段 C |
 | `BundleLruUnloadPolicy` | grace / MaxIdleBundles 可配置化 | 可选 |
 | `LoaderOptimizationPlan` §2.2 | `AssetReference`、`LoadGameObject` | P1.5-3 |
@@ -291,3 +298,5 @@ Bundle 层 LRU 策略见 [BusinessApiUsageGuide.md §5.6](./BusinessApiUsageGuid
 | 2026-06-13 | **P1-B**：`BundleBuildPipeline`、增量/Manifest、`SharedBundlePlanner`、`ResourcePriority` 写清单 |
 | 2026-06-13 | **P1.5-5**：`BundleManager` LRU 延迟卸包 + `BundleLruUnloadPolicy` |
 | 2026-06-13 | **阶段 C 封板**：`CdnCatalogueSyncService`、`BundleDownloadQueue`、`PreLoadBundles`、B4 `DependencyGraph` + Explorer、`MyCdnHotUpdateTest` |
+| 2026-06-13 | **P3-12**：资源清单改二进制 `catalog.bytes`（`AssetCatalogBinaryCodec` VCAT v1）；`Base/Version/` 布局 |
+| 2026-06-13 | **文档链接**：跨文档链接改为仓库根路径 `Assets/...`；§5 LRU / `resourcePriority` 显式锚点 |

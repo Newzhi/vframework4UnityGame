@@ -56,6 +56,17 @@ public class BundleBuilder
                 DeleteFileAndMeta(cataloguePath);
         }
 
+        string catalogueDir = Path.GetDirectoryName(cataloguePath);
+        if (!string.IsNullOrEmpty(catalogueDir))
+        {
+            foreach (string legacyName in new[] { "AssetCatalog.json", "catalog.json", "catalog.fragment.json" })
+            {
+                string legacyPath = Path.Combine(catalogueDir, legacyName);
+                if (File.Exists(legacyPath))
+                    DeleteFileAndMeta(legacyPath);
+            }
+        }
+
         AssetDatabase.Refresh();
         Debug.Log("已清理打包输出、清单与 BuildCache");
     }
@@ -86,10 +97,10 @@ public class BundleBuilder
                 return false;
             }
 
-            // TODO: DlcPackage 校验独立 dlcOutputPath、DLC 包名/id
-            if (setting.buildMode == BuildMode.DlcPackage && string.IsNullOrEmpty(setting.cdnOutputPath))
+            // TODO: DlcPackage 校验 dlcPackageId
+            if (setting.buildMode == BuildMode.DlcPackage && string.IsNullOrEmpty(setting.dlcPackageId))
             {
-                Debug.LogError("DLC分包模式：联网 CDN 输出路径暂作占位，不能为空（TODO：改为 dlcOutputPath）");
+                Debug.LogError("DLC分包模式：dlcPackageId 不能为空（如 Desert）");
                 return false;
             }
         }
@@ -162,19 +173,24 @@ public class BundleBuilder
                 basePath = setting.cdnOutputPath;
                 break;
             case BuildMode.DlcPackage:
-                // TODO: setting.dlcOutputPath（如 Bundles/DLC/{PackageName}），与 CDN 热更主线分离
-                basePath = setting.cdnOutputPath;
+                basePath = setting.deviceOutputPath;
                 break;
             case BuildMode.DeviceDebug:
                 basePath = setting.deviceOutputPath;
                 break;
             default:
-                // TODO: EditorTest 占位 root，后续改为纯模拟清单目录
                 basePath = setting.deviceOutputPath;
                 break;
         }
 
-        return ResolvePlatformOutputPath(basePath, setting.platform, setting.usePlatformSubfolders);
+        string platformRoot = ResolvePlatformOutputPath(basePath, setting.platform, setting.usePlatformSubfolders);
+        string packageId = BundlePlatformPaths.ResolvePackageId(mode, setting);
+        return BundlePlatformPaths.ResolvePackageRoot(platformRoot, packageId);
+    }
+
+    public static string ResolveBundlesBuildRoot(BuildMode mode, BuildSetting setting)
+    {
+        return BundlePlatformPaths.ResolveBundlesRoot(ResolveBundleRoot(mode, setting));
     }
 
     public static string ResolvePlatformOutputPath(
@@ -198,11 +214,72 @@ public class BundleBuilder
 
     static void CleanOutputPath(string configPath, BuildSetting setting)
     {
+        if (setting.usePlatformSubfolders)
+        {
+            string baseAbs = ResolveOutputPath(configPath);
+            foreach (string platformFolder in StreamingAssetsPlatformIsolation.KnownPlatformFolders)
+            {
+                string platformPath = Path.Combine(baseAbs, platformFolder);
+                if (Directory.Exists(platformPath))
+                {
+                    CleanPackageTree(platformPath);
+                    TryDeletePlatformFolderAsset(platformPath);
+                }
+            }
+
+            return;
+        }
+
         string outputPath = ResolvePlatformOutputPath(
             configPath,
             setting.platform,
             setting.usePlatformSubfolders);
 
+        if (!Directory.Exists(outputPath))
+            return;
+
+        CleanOutputDirectory(outputPath);
+        TryDeletePlatformFolderAsset(outputPath);
+    }
+
+    static void TryDeletePlatformFolderAsset(string absolutePath)
+    {
+        string relative = ToAssetsRelativePath(absolutePath);
+        if (string.IsNullOrEmpty(relative) || !relative.StartsWith("Assets/"))
+            return;
+
+        if (AssetDatabase.IsValidFolder(relative))
+            AssetDatabase.DeleteAsset(relative);
+    }
+
+    static void CleanPackageTree(string platformPath)
+    {
+        string basePath = Path.Combine(platformPath, BundlePlatformPaths.BasePackageId);
+        if (Directory.Exists(basePath))
+            CleanOutputDirectory(basePath);
+
+        if (!Directory.Exists(platformPath))
+            return;
+
+        foreach (string dir in Directory.GetDirectories(platformPath))
+        {
+            string name = Path.GetFileName(dir);
+            if (name.StartsWith(BundlePlatformPaths.DlcPackagePrefix, System.StringComparison.OrdinalIgnoreCase))
+                CleanOutputDirectory(dir);
+        }
+
+        string modsRoot = Path.Combine(platformPath, BundlePlatformPaths.ModsFolder);
+        if (Directory.Exists(modsRoot))
+        {
+            foreach (string modDir in Directory.GetDirectories(modsRoot))
+                CleanOutputDirectory(modDir);
+        }
+
+        CleanOutputDirectory(platformPath);
+    }
+
+    static void CleanOutputDirectory(string outputPath)
+    {
         if (!Directory.Exists(outputPath))
             return;
 
@@ -220,17 +297,41 @@ public class BundleBuilder
                 DeleteOutputFile(file);
         }
 
-        string runtimeCatalogueDir = Path.Combine(outputPath, "Catalogue");
+        string runtimeCatalogueDir = Path.Combine(outputPath, BundlePlatformPaths.VersionFolder);
         if (Directory.Exists(runtimeCatalogueDir))
         {
             foreach (string file in Directory.GetFiles(runtimeCatalogueDir, "*", SearchOption.AllDirectories))
                 DeleteOutputFile(file);
+        }
 
-            string relativeCatalogueDir = ToAssetsRelativePath(runtimeCatalogueDir);
+        string bundlesDir = Path.Combine(outputPath, BundlePlatformPaths.BundlesFolder);
+        if (Directory.Exists(bundlesDir))
+        {
+            foreach (string file in Directory.GetFiles(bundlesDir, "*", SearchOption.AllDirectories))
+            {
+                if (ShouldDeleteBuildArtifact(file))
+                    DeleteOutputFile(file);
+            }
+        }
+
+        string configDir = Path.Combine(outputPath, BundlePlatformPaths.ConfigFolder);
+        if (Directory.Exists(configDir))
+        {
+            foreach (string file in Directory.GetFiles(configDir, "*", SearchOption.AllDirectories))
+                DeleteOutputFile(file);
+        }
+
+        string runtimeCatalogueDirLegacy = Path.Combine(outputPath, "Catalogue");
+        if (Directory.Exists(runtimeCatalogueDirLegacy))
+        {
+            foreach (string file in Directory.GetFiles(runtimeCatalogueDirLegacy, "*", SearchOption.AllDirectories))
+                DeleteOutputFile(file);
+
+            string relativeCatalogueDir = ToAssetsRelativePath(runtimeCatalogueDirLegacy);
             if (!string.IsNullOrEmpty(relativeCatalogueDir) && AssetDatabase.IsValidFolder(relativeCatalogueDir))
                 AssetDatabase.DeleteAsset(relativeCatalogueDir);
-            else if (Directory.Exists(runtimeCatalogueDir) && Directory.GetFiles(runtimeCatalogueDir).Length == 0)
-                Directory.Delete(runtimeCatalogueDir, true);
+            else if (Directory.Exists(runtimeCatalogueDirLegacy) && Directory.GetFiles(runtimeCatalogueDirLegacy).Length == 0)
+                Directory.Delete(runtimeCatalogueDirLegacy, true);
         }
     }
 
@@ -249,7 +350,11 @@ public class BundleBuilder
         string name = Path.GetFileName(filePath);
         return name.EndsWith(RuleResolver.BundleSuffix)
             || name.EndsWith(".manifest")
-            || name == RuntimeCatalogueFileName;
+            || name == RuntimeCatalogueFileName
+            || name == BundlePlatformPaths.CatalogFragmentFileName
+            || name == "AssetCatalog.json"
+            || name == "catalog.json"
+            || name == "catalog.fragment.json";
     }
 
     static bool ShouldDeleteExtensionlessManifest(string filePath)
@@ -302,6 +407,26 @@ public class BundleBuilder
             default:
                 return BuildTarget.StandaloneWindows64;
         }
+    }
+
+    /// <summary>AB 打包前切换到 BuildSetting 目标平台，避免在错误 Active Target 下产出其它平台格式 bundle。</summary>
+    public static bool EnsureActiveBuildTarget(BuildTarget target)
+    {
+        if (EditorUserBuildSettings.activeBuildTarget == target)
+            return true;
+
+        BuildTargetGroup group = BuildPipeline.GetBuildTargetGroup(target);
+        if (!EditorUserBuildSettings.SwitchActiveBuildTarget(group, target))
+        {
+            Debug.LogError(
+                "无法切换 Active Build Target 到 " + target +
+                "（当前 " + EditorUserBuildSettings.activeBuildTarget +
+                "）。请在 Build Settings 中切换平台后重试。");
+            return false;
+        }
+
+        Debug.Log("[BundleBuilder] 已切换 Active Build Target → " + target);
+        return true;
     }
 
     public static string ToAssetsRelativePath(string absPath)

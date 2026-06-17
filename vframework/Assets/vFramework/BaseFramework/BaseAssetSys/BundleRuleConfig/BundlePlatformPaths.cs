@@ -10,7 +10,7 @@ public static class BundlePlatformPaths
     /// <summary>工程内 AB 资源系统根目录（BaseAssetSys，原 ABSystem_Beta）。</summary>
     public const string SystemRoot = "Assets/vFramework/BaseFramework/BaseAssetSys";
 
-    public const string ProjectCatalogueRelativePath = SystemRoot + "/BundleRuleConfig/Catalogue/AssetCatalog.json";
+    public const string ProjectCatalogueRelativePath = SystemRoot + "/BundleRuleConfig/Catalogue/AssetCatalog.bytes";
 
     public const string DefaultBuildSettingRelativePath = SystemRoot + "/BundleRuleConfig/Setting/DefaultBuildSetting.asset";
 
@@ -23,6 +23,18 @@ public static class BundlePlatformPaths
     public const string IOSFolder = "iOS";
     public const string MacFolder = "StandaloneOSX";
     public const string WebGLFolder = "WebGL";
+
+    public const string BasePackageId = "Base";
+    public const string VersionFolder = "Version";
+    public const string BundlesFolder = "Bundles";
+    public const string ConfigFolder = "Config";
+    public const string ModsFolder = "Mods";
+    public const string DlcPackagePrefix = "DLC_";
+
+    public const string CatalogFileName = "catalog.bytes";
+    public const string ManifestFileName = "manifest.json";
+    public const string VersionFileName = "version.json";
+    public const string CatalogFragmentFileName = "catalog.fragment.bytes";
 
     public static string GetFolderName(BuildPlatform platform)
     {
@@ -121,16 +133,179 @@ public static class BundlePlatformPaths
         return Path.GetFullPath(withPlatform);
     }
 
-    /// <summary>统一 bundle 文件名为小写 + .bundle 后缀，构建与运行时共用。</summary>
+    public static string ResolvePackageId(BuildMode mode, BuildSetting setting)
+    {
+        if (mode == BuildMode.DlcPackage)
+        {
+            if (setting != null && !string.IsNullOrEmpty(setting.dlcPackageId))
+                return NormalizeDlcPackageId(setting.dlcPackageId);
+            return DlcPackagePrefix + "Default";
+        }
+
+        return BasePackageId;
+    }
+
+    public static string NormalizeDlcPackageId(string dlcPackageId)
+    {
+        if (string.IsNullOrEmpty(dlcPackageId))
+            return DlcPackagePrefix + "Default";
+
+        string id = dlcPackageId.Replace("\\", "/").Trim('/');
+        if (id.StartsWith(DlcPackagePrefix, StringComparison.OrdinalIgnoreCase))
+            return id;
+
+        return DlcPackagePrefix + id;
+    }
+
+    public static string ResolvePackageRoot(string platformRoot, string packageId)
+    {
+        if (string.IsNullOrEmpty(platformRoot))
+            return platformRoot;
+
+        if (string.IsNullOrEmpty(packageId) || packageId == BasePackageId)
+        {
+            if (StreamingAssetsIO.IsNonFileProtocolPath(platformRoot))
+                return StreamingAssetsIO.CombinePath(platformRoot, BasePackageId);
+            return Path.GetFullPath(Path.Combine(platformRoot, BasePackageId));
+        }
+
+        if (packageId.StartsWith(ModsFolder + "/", StringComparison.OrdinalIgnoreCase))
+        {
+            if (StreamingAssetsIO.IsNonFileProtocolPath(platformRoot))
+                return StreamingAssetsIO.CombinePath(platformRoot, packageId);
+            return Path.GetFullPath(Path.Combine(platformRoot, packageId.Replace("/", Path.DirectorySeparatorChar.ToString())));
+        }
+
+        if (StreamingAssetsIO.IsNonFileProtocolPath(platformRoot))
+            return StreamingAssetsIO.CombinePath(platformRoot, packageId);
+
+        return Path.GetFullPath(Path.Combine(platformRoot, packageId));
+    }
+
+    public static string ResolveBundlesRoot(string packageRoot)
+    {
+        if (string.IsNullOrEmpty(packageRoot))
+            return packageRoot;
+
+        if (StreamingAssetsIO.IsNonFileProtocolPath(packageRoot))
+            return StreamingAssetsIO.CombinePath(packageRoot, BundlesFolder);
+
+        return Path.GetFullPath(Path.Combine(packageRoot, BundlesFolder));
+    }
+
+    public static string ResolveVersionDir(string packageRoot)
+    {
+        if (string.IsNullOrEmpty(packageRoot))
+            return packageRoot;
+
+        if (StreamingAssetsIO.IsNonFileProtocolPath(packageRoot))
+            return StreamingAssetsIO.CombinePath(packageRoot, VersionFolder);
+
+        return Path.GetFullPath(Path.Combine(packageRoot, VersionFolder));
+    }
+
+    public static string ResolveConfigDir(string packageRoot)
+    {
+        if (string.IsNullOrEmpty(packageRoot))
+            return packageRoot;
+
+        if (StreamingAssetsIO.IsNonFileProtocolPath(packageRoot))
+            return StreamingAssetsIO.CombinePath(packageRoot, ConfigFolder);
+
+        return Path.GetFullPath(Path.Combine(packageRoot, ConfigFolder));
+    }
+
+    public static string ResolveVersionCatalogPath(string packageRoot)
+    {
+        return StreamingAssetsIO.CombinePath(ResolveVersionDir(packageRoot), CatalogFileName);
+    }
+
+    /// <summary>运行时解析首包：Base/Version/catalog.bytes。</summary>
+    public static bool TryResolveRuntimeCatalogPath(string platformRoot, out string cataloguePath, out string bundlesRoot)
+    {
+        cataloguePath = null;
+        bundlesRoot = null;
+
+        if (string.IsNullOrEmpty(platformRoot))
+            platformRoot = Application.streamingAssetsPath;
+
+        string basePackageRoot = ResolvePackageRoot(platformRoot, BasePackageId);
+        string catalogPath = ResolveVersionCatalogPath(basePackageRoot);
+        if (!CatalogFileExists(catalogPath))
+            return false;
+
+        cataloguePath = catalogPath;
+        bundlesRoot = ResolveBundlesRoot(basePackageRoot);
+        return true;
+    }
+
+    static bool CatalogFileExists(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return false;
+
+        if (StreamingAssetsIO.IsNonFileProtocolPath(path))
+            return true;
+
+        return File.Exists(path);
+    }
+
+    public static bool TryResolveBundleFilePath(string bundlesRoot, string bundleName, out string fullPath)
+    {
+        fullPath = null;
+        if (string.IsNullOrEmpty(bundlesRoot) || string.IsNullOrEmpty(bundleName))
+            return false;
+
+        bundleName = NormalizeBundleName(bundleName);
+        string direct = StreamingAssetsIO.CombinePath(bundlesRoot, bundleName);
+        if (!StreamingAssetsIO.IsNonFileProtocolPath(bundlesRoot) && File.Exists(direct))
+        {
+            fullPath = direct;
+            return true;
+        }
+
+        if (StreamingAssetsIO.IsNonFileProtocolPath(bundlesRoot))
+        {
+            fullPath = direct;
+            return true;
+        }
+
+        if (!Directory.Exists(bundlesRoot))
+            return false;
+
+        string fileName = Path.GetFileName(bundleName);
+        foreach (string file in Directory.GetFiles(bundlesRoot, "*.bundle", SearchOption.AllDirectories))
+        {
+            if (string.Equals(Path.GetFileName(file), fileName, StringComparison.OrdinalIgnoreCase))
+            {
+                fullPath = file;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>统一 bundle 名为小写 + .bundle；保留分类子路径（如 core/ui.bundle）。</summary>
     public static string NormalizeBundleName(string bundleName)
     {
         if (string.IsNullOrEmpty(bundleName))
             return bundleName;
 
         string name = bundleName.Replace("\\", "/").Trim();
-        if (!name.EndsWith(BundleSuffix, StringComparison.OrdinalIgnoreCase))
-            name += BundleSuffix;
+        string[] segments = name.Split('/');
+        for (int i = 0; i < segments.Length; i++)
+        {
+            if (string.IsNullOrEmpty(segments[i]))
+                continue;
 
-        return name.ToLowerInvariant();
+            string segment = segments[i];
+            if (!segment.EndsWith(BundleSuffix, StringComparison.OrdinalIgnoreCase))
+                segment += BundleSuffix;
+
+            segments[i] = segment.ToLowerInvariant();
+        }
+
+        return string.Join("/", segments);
     }
 }

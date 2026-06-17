@@ -42,3 +42,14 @@ public struct PlayerDamageEvent : IGameEvent
 {
     public float Amount;
 }
+
+public struct AllySpawnedEvent : IGameEvent
+{
+    public GameObject Ally;
+}
+
+public struct AllyShotEvent : IGameEvent
+{
+    public Vector3 Position;
+    public Quaternion Rotation;
+}

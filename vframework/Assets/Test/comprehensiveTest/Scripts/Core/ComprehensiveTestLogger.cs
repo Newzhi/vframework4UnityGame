@@ -15,15 +15,18 @@ public class ComprehensiveTestLogger : MonoBehaviour
 {
     const string BulletPath = "Model/Prefabs/Bullet";
     const string EnemyPath = "Model/Prefabs/enemy";
+    const string AllyPath = "Model/Prefabs/Ally";
     const int EnemyExpectedRefCount = 1;
+    const int AllyExpectedRefCount = 1;
     const int BulletBaseMaxInactive = 48;
-    const int EnemyBaseMaxInactive = 12;
+    const int EnemyBaseMaxInactive = 44;
+    const int AllyBaseMaxInactive = 36;
     const float DamageLogInterval = 1f;
     const float SnapshotInterval = 5f;
     const int LeakTrendSamples = 6;
     const long LeakMonoGrowthThreshold = 5 * 1024 * 1024;
     const int DefaultMaxStoredLines = 12000;
-    const string LoggerSchemaVersion = "v2-ref-holders-max";
+    const string LoggerSchemaVersion = "v3-entity-autounload-gc";
 
     public static ComprehensiveTestLogger Instance { get; private set; }
 
@@ -34,10 +37,10 @@ public class ComprehensiveTestLogger : MonoBehaviour
             Instance.WriteBulletPoolRef(reason);
     }
 
-    public static void LogEnemySpawnMode(ComprehensiveTestDebugConfig.EnemySpawnMode mode)
+    public static void LogEntitySpawnMode(ComprehensiveTestDebugConfig.EntitySpawnMode mode)
     {
         if (Instance != null)
-            Instance.Write("敌人生成模式=" + mode, pin: true);
+            Instance.Write("实体生成模式=" + mode, pin: true);
     }
 
     [SerializeField] Text logText;
@@ -62,6 +65,9 @@ public class ComprehensiveTestLogger : MonoBehaviour
     long baselineMonoUsed;
     long baselineTotalReserved;
     long baselineGcManaged;
+    int baselineGcGen0;
+    int baselineGcGen1;
+    int baselineGcGen2;
 
     void Awake()
     {
@@ -93,6 +99,8 @@ public class ComprehensiveTestLogger : MonoBehaviour
         GameEventBus.RegisterEvent<DamageTakenEvent>(OnDamageTaken);
         GameEventBus.RegisterEvent<EntityDeadEvent>(OnEntityDead);
         GameEventBus.RegisterEvent<EnemySpawnedEvent>(OnEnemySpawned);
+        GameEventBus.RegisterEvent<AllySpawnedEvent>(OnAllySpawned);
+        GameEventBus.RegisterEvent<AllyShotEvent>(OnAllyShot);
         GameEventBus.RegisterEvent<PlayerRespawnedEvent>(OnPlayerRespawned);
     }
 
@@ -103,6 +111,8 @@ public class ComprehensiveTestLogger : MonoBehaviour
         GameEventBus.DeRegisterEvent<DamageTakenEvent>(OnDamageTaken);
         GameEventBus.DeRegisterEvent<EntityDeadEvent>(OnEntityDead);
         GameEventBus.DeRegisterEvent<EnemySpawnedEvent>(OnEnemySpawned);
+        GameEventBus.DeRegisterEvent<AllySpawnedEvent>(OnAllySpawned);
+        GameEventBus.DeRegisterEvent<AllyShotEvent>(OnAllyShot);
         GameEventBus.DeRegisterEvent<PlayerRespawnedEvent>(OnPlayerRespawned);
     }
 
@@ -159,6 +169,14 @@ public class ComprehensiveTestLogger : MonoBehaviour
         Write("ES " + Fv(e.Position));
     }
 
+    void OnAllyShot(AllyShotEvent e)
+    {
+        if (!logShots)
+            return;
+
+        Write("AS " + Fv(e.Position));
+    }
+
     void OnDamageTaken(DamageTakenEvent e)
     {
         if (Time.time < nextDamageLogTime)
@@ -175,15 +193,12 @@ public class ComprehensiveTestLogger : MonoBehaviour
         {
             Write("玩家死亡 lives=" + e.RemainingLives, pin: true);
             Write(e.RemainingLives > 0 ? "将复活" : "命尽回Start", pin: true);
+            ExportSessionReport("PoolTest玩家死亡_lives" + e.RemainingLives);
             return;
         }
 
         Write("敌人死亡", pin: true);
-        if (ComprehensiveTestDebugConfig.ResolveEnemySpawnMode()
-            == ComprehensiveTestDebugConfig.EnemySpawnMode.DirectInstantiate)
-            WriteBulletPoolRef("敌人死亡将Destroy卸子弹份额");
-        else
-            WriteBulletPoolRef("敌人死亡(池化回敌人池,子弹ref不降)");
+        LogEntityDeathPoolRef("敌人");
     }
 
     void OnPlayerRespawned(PlayerRespawnedEvent e)
@@ -197,9 +212,26 @@ public class ComprehensiveTestLogger : MonoBehaviour
         WriteBulletPoolRef("敌人生成后");
     }
 
+    void OnAllySpawned(AllySpawnedEvent e)
+    {
+        Write("友军生成", pin: true);
+        WriteBulletPoolRef("友军生成后");
+    }
+
+    void LogEntityDeathPoolRef(string label)
+    {
+        var mode = ComprehensiveTestDebugConfig.ResolveEntitySpawnMode();
+        if (mode == ComprehensiveTestDebugConfig.EntitySpawnMode.Pooled)
+            WriteBulletPoolRef(label + "死亡(池化回收,子弹ref不降)");
+        else if (mode == ComprehensiveTestDebugConfig.EntitySpawnMode.AutoUnload)
+            WriteBulletPoolRef(label + "死亡Destroy+AssetReference释prefab句柄");
+        else
+            WriteBulletPoolRef(label + "死亡Destroy卸子弹份额");
+    }
+
     void WriteBulletPoolRef(string reason)
     {
-        int holders = PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount;
+        int holders = GetBulletPoolHolderCount();
         if (!PrefabPoolManager.Instance.TryGetPool(BulletPath, out PrefabPool pool))
         {
             Write("池ref[" + reason + "] 未注册 holders=" + holders, pin: true);
@@ -220,14 +252,23 @@ public class ComprehensiveTestLogger : MonoBehaviour
 
     public void OnExitGame()
     {
-        Write("退出导出...", pin: true);
+        ExportSessionReport("PoolTest退出", quitAfterExport: true);
+    }
+
+    /// <summary>与退出按钮相同：池快照 + 内存 + 写文件；可选退出应用。</summary>
+    public void ExportSessionReport(string tag, bool quitAfterExport = false)
+    {
+        Write("报告导出 tag=" + tag + "...", pin: true);
         LogPoolSnapshot();
         if (logMemory)
-            LogMemorySnapshot("退出", pin: true);
+            LogMemorySnapshot(tag, pin: true);
 
-        string path = ExportLogFile();
+        string path = ExportLogFile(tag);
         Write("已写入 " + path, pin: true);
         RefreshLogText();
+
+        if (!quitAfterExport)
+            return;
 
         ComprehensiveTestSceneFlow.CleanupBeforeSceneChange();
 
@@ -238,15 +279,25 @@ public class ComprehensiveTestLogger : MonoBehaviour
 #endif
     }
 
+    static int GetBulletPoolHolderCount()
+    {
+        return PlayerTest.BulletPoolShareCount
+            + enemyTest.BulletPoolShareCount
+            + AllyTest.BulletPoolShareCount;
+    }
+
     void LogPoolSnapshot()
     {
         Scene active = SceneManager.GetActiveScene();
-        int expectedBulletRef = PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount;
+        int expectedBulletRef = GetBulletPoolHolderCount();
         LogPoolStats(BulletPath, "Bullet", expectedBulletRef, BulletBaseMaxInactive);
 
-        if (ComprehensiveTestDebugConfig.ResolveEnemySpawnMode()
-            == ComprehensiveTestDebugConfig.EnemySpawnMode.Pooled)
+        var mode = ComprehensiveTestDebugConfig.ResolveEntitySpawnMode();
+        if (mode == ComprehensiveTestDebugConfig.EntitySpawnMode.Pooled)
+        {
             LogPoolStats(EnemyPath, "Enemy", EnemyExpectedRefCount, EnemyBaseMaxInactive);
+            LogPoolStats(AllyPath, "Ally", AllyExpectedRefCount, AllyBaseMaxInactive);
+        }
 
         if (!PoolSceneRootsUtil.TryGetRuntimeRoot(active, out Transform poolRuntime))
         {
@@ -258,6 +309,7 @@ public class ComprehensiveTestLogger : MonoBehaviour
         Write("池 scene=" + active.name + " ch=" + poolRuntime.childCount + " rootInActive=" + sameScene, pin: true);
         LogHierarchyCrossCheck(active, BulletPath, "Bullet");
         LogHierarchyCrossCheck(active, EnemyPath, "Enemy");
+        LogHierarchyCrossCheck(active, AllyPath, "Ally");
     }
 
     /// <summary>
@@ -311,7 +363,7 @@ public class ComprehensiveTestLogger : MonoBehaviour
             "池 " + shortName + " b=" + pool.ActiveCount + " p=" + pool.InactiveCount +
             " ref=" + pool.RefCount + " max=" + pool.MaxInactiveCapacity +
             (shortName == "Bullet"
-                ? " holders=" + (PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount)
+                ? " holders=" + GetBulletPoolHolderCount()
                 : ""),
             pin: true);
 
@@ -323,7 +375,7 @@ public class ComprehensiveTestLogger : MonoBehaviour
 
         if (shortName == "Bullet")
         {
-            int holderCount = PlayerTest.BulletPoolShareCount + enemyTest.BulletPoolShareCount;
+            int holderCount = GetBulletPoolHolderCount();
             if (pool.RefCount != holderCount)
                 Write(
                     "池 Bullet 持有者不符 holders=" + holderCount + " ref=" + pool.RefCount,
@@ -349,6 +401,9 @@ public class ComprehensiveTestLogger : MonoBehaviour
         baselineMonoUsed = Profiler.GetMonoUsedSizeLong();
         baselineTotalReserved = Profiler.GetTotalReservedMemoryLong();
         baselineGcManaged = GC.GetTotalMemory(false);
+        baselineGcGen0 = GC.CollectionCount(0);
+        baselineGcGen1 = GC.CollectionCount(1);
+        baselineGcGen2 = GC.CollectionCount(2);
     }
 
     void LogMemorySnapshot(string label, bool pin = false)
@@ -357,27 +412,41 @@ public class ComprehensiveTestLogger : MonoBehaviour
         long monoHeap = Profiler.GetMonoHeapSizeLong();
         long totalReserved = Profiler.GetTotalReservedMemoryLong();
         long totalAllocated = Profiler.GetTotalAllocatedMemoryLong();
+        long unusedReserved = Profiler.GetTotalUnusedReservedMemoryLong();
         long gfxDriver = Profiler.GetAllocatedMemoryForGraphicsDriver();
         long gcManaged = GC.GetTotalMemory(false);
+
+        int gcGen0 = GC.CollectionCount(0);
+        int gcGen1 = GC.CollectionCount(1);
+        int gcGen2 = GC.CollectionCount(2);
 
         long monoDelta = monoUsed - baselineMonoUsed;
         long reservedDelta = totalReserved - baselineTotalReserved;
         long gcDelta = gcManaged - baselineGcManaged;
+        long monoUnused = monoHeap - monoUsed;
 
         Write(
             "MEM " + label +
             " m=" + Fb(monoUsed) + " d" + Fs(monoDelta) +
-            " h=" + Fb(monoHeap) +
+            " h=" + Fb(monoHeap) + " u=" + Fb(monoUnused) +
             " r=" + Fb(totalReserved) + " d" + Fs(reservedDelta) +
             " a=" + Fb(totalAllocated) +
+            " ur=" + Fb(unusedReserved) +
             " g=" + Fb(gfxDriver) +
             " gc=" + Fb(gcManaged) + " d" + Fs(gcDelta),
             pin);
 
-        CheckLeakTrend(monoUsed, totalReserved, gcManaged);
+        Write(
+            "GC " + label +
+            " g0=" + gcGen0 + " d" + (gcGen0 - baselineGcGen0) +
+            " g1=" + gcGen1 + " d" + (gcGen1 - baselineGcGen1) +
+            " g2=" + gcGen2 + " d" + (gcGen2 - baselineGcGen2),
+            pin);
+
+        CheckLeakTrend(monoUsed, totalReserved, gcManaged, gcGen0, gcGen1, gcGen2);
     }
 
-    void CheckLeakTrend(long monoUsed, long totalReserved, long gcManaged)
+    void CheckLeakTrend(long monoUsed, long totalReserved, long gcManaged, int gcGen0, int gcGen1, int gcGen2)
     {
         monoUsedHistory.Add(monoUsed);
         if (monoUsedHistory.Count < LeakTrendSamples)
@@ -389,19 +458,26 @@ public class ComprehensiveTestLogger : MonoBehaviour
 
         long reservedGrowth = totalReserved - baselineTotalReserved;
         long gcGrowth = gcManaged - baselineGcManaged;
+        int gen0Growth = gcGen0 - baselineGcGen0;
         if (reservedGrowth > LeakMonoGrowthThreshold && monoGrowth > LeakMonoGrowthThreshold / 2)
-            Write("MEM提示 res+" + Fb(reservedGrowth) + " gc+" + Fb(gcGrowth), pin: true);
+            Write(
+                "MEM提示 res+" + Fb(reservedGrowth) + " gc+" + Fb(gcGrowth) +
+                " g0+" + gen0Growth + " g1+" + (gcGen1 - baselineGcGen1),
+                pin: true);
+
+        if (gen0Growth > LeakTrendSamples * 8)
+            Write("GC提示 g0累积+" + gen0Growth + " 近" + LeakTrendSamples + "采样", pin: true);
 
         monoUsedHistory.RemoveAt(0);
     }
 
-    string ExportLogFile()
+    string ExportLogFile(string tag)
     {
         var lines = new List<string>(entries.Count);
         for (int i = 0; i < entries.Count; i++)
             lines.Add(entries[i].Line);
 
-        return ComprehensiveTestLogExporter.ExportLog(lines, "PoolTest退出");
+        return ComprehensiveTestLogExporter.ExportLog(lines, tag);
     }
 
     void Write(string message, bool pin = false, bool isError = false)

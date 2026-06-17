@@ -478,12 +478,12 @@
                 </div>
                 <div class="settings-row">
                     <div class="setting-item" style="flex: 1;">
-                        <label title="应用版本号（x.y.z），写入 AssetCatalog.json 的 version 字段。">版本号:</label>
+                        <label title="应用版本号（x.y.z），写入资源清单 catalog.bytes 的 version 字段。">版本号:</label>
                         <input type="text" id="versionNumber" value="1.0.0" placeholder="输入版本号" style="flex: 1;">
                         <button title="版本号 patch 位 +1，同时 buildNumber +1。" style="padding: 5px 15px; background: #007acc; border: 1px solid #007acc; color: white; border-radius: 3px; cursor: pointer; font-size: 12px;" onclick="updateVersion()">📌 更新版本号</button>
                     </div>
                     <div class="setting-item">
-                        <label title="递增构建编号，写入 AssetCatalog.json 的 buildNumber 字段。">构建号:</label>
+                        <label title="递增构建编号，写入资源清单 catalog.bytes 的 buildNumber 字段。">构建号:</label>
                         <input type="text" id="buildNumber" value="1001" placeholder="构建号">
                     </div>
                 </div>
@@ -593,7 +593,7 @@
                 case 'cdn':
                     return 'CDN联网：AB 输出到联网 CDN 输出路径（默认 Bundles/CDN）。';
                 case 'dlc':
-                    return 'DLC分包：可选下载内容包，输出到独立 DLC 目录（TODO：未实现）。';
+                    return 'DLC分包：输出到 {平台}/DLC_{id}/（Bundles + catalog.fragment.bytes）；运行时由 ContentPackageService 挂载，商店 Gate 待接 SDK。';
                 default:
                     return '编辑器测试：不生成 .bundle，仅更新清单（模拟阶段）。';
             }

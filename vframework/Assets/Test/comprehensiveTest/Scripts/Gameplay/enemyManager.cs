@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -9,20 +10,22 @@ public class enemyManager : MonoBehaviour
     #region 游戏逻辑
 
     const string EnemyPath = "Model/Prefabs/enemy";
-    const int EnemyMaxInactive = 12;
-    const float SpawnInterval = 2.5f;
-    const float SpawnRadius = 18f;
-    const int MaxActiveEnemies = 8;
+    const float SpawnInterval = 1.4f;
+    const int SpawnBatchSize = 2;
+    const float SpawnMinRadius = 6f;
+    const float SpawnMaxRadius = 20f;
 
     PrefabPool enemyPool;
     IAssetHandle enemyPrefabHandle;
     Transform player;
     float nextSpawnTime;
+    ComprehensiveTestDebugConfig.EntitySpawnMode spawnMode;
+    readonly List<Vector3> spawnOccupied = new List<Vector3>();
 
     void Start()
     {
-        InitTestSpawnMode();
-        LogTestSpawnMode();
+        spawnMode = ComprehensiveTestDebugConfig.ResolveEntitySpawnMode();
+        ComprehensiveTestLogger.LogEntitySpawnMode(spawnMode);
 
         if (!BundleResLoader.Instance.EnsureReady())
         {
@@ -30,23 +33,25 @@ public class enemyManager : MonoBehaviour
             return;
         }
 
-        if (IsPooledSpawnMode())
-            enemyPool = PrefabPoolManager.Instance.GetOrCreatPool(EnemyPath, maxInactiveCapacity: EnemyMaxInactive);
-        else
+        if (EntitySpawnHelper.IsPooled(spawnMode))
+            enemyPool = PrefabPoolManager.Instance.GetOrCreatPool(
+                EnemyPath,
+                maxInactiveCapacity: EntitySpawnHelper.MaxEnemyCount);
+        else if (!EntitySpawnHelper.IsAutoUnload(spawnMode))
             enemyPrefabHandle = BundleResLoader.Instance.Load<GameObject>(EnemyPath);
 
         player = GameObject.Find("Player")?.transform;
         if (player == null)
             Debug.LogError("enemyManager: Player not found.");
 
-        nextSpawnTime = Time.time + 1f;
+        nextSpawnTime = Time.time + 0.6f;
     }
 
     void OnDestroy()
     {
-        if (IsPooledSpawnMode())
+        if (EntitySpawnHelper.IsPooled(spawnMode))
             PrefabPoolManager.Instance.ReleasePoolShare(EnemyPath);
-        else
+        else if (!EntitySpawnHelper.IsAutoUnload(spawnMode))
         {
             enemyPrefabHandle?.Release();
             enemyPrefabHandle = null;
@@ -58,58 +63,55 @@ public class enemyManager : MonoBehaviour
         if (player == null || Time.time < nextSpawnTime)
             return;
 
-        if (GetActiveEnemyCount() >= MaxActiveEnemies)
+        if (GetActiveEnemyCount() >= EntitySpawnHelper.MaxEnemyCount)
             return;
 
-        if (IsPooledSpawnMode() && enemyPool == null)
+        if (EntitySpawnHelper.IsPooled(spawnMode) && enemyPool == null)
             return;
 
-        if (!IsPooledSpawnMode() && enemyPrefabHandle == null)
+        if (!EntitySpawnHelper.IsPooled(spawnMode) && !EntitySpawnHelper.IsAutoUnload(spawnMode)
+            && enemyPrefabHandle == null)
             return;
 
-        SpawnEnemy();
+        SpawnEnemyBatch();
         nextSpawnTime = Time.time + SpawnInterval;
     }
 
     int GetActiveEnemyCount()
     {
-        if (IsPooledSpawnMode())
+        if (EntitySpawnHelper.IsPooled(spawnMode))
             return enemyPool != null ? enemyPool.ActiveCount : 0;
 
         return enemyTest.DirectAliveCount;
     }
 
-    void SpawnEnemy()
+    void SpawnEnemyBatch()
     {
-        Vector3 offset = Random.insideUnitSphere * SpawnRadius;
-        offset.y = 0f;
-        Vector3 spawnPos = player.position + offset;
+        spawnOccupied.Clear();
+        EntitySpawnHelper.CollectOccupiedPositions(spawnOccupied);
 
-        if (IsPooledSpawnMode())
-            enemyPool?.GetObj(spawnPos, Quaternion.identity);
-        else
-            enemyPrefabHandle?.InstantiateAt(spawnPos, Quaternion.identity, null);
-    }
+        for (int i = 0; i < SpawnBatchSize; i++)
+        {
+            if (GetActiveEnemyCount() >= EntitySpawnHelper.MaxEnemyCount)
+                break;
 
-    #endregion
+            Vector3 spawnPos;
+            if (!EntitySpawnHelper.TryFindRandomPosition(
+                    player.position,
+                    SpawnMinRadius,
+                    SpawnMaxRadius,
+                    spawnOccupied,
+                    out spawnPos))
+            {
+                float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+                float radius = Random.Range(SpawnMinRadius, SpawnMaxRadius);
+                spawnPos = player.position + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+                Debug.LogWarning("enemyManager: spawn spacing fallback");
+            }
 
-    #region 综合测试
-
-    ComprehensiveTestDebugConfig.EnemySpawnMode spawnMode;
-
-    void InitTestSpawnMode()
-    {
-        spawnMode = ComprehensiveTestDebugConfig.ResolveEnemySpawnMode();
-    }
-
-    void LogTestSpawnMode()
-    {
-        ComprehensiveTestLogger.LogEnemySpawnMode(spawnMode);
-    }
-
-    bool IsPooledSpawnMode()
-    {
-        return spawnMode == ComprehensiveTestDebugConfig.EnemySpawnMode.Pooled;
+            spawnOccupied.Add(spawnPos);
+            EntitySpawnHelper.Spawn(EnemyPath, spawnMode, spawnPos, Quaternion.identity, enemyPool, enemyPrefabHandle);
+        }
     }
 
     #endregion

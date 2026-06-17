@@ -89,7 +89,19 @@ public class BundleResLoader
             resourceDic.Clear();
             preloadedBundleRefs.Clear();
 
-            bool catalogueLoaded = catalogue.LoadFromBundleRoot(bundleRootPath);
+            string bundlesRoot = bundleRootPath;
+            bool catalogueLoaded;
+            if (BundlePlatformPaths.TryResolveRuntimeCatalogPath(bundleRootPath, out string cataloguePath, out string resolvedBundlesRoot))
+            {
+                catalogueLoaded = catalogue.LoadFromFile(cataloguePath);
+                if (!string.IsNullOrEmpty(resolvedBundlesRoot))
+                    bundlesRoot = resolvedBundlesRoot;
+            }
+            else
+            {
+                catalogueLoaded = catalogue.LoadFromBundleRoot(bundleRootPath);
+            }
+
 #if UNITY_EDITOR
             if (!catalogueLoaded)
                 catalogueLoaded = catalogue.LoadFromProjectCatalogue();
@@ -102,12 +114,12 @@ public class BundleResLoader
                 return false;
             }
 
-            DefaultBundlePathResolver resolver = DefaultBundlePathResolver.Create(bundleRootPath);
+            DefaultBundlePathResolver resolver = DefaultBundlePathResolver.Create(bundlesRoot);
             string cacheRoot = resolver.CacheRoot;
 
             CdnRuntimeBootstrap.SyncCatalogueIfNeeded(catalogue, cacheRoot);
 
-            BundleManager.Init(bundleRootPath, catalogue);
+            BundleManager.Init(bundlesRoot, catalogue);
             IRemoteBundleProvider remoteProvider = CdnRuntimeBootstrap.CreateRemoteProvider(catalogue, cacheRoot);
             AssetRouter.Instance.Init(catalogue, resolver, remoteProvider);
 

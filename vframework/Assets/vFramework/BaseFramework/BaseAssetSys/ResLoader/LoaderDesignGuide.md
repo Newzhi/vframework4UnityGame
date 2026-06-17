@@ -1,4 +1,4 @@
-﻿# 加载器设计说明（双层架构）
+# 加载器设计说明（双层架构）
 
 > 目录：`BaseAssetSys/ResLoader/`（子目录见 [README.md](./README.md)）  
 > 相关：`AbstractAssets/IAssetHandle.cs`、`AbstractAssets/AbstractResource.cs`、`BundleRuleConfig/Catalogue/`（清单）、[`CatalogueReference.md`](../Docs/CatalogueReference.md)
@@ -76,7 +76,7 @@ AssetBundle 文件         ← StreamingAssets / CDN 缓存目录等
 
 - `DeviceDebug` / 首包真机模式：仍走真 AB（`buildMode != EditorTest`）。
 - `BundleResLoader.Init` 时注册 `DefaultBundlePathResolver`（cache → 首包）并 `AssetRouter.Init`。
-- Editor 无 StreamingAssets 清单时，`CatalogueReader.LoadFromProjectCatalogue()` 回退读工程内 JSON。
+- Editor 无 StreamingAssets 清单时，`CatalogueReader.LoadFromProjectCatalogue()` 回退读工程内 `AssetCatalog.bytes`。
 
 ---
 
@@ -92,7 +92,7 @@ AssetBundle 文件         ← StreamingAssets / CDN 缓存目录等
 | `Load<T>(loadPath)` | 同步加载简路径（相对 `resourceRoot`，无扩展名） | ✅ |
 | `LoadByBundle<T>(bundle, asset)` | 按包名桥接 BundleManager | ✅ |
 | `LoadByAssetPath<T>(assetPath)` | 按 Unity 完整路径 | ✅ |
-| `LoadUniTaskAsync` / 回调 / 预加载包 | `LoadUniTaskAsync(UniTask)` + `LoadUniTaskWithCallback` / `LoadByAssetPathUniTaskWithCallback` / `LoadByBundleUniTaskWithCallback` 已实现；预加载 TODO | 🟡 |
+| `LoadUniTaskAsync` / 回调 / 预加载包 | `LoadUniTaskAsync` + 回调已实现；`PreLoadBundles` / `PreLoad<T>` ✅ | ✅ |
 | `UnloadAll()` | 释放全部 Resource + Bundle | ✅ |
 
 **设计要点**
@@ -138,8 +138,8 @@ Resource Ref 与 Bundle Ref **不必相等**（一个包内多个 asset、或多
 | `entries[]` / `resourceRoot` | `CatalogueReader` | 工程路径 + 简路径 `loadPath` → `bundleName` + `assetName` |
 | `bundles[]` | `BundleManager` | 加载某包前先 Acquire 依赖包 |
 
-打包器写入清单；加载器 **只读** 运行时副本（如 `{bundleRoot}/Catalogue/AssetCatalog.json`）。  
-`bundleRoot` 默认含平台子目录，见 `BundlePlatformPaths` / `BuildSetting.usePlatformSubfolders`。
+打包器写入清单；加载器 **只读** 运行时副本（`{平台根}/Base/Version/catalog.bytes`）。  
+`bundleRoot` 默认含平台子目录与 `Base` 包，见 `BundlePlatformPaths` / `BuildSetting.usePlatformSubfolders`。
 
 ---
 
@@ -154,7 +154,7 @@ Resource Ref 与 Bundle Ref **不必相等**（一个包内多个 asset、或多
 | `Router/AssetRouter.cs` + `Router/IAssetProvider.cs` + `Router/*Provider.cs` | 四源路由 |
 | `Bundle/IBundlePathResolver.cs` | 本地 bundle 多根解析（`DefaultBundlePathResolver`） |
 | `../AbstractAssets/AbstractResource.cs` | 单资源封装 + Resource Ref |
-| `../../../../BaseLayer/AssetLayer/ABSystemTester/ABLoadSmokeTest.cs` | 手动 Smoke 测试 |
+| `../../../../BaseLayer/ToDelete/ABSystemTester/ABLoadSmokeTest.cs` | 手动 Smoke 测试 |
 
 **后续迭代**：按 [Docs/MainRoadmap.md](../Docs/MainRoadmap.md) — 阶段 **B-2** inFlight / 真异步 I/O。
 
@@ -179,7 +179,7 @@ Resource Ref 与 Bundle Ref **不必相等**（一个包内多个 asset、或多
 ## 9. CDN 与多根目录（阶段 C ✅）
 
 1. `DefaultBundlePathResolver`：**ABCache → StreamingAssets**  
-2. `CdnCatalogueSyncService`：远程 `catalogueHash` → 写 `ABCache/Catalogue/AssetCatalog.json` → 重载 Reader  
+2. `CdnCatalogueSyncService`：远程 `catalogueHash` → 写 `ABCache/Catalogue/catalog.bytes` → 重载 Reader  
 3. `HttpRemoteBundleProvider` + `BundleDownloadQueue`：按 `resourcePriority` 排序；同 bundle in-flight 合并  
 4. `PreLoadBundles`：Acquire 依赖链并保持 Bundle 引用至 `UnloadAll`  
 

@@ -3,7 +3,7 @@ using System.IO;
 using UnityEngine;
 
 /// <summary>
-/// 运行时清单热更：远程 catalogueHash 变化时下载 AssetCatalog.json 至 ABCache 并重载 CatalogueReader。
+/// 运行时清单热更：远程 catalogueHash 变化时下载 catalog.bytes 至 ABCache 并重载 CatalogueReader。
 /// </summary>
 public static class CdnCatalogueSyncService
 {
@@ -24,14 +24,13 @@ public static class CdnCatalogueSyncService
         cdnBaseUrl = cdnBaseUrl.TrimEnd('/');
         string remoteUrl = cdnBaseUrl + "/Catalogue/" + CatalogueReader.RuntimeCatalogueFileName;
 
-        if (!CdnHttpClient.TryGetText(remoteUrl, out string remoteJson))
+        if (!CdnHttpClient.TryGetBytes(remoteUrl, out byte[] remoteBytes))
         {
             Debug.LogWarning("[CdnCatalogueSyncService] 远程清单拉取失败，继续使用本地清单: " + remoteUrl);
             return false;
         }
 
-        AssetCatalog remote = JsonUtility.FromJson<AssetCatalog>(remoteJson);
-        if (remote == null)
+        if (!AssetCatalogBinaryCodec.TryDeserialize(remoteBytes, out AssetCatalog remote))
         {
             Debug.LogWarning("[CdnCatalogueSyncService] 远程清单解析失败");
             return false;
@@ -50,7 +49,7 @@ public static class CdnCatalogueSyncService
 
         try
         {
-            File.WriteAllText(cacheCataloguePath, remoteJson);
+            File.WriteAllBytes(cacheCataloguePath, remoteBytes);
         }
         catch (Exception ex)
         {

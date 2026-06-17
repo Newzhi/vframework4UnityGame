@@ -36,6 +36,14 @@ public static class BundleIntegrityUtil
             return string.Empty;
 
         byte[] bytes = Encoding.UTF8.GetBytes(text);
+        return ComputeBytesSha256(bytes);
+    }
+
+    public static string ComputeBytesSha256(byte[] bytes)
+    {
+        if (bytes == null || bytes.Length == 0)
+            return string.Empty;
+
         using (var sha = SHA256.Create())
             return ToHex(sha.ComputeHash(bytes));
     }

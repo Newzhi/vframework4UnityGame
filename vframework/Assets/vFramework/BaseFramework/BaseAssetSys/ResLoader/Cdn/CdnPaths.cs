@@ -15,11 +15,17 @@ public static class CdnPaths
             BundlePlatformPaths.GetRuntimeFolderName());
     }
 
-    /// <summary>{cacheRoot}/Catalogue/AssetCatalog.json</summary>
+    /// <summary>{cacheRoot}/Catalogue/catalog.bytes</summary>
     public static string GetCacheCataloguePath(string cacheRoot = null)
     {
         cacheRoot = cacheRoot ?? GetCacheRoot();
         return Path.Combine(cacheRoot, "Catalogue", CatalogueReader.RuntimeCatalogueFileName);
+    }
+
+    public static string GetPackageCacheRoot(string packageId)
+    {
+        string platform = BundlePlatformPaths.GetRuntimeFolderName();
+        return Path.Combine(Application.persistentDataPath, "ContentPackages", platform, packageId ?? string.Empty);
     }
 
     /// <summary>{cacheRoot}/{bundleName}</summary>

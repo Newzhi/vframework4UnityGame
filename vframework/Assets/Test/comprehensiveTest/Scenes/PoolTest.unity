@@ -1043,6 +1043,7 @@ GameObject:
   - component: {fileID: 2000000303}
   - component: {fileID: 2000000203}
   - component: {fileID: 2000000403}
+  - component: {fileID: 2000000503}
   m_Layer: 0
   m_Name: ComprehensiveTestRoot
   m_TagString: Untagged
@@ -1099,7 +1100,9 @@ MonoBehaviour:
   exitButton: {fileID: 514132015}
   logToConsole: 1
   logMemory: 1
+  logShots: 0
   maxUiLines: 18
+  maxStoredLines: 12000
 --- !u!114 &2000000303
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1113,7 +1116,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statusText: {fileID: 1517989633}
-  player: {fileID: 2000000102}
 --- !u!114 &2000000403
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1126,7 +1128,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d4e2f1a9b3c5670d8e9f0a1b2c3d4e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemySpawnMode: 1
+  enemySpawnMode: 2
+--- !u!114 &2000000503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8a5b3c9d01e2f3a4b5c6d7e8f9a0b1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxAllyCount: 36
 --- !u!1001 &6117901995098567104
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -77,4 +77,30 @@ public static class StreamingAssetsIO
             return request.downloadHandler.text;
         }
     }
+
+    public static byte[] ReadAllBytes(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            throw new ArgumentException("path is empty", nameof(path));
+
+        if (!IsNonFileProtocolPath(path))
+            return File.ReadAllBytes(path);
+
+        using (UnityWebRequest request = UnityWebRequest.Get(path))
+        {
+            UnityWebRequestAsyncOperation op = request.SendWebRequest();
+            while (!op.isDone)
+            {
+            }
+
+#if UNITY_2020_1_OR_NEWER
+            if (request.result != UnityWebRequest.Result.Success)
+#else
+            if (request.isNetworkError || request.isHttpError)
+#endif
+                throw new IOException("StreamingAssets read failed: " + path + " | " + request.error);
+
+            return request.downloadHandler.data ?? new byte[0];
+        }
+    }
 }

@@ -1,4 +1,4 @@
-﻿# Editor 打包模块说明
+# Editor 打包模块说明
 
 > 路径：`BaseAssetSys/Editor/`  
 > 菜单：**vFramework → AssetBundle Packer**（单窗口双页签）
@@ -21,11 +21,11 @@ BundlePacker/          UI 层：统一窗口（Builder 页签 + Reporter 页签�
 BundleRuleConfig/      配置层：BuildSetting、AssetCatalog schema、拓扑工具、BundleIntegrityUtil
         │
         ▼
-产出                   {deviceOutputPath|cdnOutputPath}/{平台}/*.bundle
-                       + Catalogue/AssetCatalog.json
-                       + Reports/BundleBuildReport.json
-                       + Reports/DependencyGraph.json
-                       + Reports/DependencyGraph.json
+产出                   {deviceOutputPath|cdnOutputPath}/{平台}/Base/
+                       ├── Bundles/*.bundle
+                       └── Version/catalog.bytes (+ manifest.json / version.json)
+                       + BundleRuleConfig/Catalogue/AssetCatalog.bytes（工程内副本）
+                       + Reports/*.json（构建报告，非资源清单）
 ```
 
 | 模块 | 目录 | 职责 |
@@ -38,7 +38,7 @@ BundleRuleConfig/      配置层：BuildSetting、AssetCatalog schema、拓扑�
 | **Reporter** | `BundleReporter/` | `BundleBuildAnalyzer`、`BundleBuildReport` DTO |
 | **Analysis** | `BundleBuild/Analysis/` | `DependencyGraphWriter`、`BundleDependencyExplorer`（Reporter 页签） |
 | **配置** | `BundleRuleConfig/` | `BuildSetting`、`AssetCatalog`、`BundleDependencyTopology` |
-| **Player** | 根目录 | `StreamingAssetsPlatformBuildFilter` |
+| **Player** | 根目录 | `StreamingAssetsPlatformBuildFilter`、`StreamingAssetsPlatformIsolation` |
 
 ---
 
@@ -64,10 +64,10 @@ BundlePackerWindow [Builder 页签] → Save BuildSetting
 
 ## UI 蓝图
 
-| 页签 | HTML 原型 |
-|------|-----------|
-| Builder | [BuilderEditorBlueprint.html](../Docs/BuilderEditorBlueprint.html) |
-| Reporter | [ReportEditorBlueprint.html](../Docs/ReportEditorBlueprint.html) |
+| 页签 | HTML 原型 | Editor 内 |
+|------|-----------|-----------|
+| Builder | [BuilderEditorBlueprint.html](../Docs/BuilderEditorBlueprint.html) | 仅设计参考 |
+| Reporter | [ReportEditorBlueprint.html](../Docs/ReportEditorBlueprint.html) | 仅设计参考（**无**「打开 HTML」按钮；Reporter 页签直接读 JSON 报告） |
 
 ---
 
@@ -75,10 +75,10 @@ BundlePackerWindow [Builder 页签] → Save BuildSetting
 
 | 模式 | AB | 清单 | 报告 |
 |------|-----|------|------|
-| EditorTest | 不打 AB | 写 JSON（`bundles` 空） | loadPath 等（无包体） |
-| DeviceDebug | `deviceOutputPath` | 双份 JSON | 完整 |
-| CdnHotUpdate | `cdnOutputPath` | 双份 JSON | 完整 |
-| DlcPackage | 临时同 CDN + Warning | 双份 JSON | 完整 |
+| EditorTest | 不打 AB | 写 `catalog.bytes`（`bundles` 空） | loadPath 等（无包体） |
+| DeviceDebug | `deviceOutputPath` | 双份 `.bytes`（工程 + `Base/Version/`） | 完整 |
+| CdnHotUpdate | `cdnOutputPath` | 双份 `.bytes` | 完整 |
+| DlcPackage | `DLC_{id}/` 布局 | `catalog.fragment.bytes` + 双份 `.bytes` | 完整 |
 
 ---
 

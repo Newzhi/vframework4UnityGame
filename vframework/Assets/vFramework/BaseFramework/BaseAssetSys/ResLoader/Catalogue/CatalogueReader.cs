@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class CatalogueReader
 {
-    public const string RuntimeCatalogueFileName = "AssetCatalog.json";
+    public const string RuntimeCatalogueFileName = BundlePlatformPaths.CatalogFileName;
     const string DefaultResourceRoot = "Assets/AssetBundle";
 
     #region 变量定义
@@ -14,6 +14,17 @@ public class CatalogueReader
     Dictionary<string, AssetCatalogEntry> entryMap = new Dictionary<string, AssetCatalogEntry>();
     Dictionary<string, AssetCatalogEntry> loadPathMap = new Dictionary<string, AssetCatalogEntry>();
     Dictionary<string, string[]> dependencyMap = new Dictionary<string, string[]>();
+
+    readonly Dictionary<string, Dictionary<string, AssetCatalogEntry>> overlayEntryMaps =
+        new Dictionary<string, Dictionary<string, AssetCatalogEntry>>();
+
+    readonly Dictionary<string, Dictionary<string, AssetCatalogEntry>> overlayLoadPathMaps =
+        new Dictionary<string, Dictionary<string, AssetCatalogEntry>>();
+
+    readonly Dictionary<string, Dictionary<string, string[]>> overlayDependencyMaps =
+        new Dictionary<string, Dictionary<string, string[]>>();
+
+    readonly HashSet<string> mountedPackageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     #endregion
 
@@ -37,10 +48,13 @@ public class CatalogueReader
             return false;
         }
 
-        string json;
         try
         {
-            json = StreamingAssetsIO.ReadAllText(cataloguePath);
+            if (!AssetCatalogBinaryCodec.TryLoadFromPath(cataloguePath, out catalog))
+            {
+                Debug.LogError("Catalogue parse failed: " + cataloguePath);
+                return false;
+            }
         }
         catch (IOException ex)
         {
@@ -50,12 +64,6 @@ public class CatalogueReader
         catch (Exception ex)
         {
             Debug.LogError("Catalogue read failed: " + cataloguePath + " | " + ex.Message);
-            return false;
-        }
-        catalog = JsonUtility.FromJson<AssetCatalog>(json);
-        if (catalog == null)
-        {
-            Debug.LogError("Catalogue parse failed: " + cataloguePath);
             return false;
         }
 
@@ -68,7 +76,9 @@ public class CatalogueReader
         if (string.IsNullOrEmpty(bundleRoot))
             bundleRoot = Application.streamingAssetsPath;
 
-        string cataloguePath = StreamingAssetsIO.CombinePath(bundleRoot, "Catalogue", RuntimeCatalogueFileName);
+        if (!BundlePlatformPaths.TryResolveRuntimeCatalogPath(bundleRoot, out string cataloguePath, out _))
+            return false;
+
         return LoadFromFile(cataloguePath);
     }
 
@@ -106,6 +116,115 @@ public class CatalogueReader
             return false;
 
         return loadPathMap.TryGetValue(NormalizeLoadPath(loadPath), out entry);
+    }
+
+    public bool IsPackageMounted(string packageId)
+    {
+        return !string.IsNullOrEmpty(packageId)
+            && mountedPackageIds.Contains(packageId);
+    }
+
+    /// <summary>合并 DLC/Mod catalog 片段（同 AssetCatalog 结构）。</summary>
+    public bool Merge(AssetCatalog fragment, string packageId)
+    {
+        if (fragment == null || string.IsNullOrEmpty(packageId))
+            return false;
+
+        if (!IsLoaded)
+        {
+            Debug.LogError("CatalogueReader.Merge failed: base catalogue not loaded");
+            return false;
+        }
+
+        if (mountedPackageIds.Contains(packageId))
+            return true;
+
+        var entryOverlay = new Dictionary<string, AssetCatalogEntry>();
+        var loadPathOverlay = new Dictionary<string, AssetCatalogEntry>();
+        string resourceRoot = string.IsNullOrEmpty(catalog.resourceRoot)
+            ? DefaultResourceRoot
+            : catalog.resourceRoot;
+
+        if (fragment.entries != null)
+        {
+            foreach (AssetCatalogEntry entry in fragment.entries)
+            {
+                if (entry == null || string.IsNullOrEmpty(entry.assetPath))
+                    continue;
+
+                string loadKey = ToLoadPath(entry.assetPath, resourceRoot);
+                if (!string.IsNullOrEmpty(loadKey) && loadPathMap.ContainsKey(loadKey))
+                {
+                    Debug.LogError("Catalogue merge conflict loadPath=" + loadKey + " package=" + packageId);
+                    return false;
+                }
+
+                if (!string.IsNullOrEmpty(loadKey))
+                    loadPathOverlay[loadKey] = entry;
+
+                entryOverlay[NormalizePath(entry.assetPath)] = entry;
+            }
+        }
+
+        var depOverlay = new Dictionary<string, string[]>();
+        if (fragment.bundles != null)
+        {
+            foreach (BundleCatalogInfo info in fragment.bundles)
+            {
+                if (info == null || string.IsNullOrEmpty(info.bundleName))
+                    continue;
+
+                string[] deps = info.dependenciesAll != null && info.dependenciesAll.Length > 0
+                    ? info.dependenciesAll
+                    : info.dependencies ?? new string[0];
+                depOverlay[info.bundleName] = deps;
+            }
+        }
+
+        foreach (KeyValuePair<string, AssetCatalogEntry> pair in entryOverlay)
+            entryMap[pair.Key] = pair.Value;
+
+        foreach (KeyValuePair<string, AssetCatalogEntry> pair in loadPathOverlay)
+            loadPathMap[pair.Key] = pair.Value;
+
+        foreach (KeyValuePair<string, string[]> pair in depOverlay)
+            dependencyMap[pair.Key] = pair.Value;
+
+        overlayEntryMaps[packageId] = entryOverlay;
+        overlayLoadPathMaps[packageId] = loadPathOverlay;
+        overlayDependencyMaps[packageId] = depOverlay;
+        mountedPackageIds.Add(packageId);
+        return true;
+    }
+
+    public bool Unmerge(string packageId)
+    {
+        if (string.IsNullOrEmpty(packageId) || !mountedPackageIds.Contains(packageId))
+            return false;
+
+        if (overlayEntryMaps.TryGetValue(packageId, out Dictionary<string, AssetCatalogEntry> entryOverlay))
+        {
+            foreach (string key in entryOverlay.Keys)
+                entryMap.Remove(key);
+        }
+
+        if (overlayLoadPathMaps.TryGetValue(packageId, out Dictionary<string, AssetCatalogEntry> loadPathOverlay))
+        {
+            foreach (string key in loadPathOverlay.Keys)
+                loadPathMap.Remove(key);
+        }
+
+        if (overlayDependencyMaps.TryGetValue(packageId, out Dictionary<string, string[]> depOverlay))
+        {
+            foreach (string key in depOverlay.Keys)
+                dependencyMap.Remove(key);
+        }
+
+        overlayEntryMaps.Remove(packageId);
+        overlayLoadPathMaps.Remove(packageId);
+        overlayDependencyMaps.Remove(packageId);
+        mountedPackageIds.Remove(packageId);
+        return true;
     }
 
     public string[] GetBundleDependencies(string bundleName)
@@ -151,6 +270,10 @@ public class CatalogueReader
         entryMap.Clear();
         loadPathMap.Clear();
         dependencyMap.Clear();
+        overlayEntryMaps.Clear();
+        overlayLoadPathMaps.Clear();
+        overlayDependencyMaps.Clear();
+        mountedPackageIds.Clear();
     }
 
     void BuildLookupTables()

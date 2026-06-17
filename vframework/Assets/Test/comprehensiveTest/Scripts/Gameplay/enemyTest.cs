@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BaseFramework.BaseEventSys;
 using UnityEngine;
 
@@ -19,11 +20,11 @@ public class enemyTest : MonoBehaviour
     const int BulletMaxInactive = 48;
     const float ShootRange = 12f;
     const float ShootRangeSqr = ShootRange * ShootRange;
-    const float FireCooldown = 1.1f;
+    const float FireCooldown = 0.65f;
     const float FireForwardOffset = 1.2f;
 
     float moveSpeed = 5f;
-    float hp = 30f;
+    float hp = 240f;
     EnemyState state;
     PrefabPool ownerPool;
     PrefabPool bulletPool;
@@ -32,10 +33,63 @@ public class enemyTest : MonoBehaviour
     Transform target;
     float nextShootTime;
 
+    static readonly List<enemyTest> ActiveInstances = new List<enemyTest>();
+
+    public static int ActiveInstanceCount => ActiveInstances.Count;
+
+    public static enemyTest GetActiveInstanceAt(int index)
+    {
+        return index >= 0 && index < ActiveInstances.Count ? ActiveInstances[index] : null;
+    }
+
+    /// <summary>查找距离最近的存活敌人（供友军 AI 等使用）。</summary>
+    public static bool TryGetNearest(Vector3 position, float maxRange, out enemyTest nearest, out float distSqr)
+    {
+        nearest = null;
+        distSqr = float.MaxValue;
+        float maxRangeSqr = maxRange * maxRange;
+
+        for (int i = 0; i < ActiveInstances.Count; i++)
+        {
+            enemyTest enemy = ActiveInstances[i];
+            if (enemy == null || !enemy.gameObject.activeInHierarchy)
+                continue;
+
+            Vector3 delta = enemy.transform.position - position;
+            delta.y = 0f;
+            float sqr = delta.sqrMagnitude;
+            if (sqr > maxRangeSqr || sqr >= distSqr)
+                continue;
+
+            distSqr = sqr;
+            nearest = enemy;
+        }
+
+        return nearest != null;
+    }
+
+    public static void CollectActivePositions(List<Vector3> positions)
+    {
+        for (int i = 0; i < ActiveInstances.Count; i++)
+        {
+            enemyTest enemy = ActiveInstances[i];
+            if (enemy == null || !enemy.gameObject.activeInHierarchy)
+                continue;
+
+            positions.Add(enemy.transform.position);
+        }
+    }
+
     void OnEnable()
     {
+        ActiveInstances.Add(this);
         BootstrapGameplay();
         BootstrapTest();
+    }
+
+    void OnDisable()
+    {
+        ActiveInstances.Remove(this);
     }
 
     void OnDestroy()
@@ -47,11 +101,11 @@ public class enemyTest : MonoBehaviour
     void BootstrapGameplay()
     {
         target = GameObject.Find("Player")?.transform;
-        hp = 30f;
+        hp = 240f;
         state = EnemyState.Chase;
         nextShootTime = 0f;
 
-        pooledEnemyLife = IsPooledSpawnMode();
+        pooledEnemyLife = EntitySpawnHelper.IsPooled(ComprehensiveTestDebugConfig.ResolveEntitySpawnMode());
         if (pooledEnemyLife)
         {
             ownerPool = null;
@@ -128,9 +182,7 @@ public class enemyTest : MonoBehaviour
         if (toPlayer.sqrMagnitude < 0.01f)
             return;
 
-        Vector3 dir = toPlayer.normalized;
-        transform.position += dir * (moveSpeed * Time.deltaTime);
-        transform.rotation = Quaternion.LookRotation(dir);
+        EntitySpawnHelper.MoveWithAvoidance(transform, toPlayer, moveSpeed);
     }
 
     void Aim(Vector3 toPlayer)
@@ -194,12 +246,6 @@ public class enemyTest : MonoBehaviour
 
     /// <summary>DirectInstantiate 模式下场上存活敌人数（供 enemyManager 限流）。</summary>
     public static int DirectAliveCount { get; private set; }
-
-    static bool IsPooledSpawnMode()
-    {
-        return ComprehensiveTestDebugConfig.ResolveEnemySpawnMode()
-            == ComprehensiveTestDebugConfig.EnemySpawnMode.Pooled;
-    }
 
     void BootstrapTest()
     {
