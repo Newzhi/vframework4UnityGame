@@ -1,6 +1,6 @@
 # 框架设计构思
 
-本文档描述 **vFramework** 的分层架构、目录约定、模块职责与关键数据流。产品目标见 [ProjectGoals.md](./ProjectGoals.md)。
+本文档描述 **vFramework** 的分层架构、目录约定、模块职责与关键数据流。定位与范围见 [ProjectGoals.md](./ProjectGoals.md)。
 
 ---
 
@@ -21,7 +21,7 @@ flowchart TB
     subgraph L3["HotUpdateLayer 业务逻辑层"]
         Flow["GameFlow FSM"]
         MVC["MVC + Proxy"]
-        Gameplay["塔防玩法 / UI View"]
+        Gameplay["具体玩法 / UI View"]
     end
 
     subgraph L2["BaseLayer 全局系统层"]
@@ -49,7 +49,7 @@ flowchart TB
 |------|----------------|------|
 | **BaseFramework** | `BaseFramework` | 与具体玩法无关的基础设施：事件、FSM 内核、网络编解码、序列化、日志、GameRoot 入口 |
 | **BaseLayer** | `BaseLayer` | 可复用的全局 Manager：资源、场景、池、UI、音频、网络会话等 |
-| **HotUpdateLayer** | `HotUpdate` | 塔防业务：流程、Proxy、Model、Controller、View |
+| **HotUpdateLayer** | `HotUpdate` | 业务逻辑：流程、Proxy、Model、Controller、View（按项目扩展） |
 
 ---
 
@@ -115,24 +115,24 @@ OnDestroy → DisposeAll（逆序）+ Clear 容器
 
 ### 4.2 BaseEventSys
 
-- 类型安全事件总线：`Subscribe` / `Unsubscribe` / `Publish`。
+- 类型安全事件总线：`RegisterEvent` / `DeRegisterEvent` / `SentEvent`（见 BaseEventSys README）。
 - 事件体实现 `IGameEvent`，推荐 `struct` + 轻量字段，避免长期持有 `UnityEngine.Object`。
-- 框架级、跨层协作事件使用；高频局内战斗消息优先走 Proxy / 直接调用，避免事件风暴。
+- 框架级、跨层协作事件使用；高频局内逻辑优先走 Proxy / 直接调用，避免事件风暴。
 
 ### 4.3 BaseFSM 与 GameFlow（分工）
 
 | 子系统 | 路径 | 状态 | 职责 |
 |--------|------|------|------|
-| **GameFlow** | `BaseGameRoot/GameFlow/` | **已实现 MVP** | **游戏专用**宏观流程：Boot、主菜单、进战斗；单当前态；`GameFlowModule` 进 Update |
+| **GameFlow** | `BaseGameRoot/GameFlow/` | **已实现 MVP** | **游戏专用**宏观流程：Boot、主菜单、进局内等；单当前态；`GameFlowModule` 进 Update |
 | **BaseFSM** | `BaseFramework/BaseFSM/` | 规划中 | **通用** FSM 内核（AI、UI 子状态、嵌套小状态机）；多实例；**不替代** GameFlow |
 
 - GameFlow 详细 API：[GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md)  
-- BaseFSM 将来仅提供 `Enter` / `Update` / `Exit` 机制，**不含**塔防具体状态名。
+- BaseFSM 将来仅提供 `Enter` / `Update` / `Exit` 机制，**不含**具体玩法状态名。
 
 ### 4.4 BaseNetwork
 
 - `INetPackage`、编解码、RingBuffer、TCP/WebSocket 适配。
-- **不含**塔、波次等业务协议；业务协议在 HotUpdateLayer 的 Proxy 中注册。
+- **不含**具体玩法业务协议；业务协议在 HotUpdateLayer 的 Proxy 中注册。
 
 ### 4.5 异步约定
 
@@ -149,15 +149,13 @@ OnDestroy → DisposeAll（逆序）+ Clear 容器
 
 **文档与排期**仅维护在 `BaseAssetSys/Docs/`（[MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md)、[DocumentIndex.md](../BaseFramework/BaseAssetSys/Docs/DocumentIndex.md)），**不写入** BaseGameRoot README。
 
-同一资源管线下的 Manager（规划中与 `BundleResLoader` / 池对齐）：
-
 同一资源管线下的三个 Manager，**目录聚合、运行时独立**：
 
 | Manager | 接口 | 职责 |
 |---------|------|------|
 | **ResMgr** | `IResMgr` | `LoadAssetAsync` / `Release` / 引用计数 |
 | **SceneMgr** | `ISceneMgr` | 单场景 / Additive 加载与卸载、Loading 流程 |
-| **ObjPoolMgr** | `IObjPoolMgr` | Spawn / Despawn（敌人、子弹、特效等） |
+| **ObjPoolMgr** | `IObjPoolMgr` | Spawn / Despawn（实体、特效、投射物等） |
 
 关系：
 
@@ -173,7 +171,7 @@ flowchart LR
 
 - 底层加载通过 **IResLoader** 适配器实现，当前默认链为 **Addressables → Resources**（`CompositeResLoader`）；Adapter 仅在 AssetLayer `Impt/Loader` 中引用。
 - 逻辑地址支持前缀：`addr://`（Addressables）、`res://`（Resources）；后续可扩展 `AssetBundleResLoader` 等实现。
-- 逻辑层调用：`ResMgr.LoadAsync("location")` / `SceneMgr.LoadSingleAsync("scene_battle")`，不直接调用 `Addressables.LoadAssetAsync` 或 `Resources.Load`。
+- 逻辑层调用：`ResMgr.LoadAsync("location")` / `SceneMgr.LoadSingleAsync("scene_main")`，不直接调用 `Addressables.LoadAssetAsync` 或 `Resources.Load`。
 
 **Init 顺序建议**：`ResMgr`（Priority 高）→ `SceneMgr` → `ObjPoolMgr`。
 
@@ -191,15 +189,15 @@ flowchart LR
 
 ## 6. HotUpdateLayer：MVC + Proxy
 
-面向塔防业务，采用 **PureMVC 风格** 的变体：
+面向具体业务玩法，采用 **PureMVC 风格** 的变体：
 
 ```mermaid
 flowchart LR
     Net["NetMgr 收包"]
     Proxy["Proxy<br/>解析协议"]
-    Model["Model<br/>塔/波次/金币等"]
+    Model["Model<br/>局内状态等"]
     Ctrl["Controller<br/>输入与规则"]
-    View["View<br/>HUD / 建造 UI"]
+    View["View<br/>HUD / 面板"]
 
     Net --> Proxy
     Proxy --> Model
@@ -214,10 +212,10 @@ flowchart LR
 
 | 角色 | 职责 | 示例 |
 |------|------|------|
-| **Model** | 纯数据，由 Proxy 写入 | `BattleModel`、`PlayerModel` |
-| **Proxy** | 网络上下行、更新 Model、注册 msgId | `BattleProxy`、`PlayerProxy` |
-| **Controller** | 点击建造、波次逻辑；调 `GetProxy<T>()` 发请求 | `BattleController` |
-| **View** | UI 绑定 Model 或订阅事件刷新 | `BattleHUDView` |
+| **Model** | 纯数据，由 Proxy 写入 | `SessionModel`、`PlayerModel` |
+| **Proxy** | 网络上下行、更新 Model、注册 msgId | `SessionProxy`、`PlayerProxy` |
+| **Controller** | 玩家操作、局内规则；调 `GetProxy<T>()` 发请求 | `GameplayController` |
+| **View** | UI 绑定 Model 或订阅事件刷新 | `HudView` |
 
 ### 6.2 AppContext（注册中心）
 
@@ -235,28 +233,28 @@ flowchart LR
 
 ---
 
-## 7. 网络与联机数据流
+## 7. 网络与联机数据流（可选）
 
 **下行（服务器 → 客户端）**
 
 ```text
 NetMgr.OnMessage(msgId, bytes)
-  → BattleProxy.OnWaveStart(data)
-  → BattleModel.SetWave(n)
-  → Publish WaveStartedEvent
-  → BattleController / BattleHUDView 刷新
+  → SessionProxy.OnStateSync(data)
+  → SessionModel.ApplySnapshot(...)
+  → Publish SessionUpdatedEvent
+  → GameplayController / HudView 刷新
 ```
 
 **上行（客户端 → 服务器）**
 
 ```text
-View 点击建造
-  → BattleController.OnBuildTower(slotId, towerId)
-  → BattleProxy.RequestBuildTower(...)
+View 点击操作
+  → GameplayController.OnPlayerAction(...)
+  → SessionProxy.RequestAction(...)
   → NetMgr.Send(msgId, payload)
 ```
 
-塔防同步字段（示例）：波次 ID、实体 ID、塔位占用、金币、敌人路径进度等——协议与 Proxy 同模块维护，NetMgr 保持通用。
+业务同步字段（示例）：实体 ID、房间状态、分数、回合序号等——协议与 Proxy 同模块维护，NetMgr 保持通用。
 
 ---
 
@@ -269,7 +267,7 @@ View 点击建造
 | `HotUpdate` | 业务逻辑 | BaseLayer、BaseFramework |
 
 - AOT 侧：GameRoot、Patch、HybridCLR 加载（若使用）。
-- 热更侧：Proxy、Controller、塔防玩法、GameFlow 节点。
+- 热更侧：Proxy、Controller、具体玩法、GameFlow 节点。
 
 ---
 
@@ -292,12 +290,12 @@ View 点击建造
 4. NetMgr 消息分发  
 5. HotUpdate：AppContext + 示例 Proxy/Controller  
 
-### P1 — 塔防联机准备
+### P1 — 业务与联机扩展
 
-6. GameFlow 扩展（Patch → Login → Battle 等 Procedure，见 GameFlowApi.md）  
+6. GameFlow 扩展（Patch → Login → InGame 等 Procedure，见 GameFlowApi.md）  
 7. UIMgr 最小窗口栈  
 8. ObjPoolMgr 与 ResMgr 打通  
-9. 第一条战斗同步协议端到端  
+9. 第一条业务同步协议端到端（若项目需要联机）  
 
 ---
 
@@ -305,8 +303,8 @@ View 点击建造
 
 | 文档 | 范围 |
 |------|------|
-| [ProjectGoals.md](./ProjectGoals.md) | 产品目标 |
+| [ProjectGoals.md](./ProjectGoals.md) | 框架定位与目标 |
 | [BaseGameRoot/README.md](../BaseFramework/BaseGameRoot/README.md) | 全局入口 + IOC（**非**资源加载） |
 | [GameFlow/GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) | 宏观流程 API 与设计 |
-| [BaseEventSys/README.md](../BaseFramework/BaseEventSys/README.md) | 异步与事件 |
+| [BaseEventSys/README.md](../BaseFramework/BaseEventSys/README.md) | 事件总线 |
 | [BaseAssetSys/Docs/MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md) | AB 打包/加载排期（**独立**于 GameRoot） |

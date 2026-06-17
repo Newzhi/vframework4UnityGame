@@ -6,7 +6,7 @@
 
 GameFlow 表示并驱动**整局游戏的宏观运行阶段**（Boot、主菜单、战斗等），对标 Unity Game Framework **Procedure**、TEngine **ProcedureModule**。须在 Bootstrap 中注册 **`GameFlowModule`** 后，业务通过 `IGameFlowService` 查询与切换状态。
 
-**不是**通用 FSM 内核（规划中的 `BaseFSM`）；**不是** `MonoBehaviour`；**不是**战斗内波次/技能等细粒度状态。
+**不是**通用 FSM 内核（规划中的 `BaseFSM`）；**不是** `MonoBehaviour`；**不是**局内回合/技能等细粒度状态。
 
 ---
 
@@ -33,8 +33,8 @@ GameFlow 表示并驱动**整局游戏的宏观运行阶段**（Boot、主菜单
 ### 1.3 刻意不做的
 
 - **不**继承 `MonoBehaviour`；由 `ModuleManager.Update` 驱动。
-- **不**在框架层写 Patch / 塔防等业务 Procedure；MVP 仅含 `Boot` / `MainMenu` 占位，热更层 `Register` 扩展。
-- **不**用 GameFlow 表达战斗每一波；局内用嵌套 FSM 或 ECS + Module `_active`。
+- **不**在框架层写 Patch / 具体玩法等业务 Procedure；MVP 仅含 `Boot` / `MainMenu` 占位，热更层 `Register` 扩展。
+- **不**用 GameFlow 表达局内每一回合/关卡细节；局内用嵌套 FSM 或 ECS + Module `_active`。
 - **不**在 Update 热路径 `services.Get`；状态在 `Enter` 缓存依赖。
 
 ### 1.4 与 Module 启停的分工
