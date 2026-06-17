@@ -282,7 +282,10 @@ public class MyLoadUniTest : MonoBehaviour
 
     async UniTask CaseInflightAbandonAsync()
     {
+        // 与 MyLoadUniTest2 Case 8（InflightParallel 用 tester）错开路径，避免双 Runner 同 Case 抢同 key
         const string path = "Icon/3";
+        spriteRes?.Release();
+        spriteRes = null;
         await UniTask.Yield(PlayerLoopTiming.Update);
 
         bool ok = await BundleResLoader.Instance.VerifyInflightAbandonAsync<Sprite>(path);

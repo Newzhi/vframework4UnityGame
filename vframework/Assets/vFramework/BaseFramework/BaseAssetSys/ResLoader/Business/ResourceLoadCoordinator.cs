@@ -155,9 +155,11 @@ internal sealed class ResourceLoadCoordinator
             }
             else
             {
-                inflightTask = LeaderLoadAsync(key, createResource, loadAsync);
+                var tcs = new UniTaskCompletionSource<IAssetHandle>();
+                inflightTask = tcs.Task;
                 loadInFlight[key] = inflightTask;
                 isFollower = false;
+                RunLeaderLoadAsync(key, createResource, loadAsync, tcs).Forget();
             }
         }
 
@@ -171,10 +173,11 @@ internal sealed class ResourceLoadCoordinator
         return TryAddRefAndValidateType<T>((AbstractResource)handle, key, skipAddRef: true);
     }
 
-    async UniTask<IAssetHandle> LeaderLoadAsync(
+    async UniTaskVoid RunLeaderLoadAsync(
         string key,
         Func<AbstractResource> createResource,
-        Func<AbstractResource, UniTask<bool>> loadAsync)
+        Func<AbstractResource, UniTask<bool>> loadAsync,
+        UniTaskCompletionSource<IAssetHandle> tcs)
     {
         AbstractResource res = null;
         try
@@ -188,17 +191,18 @@ internal sealed class ResourceLoadCoordinator
             if (!ok || res.CurrentRef <= 0)
             {
                 CleanupFailedLoad(key, res);
-                return null;
+                tcs.TrySetResult(null);
+                return;
             }
 
-            return res;
+            tcs.TrySetResult(res);
         }
         catch (Exception ex)
         {
             Debug.LogError("Async load failed for key=" + key + ": " + ex.Message);
             if (res != null)
                 CleanupFailedLoad(key, res);
-            return null;
+            tcs.TrySetException(ex);
         }
         finally
         {
@@ -243,12 +247,51 @@ internal sealed class ResourceLoadCoordinator
             return false;
 
         UniTask<IAssetHandle> loadTask = LoadAsync<T>(loadPath);
-        await UniTask.Yield(PlayerLoopTiming.Update);
 
-        if (!resourceDic.TryGetValue(key, out AbstractResource inflightRes) || !inflightRes.IsLoading)
+        AbstractResource inflightRes = null;
+        for (int i = 0; i < 60 && inflightRes == null; i++)
+        {
+            resourceDic.TryGetValue(key, out inflightRes);
+            if (inflightRes == null)
+                await UniTask.Yield(PlayerLoopTiming.Update);
+        }
+
+        if (inflightRes == null)
+        {
+            Debug.LogWarning(
+                "[ResourceLoadCoordinator] VerifyInflightAbandon: resource not registered within 60 frames for " + loadPath);
+            await loadTask;
             return false;
+        }
 
-        inflightRes.Release();
+        bool releasedDuringLoad = false;
+        for (int i = 0; i < 60 && !releasedDuringLoad; i++)
+        {
+            if (inflightRes.IsLoading)
+            {
+                inflightRes.Release();
+                releasedDuringLoad = true;
+                break;
+            }
+
+            if (inflightRes.GetAsset<T>() != null)
+            {
+                Debug.LogWarning(
+                    "[ResourceLoadCoordinator] VerifyInflightAbandon: load finished before Release for " + loadPath);
+                await loadTask;
+                return false;
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.Update);
+        }
+
+        if (!releasedDuringLoad)
+        {
+            Debug.LogWarning(
+                "[ResourceLoadCoordinator] VerifyInflightAbandon: IsLoading not observed within 60 frames for " + loadPath);
+            await loadTask;
+            return false;
+        }
 
         IAssetHandle result = await loadTask;
         return result == null && !resourceDic.ContainsKey(key);

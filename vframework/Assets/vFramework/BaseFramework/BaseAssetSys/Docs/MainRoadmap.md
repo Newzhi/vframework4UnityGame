@@ -91,7 +91,7 @@
 |----|------|
 | 同步 `Load<T>` + Release / UnloadAll | ✅ 三端双 Runner 19/19 |
 | 打包三种模式 + Player 平台过滤 | ✅ |
-| `LoadUniTaskAsync` / 回调 API | ✅ **三端异步双 Runner 21/21**（B-2 inFlight + 真异步；B-1 基准 `225805`/`230136`/`231720` 为 19/19） |
+| `LoadUniTaskAsync` / 回调 API | ✅ **Editor B-2 21/21**（`215550`）；B-1 三端 19/19（`225805`/`230136`/`231720`）；Player/Android B-2 待复测 |
 | `BundleResLoader` 对象池 | ✅ 已迁至 `PrefabPoolManager` |
 | `AssetRefTraceLogger`（Resource/Bundle/Pool Trace） | 🟡 首版 + 关键路径接入 |
 | `AssetReference` 自动 Release（非池） | ✅ `AssetReference` + `LoadGameObject` |
@@ -294,7 +294,8 @@ Bundle 层 LRU 策略见 [BusinessApiUsageGuide.md §5.6](Assets/vFramework/Base
 | 2026-06-13 | 集成归档：Android 同步 19/19 复测；异步 Editor/Player **19/19**（`225805`/`230136`）；场景 Collector 默认异步套系 |
 | 2026-06-13 | **B-Pool**：`PrefabPool` + 按 Active Scene 分池（`PoolSceneRootsUtil`、`poolsBySceneAndPath`） |
 | 2026-06-13 | 异步 **Android 19/19**（`231720`）；**阶段 B-1 三端完成** |
-| 2026-06-13 | **阶段 B-2**：`ResourceLoadCoordinator` + 真异步 `LoadFromFileAsync`；异步门禁 **21/21**（+InflightParallel / InflightAbandon Case） |
+| 2026-06-13 | **阶段 B-2 实现**：`ResourceLoadCoordinator` + 真异步 `LoadFromFileAsync`；+InflightParallel / InflightAbandon Case |
+| 2026-06-17 | **阶段 B-2 Editor 门禁 21/21**（`215550`）；TCS inFlight 修复 `212707`/`214738` |
 | 2026-06-13 | **P1.5**：`PrefabPoolManager` 迁出 Loader、`AssetRefTraceLogger`、文档合并门禁 |
 | 2026-06-13 | **P1-B**：`BundleBuildPipeline`、增量/Manifest、`SharedBundlePlanner`、`ResourcePriority` 写清单 |
 | 2026-06-13 | **P1.5-5**：`BundleManager` LRU 延迟卸包 + `BundleLruUnloadPolicy` |

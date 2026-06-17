@@ -225,27 +225,28 @@ public class BundleManager
         }
 
         UniTask<AssetBundle> inflightTask;
-        bool isLeader;
+        bool isFollower;
 
         lock (bundleInflightGate)
         {
-            if (bundleInflight.TryGetValue(bundleName, out UniTask<AssetBundle> existing))
+            if (bundleInflight.TryGetValue(bundleName, out inflightTask))
             {
-                inflightTask = existing;
-                isLeader = false;
+                isFollower = true;
             }
             else
             {
-                inflightTask = LoadBundleFromFileAsync(bundleName, role, mainBundle);
+                var tcs = new UniTaskCompletionSource<AssetBundle>();
+                inflightTask = tcs.Task;
                 bundleInflight[bundleName] = inflightTask;
-                isLeader = true;
+                isFollower = false;
+                RunBundleLoadAsync(bundleName, role, mainBundle, tcs).Forget();
             }
         }
 
         try
         {
             AssetBundle bundle = await inflightTask;
-            if (!isLeader && bundle != null && loadedBundles.TryGetValue(bundleName, out BundleEntry loaded))
+            if (isFollower && bundle != null && loadedBundles.TryGetValue(bundleName, out BundleEntry loaded))
             {
                 loaded.Ref++;
                 loaded.LastUsedTime = Time.realtimeSinceStartup;
@@ -260,7 +261,11 @@ public class BundleManager
         }
     }
 
-    static async UniTask<AssetBundle> LoadBundleFromFileAsync(string bundleName, string role, string mainBundle)
+    static async UniTaskVoid RunBundleLoadAsync(
+        string bundleName,
+        string role,
+        string mainBundle,
+        UniTaskCompletionSource<AssetBundle> tcs)
     {
         try
         {
@@ -269,7 +274,8 @@ public class BundleManager
             if (request == null)
             {
                 Debug.LogError("Bundle load failed: " + path);
-                return null;
+                tcs.TrySetResult(null);
+                return;
             }
 
             await request;
@@ -278,7 +284,8 @@ public class BundleManager
             if (bundle == null)
             {
                 Debug.LogError("Bundle load failed: " + path);
-                return null;
+                tcs.TrySetResult(null);
+                return;
             }
 
             if (loadedBundles.TryGetValue(bundleName, out BundleEntry existing))
@@ -287,7 +294,8 @@ public class BundleManager
                 existing.Ref++;
                 existing.LastUsedTime = Time.realtimeSinceStartup;
                 AssetRefTraceLogger.TraceBundle(bundleName, existing.Ref, +1, "AcquireBundleAsync(race)", role, mainBundle);
-                return existing.Bundle;
+                tcs.TrySetResult(existing.Bundle);
+                return;
             }
 
             loadedBundles[bundleName] = new BundleEntry
@@ -298,7 +306,12 @@ public class BundleManager
                 ResourcePriority = ResolveResourcePriority(bundleName)
             };
             AssetRefTraceLogger.TraceBundle(bundleName, 1, +1, "AcquireBundleAsync(new)", role, mainBundle);
-            return bundle;
+            tcs.TrySetResult(bundle);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("Bundle async load failed: " + bundleName + " | " + ex.Message);
+            tcs.TrySetException(ex);
         }
         finally
         {
