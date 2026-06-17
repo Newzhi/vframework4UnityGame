@@ -30,10 +30,14 @@ public class LoadApiTestLogCollector : MonoBehaviour
     /// <summary>Stress 套系：允许调用 UnloadAll 的 Runner 标识。</summary>
     public const string UnloadAllRunnerSourceStress = "MyLoadStressTest";
 
+    /// <summary>ABStressTest 套系：允许调用 UnloadAll 的编排者标识。</summary>
+    public const string UnloadAllRunnerSourceABStress = "ABStressOrchestrator";
+
     public const string SessionPrefixConcurrent = "ConcurrentLoad_";
     public const string SessionPrefixUni = "UniConcurrentLoad_";
     public const string SessionPrefixRouter = "RouterLoad_";
     public const string SessionPrefixStress = "StressLoad_";
+    public const string SessionPrefixABStress = "ABStressLoad_";
 
     [Header("输出")]
     [Tooltip("写入 BundleResLoader 运行时根目录下的 Logs（与 model.bundle 同目录）")]

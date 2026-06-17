@@ -1360,6 +1360,7 @@ GameObject:
   - component: {fileID: 2100000006}
   - component: {fileID: 2100000007}
   - component: {fileID: 2100000008}
+  - component: {fileID: 2100000009}
   m_Layer: 0
   m_Name: ABundleTestRunner
   m_TagString: Untagged
@@ -1409,7 +1410,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2100000001}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa95507f350fa56449ff583d9e6e5cc7, type: 3}
   m_Name: 
@@ -1457,7 +1458,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2100000001}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45e49c72c1dfecd4e9a8387b10a40f7c, type: 3}
   m_Name: 
@@ -1504,6 +1505,27 @@ MonoBehaviour:
   spawnRoot: {fileID: 0}
   finishButton: {fileID: 0}
   quitApplicationAfterSave: 0
+--- !u!114 &2100000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100000001}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48641b762de162d4ea8aec57aa5af7d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  intervalSeconds: 5
+  runOnStart: 1
+  logCollector: {fileID: 0}
+  finishButton: {fileID: 0}
+  quitApplicationAfterSave: 1
+  stressCycles: 20
+  stressLoadPaths:
+  - Icon/3
+  - Atlas/Role/Hog_Attack_000
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
