@@ -13,7 +13,7 @@ using UnityEditor;
 /// </summary>
 public class MyLoadUniTest : MonoBehaviour
 {
-    const int CaseCount = 9;
+    const int CaseCount = 10;
     const string LogSource = "MyLoadUniTest";
     const string PeerRunnerSource = "MyLoadUniTest2";
 
@@ -76,7 +76,7 @@ public class MyLoadUniTest : MonoBehaviour
             currentCaseId = caseIndex;
             logCollector?.AppendLine("[" + LogSource + "] ---------- Case " + currentCaseId + " ----------");
 
-            if (currentCaseId == 8)
+            if (currentCaseId == 9)
                 await CaseUnloadAllAfterPeersAsync();
             else
                 await RunCaseAsync(currentCaseId);
@@ -103,6 +103,7 @@ public class MyLoadUniTest : MonoBehaviour
             case 5: await CaseCrossUIAsync(); break;
             case 6: CaseReleaseAux(); break;
             case 7: CaseDestroyPrefab(); break;
+            case 8: await CaseInflightAbandonAsync(); break;
         }
     }
 
@@ -277,6 +278,18 @@ public class MyLoadUniTest : MonoBehaviour
         prefabRes?.Release();
         prefabRes = null;
         LogOk("Destroy Prefab", "instance destroyed");
+    }
+
+    async UniTask CaseInflightAbandonAsync()
+    {
+        const string path = "Icon/3";
+        await UniTask.Yield(PlayerLoopTiming.Update);
+
+        bool ok = await BundleResLoader.Instance.VerifyInflightAbandonAsync<Sprite>(path);
+        if (ok)
+            LogOk("InflightAbandon", "ref==0 discard; cache empty for " + path);
+        else
+            LogFail("InflightAbandon", "abandon verification failed for " + path);
     }
 
     async UniTask CaseUnloadAllAfterPeersAsync()

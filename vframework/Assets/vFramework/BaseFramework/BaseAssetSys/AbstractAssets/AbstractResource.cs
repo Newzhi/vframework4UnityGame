@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -15,6 +16,7 @@ internal class AbstractResource : IAssetHandle
     private string loadPath;
     private Object asset;
     private int Ref;
+    private bool isLoading;
     private AssetSource loadedSource;
     private readonly List<string> acquiredBundleNames = new List<string>();
     internal Action onUnLoad;
@@ -55,6 +57,8 @@ internal class AbstractResource : IAssetHandle
     }
 
     internal int CurrentRef => Ref;
+
+    internal bool IsLoading => isLoading;
 
     #endregion
 
@@ -101,6 +105,63 @@ internal class AbstractResource : IAssetHandle
             loadedSource.ToString());
     }
 
+    internal async UniTask<bool> LoadAssetAsync(Type assetType, string fallbackAssetPath = null, string explicitLoadPath = null)
+    {
+        if (assetType == null)
+            assetType = typeof(Object);
+
+        ReleaseLoadedAsset();
+
+        string resolvedLoadPath = explicitLoadPath ?? loadPath ?? assetKey;
+        string resolvedAssetPath = !string.IsNullOrEmpty(fallbackAssetPath) ? fallbackAssetPath : catalogueAssetPath;
+
+        AssetRefTraceLogger.BeginResourceLoad(GetTraceKey(), resolvedLoadPath, bundleName, Ref);
+
+        isLoading = true;
+        try
+        {
+            var ctx = new AssetLoadContext
+            {
+                loadPath = resolvedLoadPath,
+                assetPath = resolvedAssetPath,
+                bundleName = bundleName,
+                assetName = assetName,
+                assetType = assetType,
+                acquiredBundleNames = acquiredBundleNames
+            };
+
+            asset = await AssetRouter.Instance.LoadAsync(ctx);
+            loadedSource = AssetRouter.Instance.RouteAssetSource(in ctx);
+
+            if (asset == null)
+            {
+                AssetRefTraceLogger.CancelLoadScope("LoadFailed");
+                ReleaseLoadedAsset();
+                return false;
+            }
+
+            if (Ref <= 0)
+            {
+                AssetRefTraceLogger.CancelLoadScope("RefZeroDiscard");
+                ReleaseLoadedAsset();
+                return false;
+            }
+
+            AssetRefTraceLogger.CompleteResourceLoad(
+                GetTraceKey(),
+                Ref,
+                resolvedLoadPath,
+                bundleName,
+                acquiredBundleNames,
+                loadedSource.ToString());
+            return true;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
     internal void UnLoad()
     {
         AssetRefTraceLogger.TraceResourceUnload(GetTraceKey(), Ref, "UnLoad", acquiredBundleNames);
@@ -115,8 +176,16 @@ internal class AbstractResource : IAssetHandle
             return;
 
         ReduceReference();
-        if (Ref == 0)
+        if (Ref == 0 && !isLoading)
             UnLoad();
+    }
+
+    internal void ForceUnloadFromCoordinator()
+    {
+        if (Ref > 0)
+            Ref = 0;
+
+        UnLoad();
     }
 
     #endregion

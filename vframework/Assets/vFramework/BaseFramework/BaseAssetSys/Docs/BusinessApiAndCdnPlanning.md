@@ -18,7 +18,7 @@
 
 **测试要求**（设计基线）：依赖顺序 ✅；异常 Log 🟡；**竞态安全 ✅**（同步双 Runner 三端 19/19）；引用计数 ✅。
 
-> 异步说明：当前 `LoadUniTaskAsync` 已提供 UniTask `await` 入口，内部仍复用同步 `Load` 完成 AB 读取；真实下载队列/并发合并/后台 I/O 仍在后续迭代。
+> 异步说明：`LoadUniTaskAsync` 经 `ResourceLoadCoordinator` 合并同 path inFlight；Bundle 层 `LoadFromFileAsync`；CDN 下载仍走 `BundleDownloadQueue`。
 
 > UniTask 依赖：通过 `Packages/manifest.json` 的 OpenUPM 源接入 `com.cysharp.unitask: 2.5.10`。
 
@@ -73,13 +73,13 @@ IRemoteBundleProvider    清单 hash 比对、HTTP 下载、CRC 校验       ←
 2. **启动**：`CdnCatalogueSyncService` 拉远程 `catalog.bytes`，`catalogueHash` 变化时写入 `ABCache/Catalogue/` 并重载 Reader。  
 3. **下载**：`HttpRemoteBundleProvider` + `BundleDownloadQueue`；`fileHash` / `crc32` 校验后写入 `persistentDataPath/ABCache/{平台}/`。  
 4. **Init**：`BundleResLoader.Init` 自动 `DefaultBundlePathResolver` + RemoteProvider（无需业务手动 Init cacheRoot）。  
-5. **Load**：同步 `Load(loadPath)` 与 `PreLoadBundles` 不变；异步入口仍为 **LoadUniTaskAsync**（内部 Yield + 同步 Load，B-2 inFlight 未做）。
+5. **Load**：同步 `Load(loadPath)` 与 `PreLoadBundles` 不变；异步入口 **LoadUniTaskAsync**（B-2 真异步 + Resource 级 inFlight 合并 + ref==0 丢弃）。
 
 ### 2.5 本阶段明确不做
 
 - 断点续传、后台 Worker 线程 I/O  
 - 多 CDN 容灾、加密 bundle  
-- B-2 全量 inFlight（`LoadUniTaskAsync` 真异步）
+- B-2 全量 inFlight（`LoadUniTaskAsync` 真异步）— **已实现**
 
 **已实现（2026-06-13 阶段 C 封板）**：`CdnCatalogueSyncService` 清单热更；`BundleDownloadQueue`；`PreLoadBundles`；Reporter `BundleDependencyExplorer` + `DependencyGraph.json`。  
 **已实现（2026-06-08）**：`AssetRouter` 四源统一入口；EditorTest 走 AssetDatabase；`Resources/` 前缀走 Resources。  

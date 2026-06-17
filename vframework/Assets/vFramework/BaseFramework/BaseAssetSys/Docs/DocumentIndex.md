@@ -25,7 +25,7 @@
 | 文档 | 角色 | 排期在哪 |
 |------|------|----------|
 | [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | AssetReference、统一池、Ref Trace **设计** | MainRoadmap **P1.5** |
-| [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步 **设计** | MainRoadmap **B-2**（inFlight 未做）；**阶段 C ✅** |
+| [BusinessApiAndCdnPlanning.md](./BusinessApiAndCdnPlanning.md) | CDN / 异步 **设计** | MainRoadmap **B-2 ✅**；**阶段 C ✅** |
 | [BundleBuildOptimizationAndTopologyPlan.md](./BundleBuildOptimizationAndTopologyPlan.md) | 拓扑 + 构建优化 **设计** | MainRoadmap **P1 #6/#7** |
 | [CatalogueReference.md](./CatalogueReference.md) | 清单字段与二进制路径 | 已实现（VCAT v1）；加密见 **P3** |
 

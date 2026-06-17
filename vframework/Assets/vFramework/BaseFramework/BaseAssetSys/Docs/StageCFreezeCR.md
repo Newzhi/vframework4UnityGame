@@ -23,7 +23,7 @@
 
 | 项 | 说明 |
 |----|------|
-| B-2 全量 inFlight | `LoadUniTaskAsync` 仍为 Yield + 同步 Load |
+| B-2 全量 inFlight | ✅ `LoadUniTaskAsync` 真异步 + `ResourceLoadCoordinator` |
 | 断点续传 / 多 CDN | 未实现 |
 | 清单二进制 | ✅ `catalog.bytes`（VCAT v1）；加密仍 P3 |
 | DLC 目录 `DLC_{id}/` | ✅ P1 基础布局；Steam Gate TODO |

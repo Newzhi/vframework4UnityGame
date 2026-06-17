@@ -13,7 +13,7 @@ using UnityEditor;
 /// </summary>
 public class MyLoadUniTest2 : MonoBehaviour
 {
-    const int CaseCount = 8;
+    const int CaseCount = 9;
     const string LogSource = "MyLoadUniTest2";
 
     public float intervalSeconds = 5f;
@@ -98,6 +98,7 @@ public class MyLoadUniTest2 : MonoBehaviour
             case 5: await CaseCrossUIAsync(); break;
             case 6: CaseReleaseAux(); break;
             case 7: await CaseVerifyChainAndReleaseAsync(); break;
+            case 8: await CaseInflightParallelAsync(); break;
         }
     }
 
@@ -264,6 +265,48 @@ public class MyLoadUniTest2 : MonoBehaviour
         prefabRes = null;
 
         LogOk("Verify Chain", "LoadUniTaskAsync OK; UnloadAll skipped (MyLoadUniTest only)");
+    }
+
+    async UniTask CaseInflightParallelAsync()
+    {
+        const string path = "Model/Prefabs/tester";
+        prefabRes?.Release();
+        prefabRes = null;
+        prefabResSecond?.Release();
+        prefabResSecond = null;
+        await UniTask.Yield(PlayerLoopTiming.Update);
+
+        (IAssetHandle first, IAssetHandle second) = await UniTask.WhenAll(
+            BundleResLoader.Instance.LoadUniTaskAsync<GameObject>(path),
+            BundleResLoader.Instance.LoadUniTaskAsync<GameObject>(path));
+
+        if (first == null || second == null)
+        {
+            LogFail("InflightParallel", "parallel LoadUniTaskAsync returned null");
+            return;
+        }
+
+        GameObject assetA = first.GetAsset<GameObject>();
+        GameObject assetB = second.GetAsset<GameObject>();
+        if (assetA == null || assetB == null)
+        {
+            LogFail("InflightParallel", "GetAsset failed");
+            first.Release();
+            second.Release();
+            return;
+        }
+
+        if (!ReferenceEquals(assetA, assetB))
+        {
+            LogFail("InflightParallel", "merged load did not share same asset instance");
+            first.Release();
+            second.Release();
+            return;
+        }
+
+        prefabRes = first;
+        second.Release();
+        LogOk("InflightParallel", "same-path inFlight merge OK; ref shared asset");
     }
 
     void LogOk(string api, string detail)

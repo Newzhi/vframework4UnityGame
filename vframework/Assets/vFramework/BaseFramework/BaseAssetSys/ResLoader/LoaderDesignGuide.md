@@ -156,7 +156,7 @@ Resource Ref 与 Bundle Ref **不必相等**（一个包内多个 asset、或多
 | `../AbstractAssets/AbstractResource.cs` | 单资源封装 + Resource Ref |
 | `../../../../BaseLayer/ToDelete/ABSystemTester/ABLoadSmokeTest.cs` | 手动 Smoke 测试 |
 
-**后续迭代**：按 [Docs/MainRoadmap.md](../Docs/MainRoadmap.md) — 阶段 **B-2** inFlight / 真异步 I/O。
+**后续迭代**：阶段 **B-2** 已完成（见 [Docs/MainRoadmap.md](../Docs/MainRoadmap.md)）。
 
 ---
 

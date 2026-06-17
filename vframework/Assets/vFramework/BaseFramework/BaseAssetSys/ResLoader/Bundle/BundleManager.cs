@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class BundleManager
@@ -10,6 +12,9 @@ public class BundleManager
     private static CatalogueReader catalogue;
     private static IBundlePathResolver pathResolver;
     private static Dictionary<string, BundleEntry> loadedBundles = new Dictionary<string, BundleEntry>();
+    private static readonly object bundleInflightGate = new object();
+    private static readonly Dictionary<string, UniTask<AssetBundle>> bundleInflight =
+        new Dictionary<string, UniTask<AssetBundle>>(StringComparer.OrdinalIgnoreCase);
 
     private class BundleEntry
     {
@@ -38,6 +43,7 @@ public class BundleManager
         bundleRootPath = rootPath;
         catalogue = reader;
         loadedBundles.Clear();
+        ClearBundleInflight();
     }
 
     public static void SetCatalogue(CatalogueReader reader)
@@ -161,6 +167,153 @@ public class BundleManager
     }
 
     /// <summary>
+    /// 异步版 <see cref="AcquireBundleWithDependencies"/>；同 bundle in-flight 合并 <see cref="LoadFromFileAsync"/>。
+    /// </summary>
+    public static async UniTask<AssetBundle> AcquireBundleWithDependenciesAsync(
+        string bundleName,
+        List<string> acquiredBundles = null)
+    {
+        bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
+
+        string[] deps = null;
+        if (catalogue != null && catalogue.IsLoaded)
+        {
+            deps = catalogue.GetBundleDependencies(bundleName);
+#if DEVELOPMENT_BUILD
+            ValidateDependencyOrder(bundleName, deps);
+#endif
+        }
+
+        AssetRefTraceLogger.TraceBundleLoadScopeBegin(bundleName, deps);
+
+        if (deps != null)
+        {
+            foreach (string dep in deps)
+            {
+                if (string.IsNullOrEmpty(dep))
+                    continue;
+
+                AssetBundle depBundle = await AcquireBundleAsync(dep, "Dep", bundleName);
+                if (depBundle != null)
+                    acquiredBundles?.Add(dep);
+            }
+        }
+
+        AssetBundle bundle = await AcquireBundleAsync(bundleName, "Main", bundleName);
+        if (bundle != null)
+            acquiredBundles?.Add(bundleName);
+
+        return bundle;
+    }
+
+    public static UniTask<AssetBundle> AcquireBundleAsync(string bundleName)
+    {
+        return AcquireBundleAsync(bundleName, null, null);
+    }
+
+    static async UniTask<AssetBundle> AcquireBundleAsync(string bundleName, string role, string mainBundle)
+    {
+        bundleName = BundlePlatformPaths.NormalizeBundleName(bundleName);
+        TryEvictIdleBundles();
+
+        if (loadedBundles.TryGetValue(bundleName, out BundleEntry entry))
+        {
+            entry.Ref++;
+            entry.LastUsedTime = Time.realtimeSinceStartup;
+            AssetRefTraceLogger.TraceBundle(bundleName, entry.Ref, +1, "AcquireBundleAsync", role, mainBundle);
+            return entry.Bundle;
+        }
+
+        UniTask<AssetBundle> inflightTask;
+        bool isLeader;
+
+        lock (bundleInflightGate)
+        {
+            if (bundleInflight.TryGetValue(bundleName, out UniTask<AssetBundle> existing))
+            {
+                inflightTask = existing;
+                isLeader = false;
+            }
+            else
+            {
+                inflightTask = LoadBundleFromFileAsync(bundleName, role, mainBundle);
+                bundleInflight[bundleName] = inflightTask;
+                isLeader = true;
+            }
+        }
+
+        try
+        {
+            AssetBundle bundle = await inflightTask;
+            if (!isLeader && bundle != null && loadedBundles.TryGetValue(bundleName, out BundleEntry loaded))
+            {
+                loaded.Ref++;
+                loaded.LastUsedTime = Time.realtimeSinceStartup;
+                AssetRefTraceLogger.TraceBundle(bundleName, loaded.Ref, +1, "AcquireBundleAsync(join)", role, mainBundle);
+            }
+
+            return bundle;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    static async UniTask<AssetBundle> LoadBundleFromFileAsync(string bundleName, string role, string mainBundle)
+    {
+        try
+        {
+            string path = ResolveBundleFilePath(bundleName);
+            AssetBundleCreateRequest request = AssetBundle.LoadFromFileAsync(path);
+            if (request == null)
+            {
+                Debug.LogError("Bundle load failed: " + path);
+                return null;
+            }
+
+            await request;
+
+            AssetBundle bundle = request.assetBundle;
+            if (bundle == null)
+            {
+                Debug.LogError("Bundle load failed: " + path);
+                return null;
+            }
+
+            if (loadedBundles.TryGetValue(bundleName, out BundleEntry existing))
+            {
+                bundle.Unload(true);
+                existing.Ref++;
+                existing.LastUsedTime = Time.realtimeSinceStartup;
+                AssetRefTraceLogger.TraceBundle(bundleName, existing.Ref, +1, "AcquireBundleAsync(race)", role, mainBundle);
+                return existing.Bundle;
+            }
+
+            loadedBundles[bundleName] = new BundleEntry
+            {
+                Bundle = bundle,
+                Ref = 1,
+                LastUsedTime = Time.realtimeSinceStartup,
+                ResourcePriority = ResolveResourcePriority(bundleName)
+            };
+            AssetRefTraceLogger.TraceBundle(bundleName, 1, +1, "AcquireBundleAsync(new)", role, mainBundle);
+            return bundle;
+        }
+        finally
+        {
+            lock (bundleInflightGate)
+                bundleInflight.Remove(bundleName);
+        }
+    }
+
+    static void ClearBundleInflight()
+    {
+        lock (bundleInflightGate)
+            bundleInflight.Clear();
+    }
+
+    /// <summary>
     /// 释放包。Ref 归零时进入 LRU 空闲队列，延迟卸载而非立即 Unload。
     /// </summary>
     public static void ReleaseBundle(string bundleName)
@@ -210,6 +363,7 @@ public class BundleManager
             entry.Bundle.Unload(true);
 
         loadedBundles.Clear();
+        ClearBundleInflight();
     }
 
     /// <summary>UnloadAll 前输出仍为正引用的 Bundle 摘要。</summary>

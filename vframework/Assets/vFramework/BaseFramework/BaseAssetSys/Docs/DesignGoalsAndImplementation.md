@@ -60,7 +60,7 @@
 > 本节随开发进度更新，可自由修改。上方 **禁止修改区域** 为原始构思；此处对照 **设计目标四条模块**，说明当前做到哪一步。  
 > **复核日期：2026-06-13**（对照源码 + 集成测试 JSON；**禁止区正文未改**）。  
 > **主路线（2026-06-08 定稿）**：不换同步地基，**阶段 B 异步 → 阶段 C CDN**；详见 **[MainRoadmap.md](./MainRoadmap.md)**。  
-> **本阶段结论**：阶段 A **19/19** 已验收；阶段 **B-1 三端异步 19/19** 已验收；**B-Pool** `PrefabPool` 已实现；**阶段 C CDN 运行时** 已封板；B-2 inFlight / 真异步未做。
+> **本阶段结论**：阶段 A **19/19** 已验收；阶段 **B-1 三端异步 19/19** 已验收；**B-2 真异步/inFlight** 已实现（异步门禁 **21/21**）；**B-Pool** `PrefabPool` 已实现；**阶段 C CDN 运行时** 已封板。
 
 ### 主路线符合度（摘要）
 
@@ -70,7 +70,7 @@
 | **B-1** | 异步双 Runner 集成 JSON | ✅ 三端 19/0（`225805`/`230136`/`231720`） |
 | **B-Pool** | `PrefabPool` + `PrefabPoolManager`；按 Active Scene 分池、`refCount` 共享 | ✅ |
 | **B-RefTrace** | `AssetRefTraceLogger` + [LoaderOptimizationPlan.md](./LoaderOptimizationPlan.md) | 🟡 首版 |
-| **B-2** | 真异步 / inFlight / ref==0 丢弃 | ❌ |
+| **B-2** | 真异步 / inFlight / ref==0 丢弃 | ✅ |
 | **C** | CDN 下载 + 多 root + version 比对 | ✅ 阶段 C 封板 |
 
 **不阻塞主路线**：DestroyInstance / AutoUnload — 见主路线 §4 延后项；Bundle LRU 延迟卸载已实现（`BundleManager` + `BundleLruUnloadPolicy`）。
@@ -220,7 +220,7 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | 同路径第二次 `Load` | 缓存命中，**Ref++**，无重复 IO |
 | 两脚本同时 `Load` 同路径 | 已验（双 Runner 19/19）；阶段 B-2 将补 **inFlight 合并** |
 | 首次 Load 慢 | 主要在 `LoadFromFile` + 依赖包 + `LoadAsset`，非 Router 开销 |
-| `LoadUniTaskAsync` | 当前 **Yield 一帧 + 同步 Load**；真异步见主路线 P2 |
+| `LoadUniTaskAsync` | ✅ **真异步**（`ResourceLoadCoordinator` + `BundleManager.AcquireBundleAsync`） |
 
 #### 8. 禁止区产品目标 vs 当前能力
 
@@ -263,7 +263,7 @@ Player 构建时 **不会永久删除** StreamingAssets 里其它平台目录，
 | 1 | API 加载 + 依赖顺序 | ✅ | `AcquireBundleWithDependencies` + 跨包 Case；清单 `bundles[]` 已写入（依赖项多为空数组，**依赖预加载 Case 未单独验**） |
 | 2 | 异常捕捉 / 规避 | 🟡 | 失败路径 `LogError`；无统一错误码 / 断言框架 / 非法路径 Case |
 | 3 | 竞态安全（多脚本同资源） | ✅ | **同步**双 Runner：**Editor / Windows Player / Android** 均 `passCount=19`（`004641` / `004530` / `004612`） |
-| 4 | 引用计数 | ✅ | 同步/异步双 Runner 19/19；**Resource Ref=0 → UnLoad + ReleaseBundle** 已实现；B-2「在途 ref==0 丢弃」未做 |
+| 4 | 引用计数 | ✅ | 同步/异步双 Runner；**Resource Ref=0 → UnLoad**；B-2「在途 ref==0 丢弃」✅ |
 
 **阶段判断（加载）**：阶段 A 已达标；主路线见 **[MainRoadmap.md](./MainRoadmap.md)**（阶段 B 异步 → 阶段 C CDN）。
 

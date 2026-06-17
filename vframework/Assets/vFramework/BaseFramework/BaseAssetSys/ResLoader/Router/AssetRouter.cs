@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -76,6 +77,18 @@ public sealed class AssetRouter
         }
 
         return provider.Load(ref ctx);
+    }
+
+    public async UniTask<Object> LoadAsync(AssetLoadContext ctx)
+    {
+        AssetSource source = RouteAssetSource(in ctx);
+        if (!providers.TryGetValue(source, out IAssetProvider provider))
+        {
+            Debug.LogError("AssetRouter has no provider for source: " + source);
+            return null;
+        }
+
+        return await provider.LoadAsync(ctx);
     }
 
     public void Release(in AssetReleaseContext ctx)

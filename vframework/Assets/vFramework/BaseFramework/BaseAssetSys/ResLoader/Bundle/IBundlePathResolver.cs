@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public interface IBundlePathResolver
@@ -9,6 +10,7 @@ public interface IBundlePathResolver
 public interface IRemoteBundleProvider
 {
     bool EnsureBundle(string bundleName);
+    UniTask<bool> EnsureBundleAsync(string bundleName);
 }
 
 public sealed class StubRemoteBundleProvider : IRemoteBundleProvider
@@ -17,5 +19,10 @@ public sealed class StubRemoteBundleProvider : IRemoteBundleProvider
     {
         Debug.LogWarning("IRemoteBundleProvider not implemented; cannot download bundle: " + bundleName);
         return false;
+    }
+
+    public UniTask<bool> EnsureBundleAsync(string bundleName)
+    {
+        return UniTask.FromResult(EnsureBundle(bundleName));
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -29,6 +30,13 @@ public sealed class EditorResourcesAssetProvider : IAssetProvider
         Debug.LogError("EditorResources is only available in Unity Editor.");
         return null;
 #endif
+    }
+
+    public async UniTask<Object> LoadAsync(AssetLoadContext ctx)
+    {
+        await UniTask.Yield(PlayerLoopTiming.Update);
+        AssetLoadContext mutable = ctx;
+        return Load(ref mutable);
     }
 
     public void Release(in AssetReleaseContext ctx)

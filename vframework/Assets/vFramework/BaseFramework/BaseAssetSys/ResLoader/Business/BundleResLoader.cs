@@ -53,11 +53,19 @@ public class BundleResLoader
     /// <summary>资源清单读取器；Load 前解析 loadPath → bundle / asset。</summary>
     readonly CatalogueReader catalogue = new CatalogueReader();
 
+    /// <summary>异步加载协调器（inFlight 合并 + 真异步 I/O）。</summary>
+    readonly ResourceLoadCoordinator loadCoordinator;
+
     /// <summary>
     /// Resource 层缓存：key 多为 bundleName/assetName，Resources 路径为 loadPath。
     /// 命中时 <see cref="AbstractResource.AddReference"/>，归零时 onUnLoad 移除项。
     /// </summary>
     Dictionary<string, AbstractResource> resourceDic = new Dictionary<string, AbstractResource>();
+
+    BundleResLoader()
+    {
+        loadCoordinator = new ResourceLoadCoordinator(EnsureInitialized, resourceDic, catalogue);
+    }
 
     #endregion
 
@@ -88,6 +96,7 @@ public class BundleResLoader
             }
             resourceDic.Clear();
             preloadedBundleRefs.Clear();
+            loadCoordinator.ResetInflight();
 
             string bundlesRoot = bundleRootPath;
             bool catalogueLoaded;
@@ -423,8 +432,26 @@ public class BundleResLoader
         Quaternion worldRotation,
         Transform parent = null)
     {
-        await UniTask.Yield(PlayerLoopTiming.Update);
-        return LoadGameObject(loadPath, worldPosition, worldRotation, parent);
+        if (string.IsNullOrEmpty(loadPath))
+        {
+            Debug.LogError("LoadGameObject: loadPath is null or empty.");
+            return null;
+        }
+
+        IAssetHandle handle = await loadCoordinator.LoadAsync<GameObject>(loadPath);
+        if (handle == null)
+            return null;
+
+        GameObject instance = handle.InstantiateAt(worldPosition, worldRotation, parent);
+        if (instance == null)
+        {
+            handle.Release();
+            Debug.LogError("LoadGameObject: Instantiate failed, path=" + loadPath);
+            return null;
+        }
+
+        AssetReference.Bind(instance, handle, loadPath);
+        return instance;
     }
 
     /// <summary>异步版 <see cref="LoadWithAutoUnLoad"/>。</summary>
@@ -434,13 +461,11 @@ public class BundleResLoader
     }
 
     /// <summary>
-    /// UniTask 异步加载默认入口。当前 Yield 一帧后复用同步 <see cref="Load{T}"/>；
-    /// 后续接入 CDN 下载 / inFlight 合并。
+    /// UniTask 异步加载默认入口；同 path inFlight 合并，底层真异步 I/O。
     /// </summary>
-    public async UniTask<IAssetHandle> LoadUniTaskAsync<T>(string loadPath) where T : Object
+    public UniTask<IAssetHandle> LoadUniTaskAsync<T>(string loadPath) where T : Object
     {
-        await UniTask.Yield(PlayerLoopTiming.Update);
-        return Load<T>(loadPath);
+        return loadCoordinator.LoadAsync<T>(loadPath);
     }
 
     /// <summary>UniTask 带回调加载；useUniTask=false 时走同步 Load 并立即回调。</summary>
@@ -505,14 +530,24 @@ public class BundleResLoader
 
     async UniTask<IAssetHandle> LoadByAssetPathUniTaskAsync<T>(string assetPath) where T : Object
     {
-        await UniTask.Yield(PlayerLoopTiming.Update);
-        return LoadByAssetPath<T>(assetPath);
+        return await loadCoordinator.LoadByAssetPathAsync<T>(assetPath);
     }
 
     async UniTask<IAssetHandle> LoadByBundleUniTaskAsync<T>(string bundleName, string assetName, string assetPath = null) where T : Object
     {
-        await UniTask.Yield(PlayerLoopTiming.Update);
-        return LoadByBundle<T>(bundleName, assetName, assetPath);
+        return await loadCoordinator.LoadByBundleAsync<T>(bundleName, assetName, assetPath);
+    }
+
+    /// <summary>B-2 验收：加载中 Release 后完成不入缓存。</summary>
+    internal UniTask<bool> VerifyInflightAbandonAsync<T>(string loadPath) where T : Object
+    {
+        return loadCoordinator.VerifyInflightAbandonAsync<T>(loadPath);
+    }
+
+    /// <summary>当前 Resource 层缓存条目数（测试用）。</summary>
+    internal int GetCachedResourceCountForTest()
+    {
+        return loadCoordinator.GetCachedResourceCount();
     }
 
     #endregion
@@ -567,6 +602,7 @@ public class BundleResLoader
             BundleManager.TracePositiveBundleRefs);
 
         PrefabPoolManager.Instance.DeleteAllPools();
+        loadCoordinator.ResetInflight();
 
         foreach (string bundleName in preloadedBundleRefs)
             BundleManager.ReleaseBundle(bundleName);

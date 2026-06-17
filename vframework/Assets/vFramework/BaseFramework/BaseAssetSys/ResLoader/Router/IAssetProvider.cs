@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -32,5 +33,6 @@ public interface IAssetProvider
 {
     AssetSource Source { get; }
     Object Load(ref AssetLoadContext ctx);
+    UniTask<Object> LoadAsync(AssetLoadContext ctx);
     void Release(in AssetReleaseContext ctx);
 }

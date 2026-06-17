@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -19,6 +20,13 @@ public sealed class ResourcesAssetProvider : IAssetProvider
 
         Type assetType = ctx.assetType ?? typeof(Object);
         return Resources.Load(relativePath, assetType);
+    }
+
+    public async UniTask<Object> LoadAsync(AssetLoadContext ctx)
+    {
+        await UniTask.Yield(PlayerLoopTiming.Update);
+        AssetLoadContext mutable = ctx;
+        return Load(ref mutable);
     }
 
     public void Release(in AssetReleaseContext ctx)
