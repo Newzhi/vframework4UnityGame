@@ -11,9 +11,19 @@ namespace BaseFramework.BaseGameRoot
     {
         public static GameRoot Instance { get; private set; }
 
+        /// <summary>IOC 服务容器；<see cref="StartPipeline"/> 时创建，<see cref="OnDestroy"/> 时清空。</summary>
         private ServiceContainer _services;
+
+        /// <summary>模块调度器：InitAll / Update / FixedUpdate / LateUpdate / DisposeAll。</summary>
         private ModuleManager _modules;
+
+        /// <summary>GameTime 帧管道；注册 <see cref="GameTimeModule"/> 后可用，否则 Update 回退 Unity deltaTime。</summary>
+        private IGameUpdatePipeline _updatePipeline;
+
+        /// <summary>是否已完成 Configure + InitAll，三相位 Update 仅在此后为 true。</summary>
         private bool _started;
+
+        /// <summary>Awake 时 Registry 尚无 Bootstrap，等待热更层 <see cref="TryStart"/>。</summary>
         private bool _waitingBootstrap;
 
         public bool IsStarted => _started;
@@ -74,19 +84,31 @@ namespace BaseFramework.BaseGameRoot
         private void Update()
         {
             if (!_started) return;
-            _modules.Update(Time.deltaTime);
+
+            if (_updatePipeline != null)
+                _updatePipeline.RunFrame(Time.deltaTime, _modules.Update);
+            else
+                _modules.Update(Time.deltaTime);
         }
 
         private void FixedUpdate()
         {
             if (!_started) return;
-            _modules.FixedUpdate(Time.fixedDeltaTime);
+
+            if (_updatePipeline != null)
+                _updatePipeline.RunFixedFrame(Time.fixedDeltaTime, _modules.FixedUpdate);
+            else
+                _modules.FixedUpdate(Time.fixedDeltaTime);
         }
 
         private void LateUpdate()
         {
             if (!_started) return;
-            _modules.LateUpdate(Time.deltaTime);
+
+            if (_updatePipeline != null)
+                _updatePipeline.RunLateFrame(Time.deltaTime, _modules.LateUpdate);
+            else
+                _modules.LateUpdate(Time.deltaTime);
         }
 
         private void OnDestroy()
@@ -115,6 +137,9 @@ namespace BaseFramework.BaseGameRoot
 
             _modules.Configure(bootstrap, _services);
             _modules.InitAll(_services);
+
+            if (_services.TryGet(out IGameUpdatePipeline pipeline))
+                _updatePipeline = pipeline;
 
             _started = true;
             _waitingBootstrap = false;

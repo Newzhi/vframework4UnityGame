@@ -14,6 +14,7 @@
 | **ServiceContainer** | 接口 → 单例实例映射 |
 | **IoC** | 静态门面，委托 `ServiceContainer` |
 | **ModuleManager** | 按 `Priority` 排序，`InitAll` / `Update` / `FixedUpdate` / `LateUpdate` / `DisposeAll` |
+| **GameTimeModule** | 内置 Clock / 双时刻 / Timer / UpdateFacade / Pipeline（`ModulePriority.Early`） |
 | **IGameBootstrap** | 业务装配：`Register` Service + `AddModule`（热更层实现） |
 
 本目录只提供框架骨架；玩法 Module / Service 在热更层实现，通过 **`GameRoot.TryStart`** 接入（路径 B，对标 TEngine `GameApp.Entrance`）。
@@ -32,7 +33,9 @@ GameRoot.Awake
     → GameRoot.TryStart(new GameBootstrap())
     → Register + Configure + InitAll
 GameRoot.Update / FixedUpdate / LateUpdate
-    → ModuleManager（仅 _started 后）
+    → IGameUpdatePipeline.RunFrame（若已注册 GameTimeModule）
+    → ModuleManager（游戏时间 delta；无 Pipeline 时回退 Unity deltaTime）
+    → UpdateFacade → Calendar → Timer
 ```
 
 ```mermaid
@@ -41,6 +44,7 @@ sequenceDiagram
     participant GR as GameRoot
     participant Hotfix as HotfixEntry
     participant BS as IGameBootstrap
+    participant PL as IGameUpdatePipeline
     participant MM as ModuleManager
 
     Scene->>GR: Awake DontDestroyOnLoad
@@ -49,7 +53,8 @@ sequenceDiagram
     GR->>BS: Configure
     GR->>MM: InitAll
     loop each frame
-        GR->>MM: Update
+        GR->>PL: RunFrame
+        PL->>MM: Update gameDelta
     end
 ```
 
@@ -68,21 +73,24 @@ sequenceDiagram
 
 ```text
 BaseGameRoot/
-└── GameRoot/
-    ├── GameRoot.cs
-    ├── Interface/
-    │   ├── IGameModule.cs
-    │   ├── IFixedUpdateModule.cs
-    │   ├── ILateUpdateModule.cs
-    │   ├── IGameBootstrap.cs
-    │   ├── IServiceRegistry.cs
-    │   └── IModuleRegistry.cs
-    └── Impt/
-        ├── GameBootstrapRegistry.cs
-        ├── ServiceContainer.cs
-        ├── ModuleManager.cs
-        ├── IoC.cs
-        └── ModulePriority.cs
+├── GameRoot/
+│   ├── GameRoot.cs
+│   ├── Interface/
+│   │   ├── IGameModule.cs
+│   │   ├── IFixedUpdateModule.cs
+│   │   ├── ILateUpdateModule.cs
+│   │   ├── IGameBootstrap.cs
+│   │   ├── IServiceRegistry.cs
+│   │   └── IModuleRegistry.cs
+│   └── Impt/
+│       ├── GameBootstrapRegistry.cs
+│       ├── ServiceContainer.cs
+│       ├── ModuleManager.cs
+│       ├── IoC.cs
+│       └── ModulePriority.cs
+└── GameTime/
+    ├── Interface/   GameMoment, IGameTimeClock, IGameCalendar, ITimerService …
+    └── Impt/        GameTimeModule, GameUpdatePipeline, TimerService …
 ```
 
 命名空间：`BaseFramework.BaseGameRoot`。
@@ -113,6 +121,11 @@ public sealed class GameBootstrap : IGameBootstrap
         services.Register<IInputService>(input);
         services.Register<IGameplayService>(gameplay);
 
+        modules.AddModule(new GameTimeModule(new GameTimeOptions
+        {
+            CalendarSettings = new GameCalendarSettings { SecondsPerDay = 120f },
+            InitialTimeScale = 1f
+        }));
         modules.AddModule(input);
         modules.AddModule(new GameLogicModule());
         modules.AddModule(gameplay);
@@ -194,11 +207,82 @@ public void Init(IServiceRegistry services)
 
 ---
 
-## 7. 扩展设计
+## 8. GameTime（双时刻模型）
+
+### 8.1 职责
+
+| 组件 | 职责 |
+|------|------|
+| **IGameTimeClock** | RealTime / GameTime / DeltaTime / Frame；TimeScale、暂停 |
+| **ISessionTimeline** (A) | 连续时刻：`ChapterId`，供存档 / 同步 |
+| **IGameCalendar** (B) | 日历：`Day/Hour/Minute`，按游戏 delta 推进 |
+| **IGameMomentProvider** | `Now` 快照，聚合 A + B |
+| **ITimerService** | `Delay` / `Repeat` / `Cancel`，基于游戏时间 |
+| **IUpdateFacade** | 轻量 `IUpdatable` 订阅，不必实现 `IGameModule` |
+| **IFixedUpdateFacade** | 轻量 `IFixedUpdatable` 订阅（FixedUpdate 相位） |
+| **ILateUpdateFacade** | 轻量 `ILateUpdatable` 订阅（LateUpdate 相位） |
+| **IGameUpdatePipeline** | Update：Clock → Modules → Facade → Calendar → Timer；Fixed / Late：Modules → 对应 Facade |
+
+### 8.2 每帧顺序
+
+1. `clock.Advance(Time.deltaTime)` → `GameDeltaTime`
+2. `ModuleManager.Update(gameDelta)`
+3. `UpdateFacade.Tick(gameDelta)`
+4. `Calendar.Advance(gameDelta)`（已配置 B 时）
+5. `TimerService.Tick(gameDelta)`
+
+`FixedUpdate` / `LateUpdate` 经 Pipeline 时仍使用 Unity `fixedDeltaTime` / `deltaTime`（未乘 TimeScale）；对应 Facade 与 Module 同相位、同 delta。
+
+### 8.3 日历配置
+
+| 方式 | 用法 |
+|------|------|
+| **Bootstrap 注入** | `new GameTimeModule(new GameTimeOptions { CalendarSettings = … })` |
+| **运行时覆盖** | `services.Get<IGameCalendar>().Configure(settings)`（调试 / 跳日） |
+
+未传 `CalendarSettings` 时仅启用 A（连续时刻），B 字段恒为 0。
+
+### 8.4 业务用法
+
+```csharp
+// Init 缓存
+_moment = services.Get<IGameMomentProvider>();
+_timers = services.Get<ITimerService>();
+_facade = services.Get<IUpdateFacade>();
+_fixedFacade = services.Get<IFixedUpdateFacade>();
+_lateFacade = services.Get<ILateUpdateFacade>();
+
+// 读时刻（含 GameTime + Day/Hour/Minute）
+GameMoment now = _moment.Now;
+
+// 延迟（游戏时间 3 秒）
+_timers.Delay(3f, OnTimeout);
+
+// 轻量每帧 / Fixed / Late
+_facade.Add(myUpdatable);
+_fixedFacade.Add(myFixedUpdatable);
+_lateFacade.Add(myLateUpdatable);
+```
+
+### 8.5 选型
+
+| 需求 | 用 |
+|------|-----|
+| 重逻辑 / 多相位 | `IGameModule`（+ Fixed / Late 接口） |
+| 轻量 Update | `IUpdateFacade.Add(IUpdatable)` |
+| 轻量 FixedUpdate | `IFixedUpdateFacade.Add(IFixedUpdatable)` |
+| 轻量 LateUpdate | `ILateUpdateFacade.Add(ILateUpdatable)` |
+| 延迟 / 周期 | `ITimerService` |
+| 读时刻 | `IGameMomentProvider.Now` |
+
+---
+
+## 9. 扩展设计
 
 | 阶段 | 内容 |
 |------|------|
 | Phase 1 ✅ | `IGameModule` + `ServiceContainer` + Update |
 | Phase 2 ✅ | Fixed / Late 相位 |
+| Phase 2.5 ✅ | GameTime 双时刻 + Pipeline |
 | Phase 3 | `EcsWorldModule` |
 | 启动 | **路径 B** `TryStart`（可与未来 ProcedureLoadAssembly 流程衔接） |
