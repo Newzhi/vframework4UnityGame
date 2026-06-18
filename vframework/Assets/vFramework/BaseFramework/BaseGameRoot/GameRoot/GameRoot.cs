@@ -6,11 +6,19 @@ namespace BaseFramework.BaseGameRoot
     /// 游戏全局唯一入口 MonoBehaviour：装配 IOC、注册模块、驱动 Update / FixedUpdate / LateUpdate；
     /// Editor 下另转发 Scene Gizmo（<see cref="IGizmoDrawModule"/>）。
     /// Bootstrap Scene 中只保留一个实例。业务装配在热更加载后调用 <see cref="TryStart"/>（路径 B）。
+    /// <see cref="StartPipeline"/> 会先 <see cref="EnsureAssetSystemReady"/>，再 Configure / InitAll（配置表等 Module 在其后）。
     /// </summary>
     [DefaultExecutionOrder(-10000)]
     public class GameRoot : MonoBehaviour
     {
         public static GameRoot Instance { get; private set; }
+
+        [Header("Asset System")]
+        [Tooltip("空=默认 StreamingAssets/{平台}/；可填 persistentDataPath 下 AB 缓存根等")]
+        [SerializeField] string bundleRootOverride;
+
+        [Tooltip("bundleRootOverride 为空时仍对默认 StreamingAssets 根追加平台子目录")]
+        [SerializeField] bool usePlatformSubfolder = true;
 
         /// <summary>IOC 服务容器；<see cref="StartPipeline"/> 时创建，<see cref="OnDestroy"/> 时清空。</summary>
         private ServiceContainer _services;
@@ -50,8 +58,7 @@ namespace BaseFramework.BaseGameRoot
                 return false;
             }
 
-            Instance.StartPipeline(bootstrap);
-            return true;
+            return Instance.StartPipeline(bootstrap);
         }
 
         private void Awake()
@@ -152,10 +159,17 @@ namespace BaseFramework.BaseGameRoot
                 Instance = null;
         }
 
-        private void StartPipeline(IGameBootstrap bootstrap)
+        private bool StartPipeline(IGameBootstrap bootstrap)
         {
             if (_started || bootstrap == null)
-                return;
+                return _started;
+
+            if (!EnsureAssetSystemReady())
+            {
+                Debug.LogError($"{nameof(GameRoot)}: Asset system init failed.", this);
+                enabled = false;
+                return false;
+            }
 
             _services = new ServiceContainer();
             _modules = new ModuleManager();
@@ -169,6 +183,19 @@ namespace BaseFramework.BaseGameRoot
 
             _started = true;
             _waitingBootstrap = false;
+            return true;
+        }
+
+        /// <summary>
+        /// 预热 <see cref="BundleResLoader"/>：读 catalog.bytes，初始化 BundleManager / AssetRouter。
+        /// 必须在 Module InitAll 之前完成，以便后续配置表 Module 可直接 Load。
+        /// </summary>
+        bool EnsureAssetSystemReady()
+        {
+            if (string.IsNullOrEmpty(bundleRootOverride))
+                return BundleResLoader.Instance.EnsureReady();
+
+            return BundleResLoader.Instance.Init(bundleRootOverride, usePlatformSubfolder);
         }
     }
 }
