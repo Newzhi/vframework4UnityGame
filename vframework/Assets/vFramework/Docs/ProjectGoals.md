@@ -98,3 +98,4 @@
 ## 相关文档
 
 - [框架设计构思](./FrameworkDesign.md)
+- [BaseFramework AOT 固定层约定](../BaseFramework/README.md)

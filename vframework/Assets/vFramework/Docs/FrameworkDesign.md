@@ -47,7 +47,7 @@ flowchart TB
 
 | 层级 | 程序集（规划） | 职责 |
 |------|----------------|------|
-| **BaseFramework** | `BaseFramework` | 与具体玩法无关的基础设施：事件、FSM 内核、网络编解码、序列化、日志、GameRoot 入口 |
+| **BaseFramework** | `BaseFramework`（**整目录 AOT，见 [BaseFramework/README.md](../BaseFramework/README.md)**） | 与具体玩法无关的基础设施：事件、FSM 内核、网络编解码、序列化、日志、GameRoot 入口 |
 | **BaseLayer** | `BaseLayer` | 可复用的全局 Manager：资源、场景、池、UI、音频、网络会话等 |
 | **HotUpdateLayer** | `HotUpdate` | 业务逻辑：流程、Proxy、Model、Controller、View（按项目扩展） |
 
@@ -58,7 +58,7 @@ flowchart TB
 ```text
 Assets/vFramework/
 ├── Docs/                          # 项目与框架文档
-├── BaseFramework/                 # 基础架构层
+├── BaseFramework/                 # 基础架构层（★ 全部 AOT，见 BaseFramework/README.md）
 │   ├── BaseGameRoot/              # 全局入口 Mono + IOC + 模块 Update（含 GameFlow）
 │   ├── BaseEventSys/              # 事件总线（Interface / Impt）
 │   ├── BaseAssetSys/              # AB 打包与加载（独立子系统，文档见 BaseAssetSys/Docs）
@@ -260,14 +260,33 @@ View 点击操作
 
 ## 8. 程序集与热更边界
 
-| 程序集 | 内容 | 引用 |
-|--------|------|------|
-| `BaseFramework` | 架构层 | UniTask、Unity 核心 |
-| `BaseLayer` | 全局 Manager | BaseFramework、Addressables 等 |
-| `HotUpdate` | 业务逻辑 | BaseLayer、BaseFramework |
+> **AOT 固定层约定**：`Assets/vFramework/BaseFramework/` 下 **全部代码** 随主包 AOT 编译，不进入 HybridCLR 热更 DLL。详见 **[BaseFramework/README.md](../BaseFramework/README.md)**。
 
-- AOT 侧：GameRoot、Patch、HybridCLR 加载（若使用）。
-- 热更侧：Proxy、Controller、具体玩法、GameFlow 节点。
+### 8.1 目录与程序集
+
+| 程序集 / 目录 | AOT / 热更 | 内容 | 引用 |
+|---------------|------------|------|------|
+| **`BaseFramework/`** | **AOT（固定）** | GameRoot、BaseAssetSys、BaseEventSys、接口与启动管道 | UniTask、Unity 核心 |
+| `BaseLayer/` | 默认 AOT（随 asmdef 约定） | 全局 Manager：ConfigTable、Input、Archive 等 | BaseFramework |
+| `HotUpdate` / `HotUpdateScripts/` | **热更** | GameBootstrap、AppEntry、玩法 Module、配表生成代码 | BaseLayer、BaseFramework |
+
+### 8.2 启动分工（HybridCLR）
+
+| 侧 | 职责 |
+|----|------|
+| **AOT（BaseFramework）** | `GameRoot`、`HybridCLRLoader` / `HotfixLaunchCoordinator`、`GameLaunchRunner`（Editor） |
+| **热更** | `GameBootstrap.Configure`、`HotUpdateGameEntry.OnHotfixLoaded` → `GameRoot.TryStart` |
+| **热更** | Proxy、Controller、具体玩法、可热更 GameFlow 状态 |
+
+### 8.3 禁止事项
+
+- 在 `BaseFramework/` 内新增 **项目业务 Module 注册**（应放在热更层 `GameBootstrap`）
+- 将 **配表生成 C#** 放入 `BaseFramework/`（应在 `HotUpdateScripts/MetaConfigs/`）
+- 热更程序集 **引用** AOT 可以；AOT **不得** 硬编码依赖热更具体类型（除 HybridCLR 代码生成桥接或过渡期反射入口）
+
+### 8.4 过渡说明
+
+`BaseGameRoot/HotUpdateBootStrap/` 内现有 `GameBootstrap`、`HotUpdateGameEntry` 为 Editor 联调 **临时** 代码，**目标迁出** 至热更目录；迁出后 BaseFramework 仅保留框架启动设施。
 
 ---
 
@@ -303,6 +322,7 @@ View 点击操作
 
 | 文档 | 范围 |
 |------|------|
+| [BaseFramework/README.md](../BaseFramework/README.md) | **AOT 固定层**目录约定 |
 | [ProjectGoals.md](./ProjectGoals.md) | 框架定位与目标 |
 | [BaseGameRoot/README.md](../BaseFramework/BaseGameRoot/README.md) | 全局入口 + IOC（**非**资源加载） |
 | [GameFlow/GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) | 宏观流程 API 与设计 |

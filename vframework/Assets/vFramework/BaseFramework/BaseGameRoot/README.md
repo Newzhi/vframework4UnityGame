@@ -1,6 +1,6 @@
 # BaseGameRoot 模块说明
 
-> 路径：`BaseFramework/BaseGameRoot/`  
+> 路径：`BaseFramework/BaseGameRoot/`（**AOT 固定层**，见 [BaseFramework/README.md](../README.md)）  
 > Bootstrap Scene 唯一 Mono 入口、IOC 服务容器、模块 Update 调度。
 
 ---
@@ -16,9 +16,11 @@
 | **ModuleManager** | 按 `Priority` 排序，`InitAll` / Update / FixedUpdate / LateUpdate / Editor Gizmo / `DisposeAll` |
 | **GameTimeModule** | 内置 Clock / 双时刻 / Timer / UpdateFacade / Pipeline（`ModulePriority.Early`） |
 | **GameFlowModule** | 宏观游戏流程 FSM（Boot / 主菜单 / …）；`IGameFlowService`（`ModulePriority.GameFlow`） |
-| **IGameBootstrap** | 业务装配：`Register` Service + `AddModule`（热更层实现） |
+| **IGameBootstrap** | 业务装配：`Register` Service + `AddModule`（**热更层实现**，不在 BaseFramework 长期驻留） |
 
-本目录只提供框架骨架；玩法 Module / Service 在热更层实现，通过 **`GameRoot.TryStart`** 接入（路径 B，对标 TEngine `GameApp.Entrance`）。
+本目录只提供 **AOT 框架骨架**；玩法 Module / Service 在热更层实现，通过 **`GameRoot.TryStart`** 接入（路径 B，对标 TEngine `GameApp.Entrance`）。
+
+> `HotUpdateBootStrap/` 内 `GameBootstrap`、`HotUpdateGameEntry` 为 **过渡联调代码**，目标迁入 `HotUpdateScripts/` 等热更目录（见 [BaseFramework/README.md §3.1](../README.md)）。
 
 ---
 
@@ -30,8 +32,9 @@ GameRoot.Awake
     → 单例 + DontDestroyOnLoad
     → 若 Registry 已有 Bootstrap → StartPipeline
     → 否则 _waitingBootstrap = true（等 TryStart）
-热更 / 逻辑程序集加载完成
-    → GameRoot.TryStart(new GameBootstrap())
+热更 / 逻辑程序集加载完成（或 Editor 下 GameLaunchRunner.Awake）
+    → HotfixLaunchCoordinator.TryLaunchGame()
+    → 反射 HotUpdateGameEntry.OnHotfixLoaded → TryStart(GameBootstrap)
     → Register + Configure + InitAll
 GameRoot.Update / FixedUpdate / LateUpdate
     → IGameUpdatePipeline.RunFrame（若已注册 GameTimeModule）
@@ -74,6 +77,9 @@ sequenceDiagram
 
 ```text
 BaseGameRoot/
+├── GameLaunch/
+│   ├── HotfixLaunchCoordinator.cs   ← AOT：反射调热更入口
+│   └── GameLaunchRunner.cs          ← Editor/Bootstrap 场景 Awake 自动 Launch
 ├── GameRoot/
 │   ├── GameRoot.cs
 │   ├── Interface/
@@ -116,7 +122,7 @@ BaseGameRoot/
 | 1 | 实现 `IGameBootstrap`（普通 C# 类） |
 | 2 | 在 `Configure` 里 `Register` / `AddModule` |
 | 3 | Bootstrap Scene **只挂 GameRoot**（无 Bootstrap 字段） |
-| 4 | 热更 DLL 加载完成后调用 **`GameRoot.TryStart(new GameBootstrap())`** |
+| 4 | HybridCLR 加载完成后 **`HotfixLaunchCoordinator.TryLaunchGame()`**（Editor 可用 `GameLaunchRunner`） |
 
 ### 4.2 IGameBootstrap
 
@@ -144,18 +150,34 @@ public sealed class GameBootstrap : IGameBootstrap
 }
 ```
 
-### 4.3 热更入口（对标 GameApp.Entrance）
+### 4.3 热更入口（HybridCLR / 路径 B）
+
+**AOT（框架）** 只通过反射调用热更入口，不硬引用 `GameBootstrap`：
 
 ```csharp
-public static class GameEntry
+// Launcher 或 GameLaunchRunner（Awake）在 HybridCLR Load 完成后：
+HotfixLaunchCoordinator.TryLaunchGame();
+// → 反射 HotUpdateGameEntry.OnHotfixLoaded()
+```
+
+**热更程序集** 实现装配并 TryStart：
+
+```csharp
+public static class HotUpdateGameEntry
 {
-    public static void OnHotfixLoaded()
+    public static bool OnHotfixLoaded()
     {
-        if (!GameRoot.TryStart(new GameBootstrap()))
-            Debug.LogError("GameRoot.TryStart failed.");
+        return GameRoot.TryStart(new GameBootstrap());
     }
 }
 ```
+
+| 场景 | 用法 |
+|------|------|
+| Editor / Init 联调 | Bootstrap 场景挂 `GameLaunchRunner` 或 `HotUpdateGameEntryRunner`（Awake 自动 Launch） |
+| 正式 HybridCLR | Launcher 场景：`LoadMetadata` + `LoadAssembly` → `HotfixLaunchCoordinator.TryLaunchGame()` → 再进 Init |
+
+`GameRoot.Start` 会 **延后一帧** 检查是否已 TryStart，避免与 Launch Runner 的 Awake 竞态。
 
 - `TryStart` 成功：Register → `Configure` → `InitAll`
 - `GameRoot` 尚未 Awake：仅 Register，Awake 时自动 `StartPipeline`
