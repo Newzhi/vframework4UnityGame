@@ -3,7 +3,8 @@ using UnityEngine;
 namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
-    /// 游戏全局唯一入口 MonoBehaviour：装配 IOC、注册模块、驱动 Update / FixedUpdate / LateUpdate。
+    /// 游戏全局唯一入口 MonoBehaviour：装配 IOC、注册模块、驱动 Update / FixedUpdate / LateUpdate；
+    /// Editor 下另转发 Scene Gizmo（<see cref="IGizmoDrawModule"/>）。
     /// Bootstrap Scene 中只保留一个实例。业务装配在热更加载后调用 <see cref="TryStart"/>（路径 B）。
     /// </summary>
     [DefaultExecutionOrder(-10000)]
@@ -110,6 +111,31 @@ namespace BaseFramework.BaseGameRoot
             else
                 _modules.LateUpdate(Time.deltaTime);
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor Scene 视图：转发至实现了 <see cref="IGizmoDrawModule"/> 的模块。
+        /// 未 TryStart（<see cref="_started"/> 为 false）时不绘制，避免访问未 Init 的 Module。
+        /// </summary>
+        private void OnDrawGizmos()
+        {
+            if (!_started || _modules == null)
+                return;
+
+            _modules.DrawGizmos();
+        }
+
+        /// <summary>
+        /// Editor Scene 视图：Hierarchy 选中本 GameObject 时，转发 <see cref="IGizmoDrawSelectedModule"/>。
+        /// </summary>
+        private void OnDrawGizmosSelected()
+        {
+            if (!_started || _modules == null)
+                return;
+
+            _modules.DrawGizmosSelected();
+        }
+#endif
 
         private void OnDestroy()
         {
