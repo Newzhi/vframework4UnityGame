@@ -539,12 +539,14 @@ public class BundleResLoader
     }
 
     /// <summary>B-2 验收：加载中 Release 后完成不入缓存。</summary>
-    internal UniTask<bool> VerifyInflightAbandonAsync<T>(string loadPath) where T : Object
+    //TODO 确认这个方法是干什么的？
+    public UniTask<bool> VerifyInflightAbandonAsync<T>(string loadPath) where T : Object
     {
         return loadCoordinator.VerifyInflightAbandonAsync<T>(loadPath);
     }
 
     /// <summary>当前 Resource 层缓存条目数（测试用）。</summary>
+    /// TODO 后续不允许有测试代码在框架层
     internal int GetCachedResourceCountForTest()
     {
         return loadCoordinator.GetCachedResourceCount();

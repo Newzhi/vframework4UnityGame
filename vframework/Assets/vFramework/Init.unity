@@ -132,6 +132,7 @@ GameObject:
   m_Component:
   - component: {fileID: 937496362}
   - component: {fileID: 937496361}
+  - component: {fileID: 937496363}
   m_Layer: 0
   m_Name: GameRoot
   m_TagString: Untagged
@@ -153,6 +154,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bundleRootOverride: 
   usePlatformSubfolder: 1
+--- !u!114 &937496363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 937496360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46fef6c517e0d62489321e63d9b83916, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoLaunchOnAwake: 0
+  launchMode: 0
 --- !u!4 &937496362
 Transform:
   m_ObjectHideFlags: 0
@@ -177,6 +192,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1509549030}
+  - component: {fileID: 1509549031}
+  - component: {fileID: 1509549032}
   m_Layer: 0
   m_Name: SceneGoto
   m_TagString: Untagged
@@ -199,6 +216,32 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1509549031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509549029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1e2d3c4b5a6978890a1b2c3d4e5f602, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1509549032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509549029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37e3cf951faf8cc45844dbcfc85209bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  testSceneName: ConfigTest
+  configReadyTimeoutSeconds: 30
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

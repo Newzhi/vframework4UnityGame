@@ -1,0 +1,10 @@
+{
+  "excelRoot": "../TestExcels",
+  "codeOutput": "../../vframework/Assets/HotUpdateScripts/MetaConfigs/Metas",
+  "globalOutput": "../../vframework/Assets/HotUpdateScripts/MetaConfigs",
+  "dataOutput": "../../vframework/Assets/AssetBundle/ConfigTables",
+  "namespace": "Game.Config",
+  "tableDiscovery": "scanAll",
+  "excludeTables": ["_Template"],
+  "includeTables": null
+}

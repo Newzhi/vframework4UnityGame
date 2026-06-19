@@ -4,9 +4,9 @@ using BaseFramework.BaseCommandSys;
 namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
-    /// 游戏宏观流程模块：注册 <see cref="IGameFlowService"/>，由 <see cref="GameRoot"/> 经
+    /// 游戏宏观流程模块（可选）：注册 <see cref="IGameFlowService"/>，由 <see cref="GameRoot"/> 经
     /// <see cref="ModuleManager"/> 每帧 Tick 当前 <see cref="IGameFlowState"/>。
-    /// <para>详见 <c>GameFlow/GameFlowApi.md</c>。</para>
+    /// <para>框架不内置 Procedure；<paramref name="registerStates"/> 由 Bootstrap / 热更层提供。详见 <c>GameFlow/GameFlowApi.md</c>。</para>
     /// </summary>
     public sealed class GameFlowModule : IGameModule
     {
@@ -22,7 +22,7 @@ namespace BaseFramework.BaseGameRoot
         /// <inheritdoc />
         public int Priority => ModulePriority.GameFlow;
 
-        /// <param name="registerStates">配置阶段注册所有 <see cref="IGameFlowState"/>。</param>
+        /// <param name="registerStates">配置阶段注册所有 <see cref="IGameFlowState"/>；由 Bootstrap / 热更层提供，框架不内置业务 Procedure。</param>
         /// <param name="initialStateId">InitAll 完成后切入的首状态；null 表示不自动切换。</param>
         public GameFlowModule(
             Action<IGameFlowRegistry> registerStates = null,
@@ -30,22 +30,6 @@ namespace BaseFramework.BaseGameRoot
         {
             _registerStates = registerStates;
             _initialStateId = initialStateId;
-        }
-
-        /// <summary>
-        /// 内置 MVP：注册 <see cref="BootFlowState"/> + <see cref="MainMenuFlowState"/>，
-        /// 启动后自动 <c>ChangeState(Boot)</c>。扩展时在 <paramref name="extra"/> 里 Register 更多状态。
-        /// </summary>
-        public static GameFlowModule CreateMvp(Action<IGameFlowRegistry> extra = null)
-        {
-            return new GameFlowModule(
-                registerStates: reg =>
-                {
-                    reg.Register(new BootFlowState());
-                    reg.Register(new MainMenuFlowState());
-                    extra?.Invoke(reg);
-                },
-                initialStateId: GameFlowIds.Boot);
         }
 
         /// <summary>

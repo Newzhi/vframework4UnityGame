@@ -270,13 +270,14 @@ View 点击操作
 | `BaseLayer/` | 默认 AOT（随 asmdef 约定） | 全局 Manager：ConfigTable、Input、Archive 等 | BaseFramework |
 | `HotUpdate` / `HotUpdateScripts/` | **热更** | GameBootstrap、AppEntry、玩法 Module、配表生成代码 | BaseLayer、BaseFramework |
 
-### 8.2 启动分工（HybridCLR）
+### 8.2 启动分工
 
 | 侧 | 职责 |
 |----|------|
-| **AOT（BaseFramework）** | `GameRoot`、`HybridCLRLoader` / `HotfixLaunchCoordinator`、`GameLaunchRunner`（Editor） |
-| **热更** | `GameBootstrap.Configure`、`HotUpdateGameEntry.OnHotfixLoaded` → `GameRoot.TryStart` |
-| **热更** | Proxy、Controller、具体玩法、可热更 GameFlow 状态 |
+| **AOT（BaseFramework）** | `GameRoot`（**集成** BaseAssetSys 预热）、`GameTimeModule` / `GameFlowModule` 内核（Bootstrap 可选注册）、`AotMinimalBootstrap`、`GameLaunchRunner` |
+| **AOT 无热更** | `GameLaunchMode.AotBootstrap` 或 `TryStart(AotMinimalBootstrap)` |
+| **热更（可选）** | `HotfixLaunchCoordinator` → `GameBootstrap.Configure`、`HotUpdateGameEntry.OnHotfixLoaded` |
+| **热更（可选）** | `IGameFlowState` 实现、Proxy、Controller、具体玩法 |
 
 ### 8.3 禁止事项
 

@@ -51,3 +51,29 @@ Thumbs.db
 vframework/Assets/AssetBundleFramework/
 vframework/Assets/AssetBundleFramework/**
 vframework/Assets/AssetBundleFramework/**/*.meta
+### 测试代码Test目录
+vframework/Assets/Test/
+vframework/Assets/Test/**
+vframework/Assets/Test/**/*.meta
+
+### ExcelTool 生成产物（export.bat / dotnet run）
+# Unity 接收目录
+vframework/Assets/AssetBundle/ConfigTables/*
+!vframework/Assets/AssetBundle/ConfigTables/.gitkeep
+
+vframework/Assets/HotUpdateScripts/MetaConfigs/GameConfigTables.cs
+vframework/Assets/HotUpdateScripts/MetaConfigs/GameConfigTables.cs.meta
+vframework/Assets/HotUpdateScripts/MetaConfigs/Metas/*.cs
+vframework/Assets/HotUpdateScripts/MetaConfigs/Metas/*.cs.meta
+
+# 工具工程本地输出（TargetFonder）
+ExcelTool4UnityGame/TargetFonder/Global/*
+!ExcelTool4UnityGame/TargetFonder/Global/.gitkeep
+ExcelTool4UnityGame/TargetFonder/Metas/*
+!ExcelTool4UnityGame/TargetFonder/Metas/.gitkeep
+ExcelTool4UnityGame/TargetFonder/Codes/*
+!ExcelTool4UnityGame/TargetFonder/Codes/.gitkeep
+
+# dotnet 构建产物
+ExcelTool4UnityGame/ExcelTool/ExcelTool/bin/
+ExcelTool4UnityGame/ExcelTool/ExcelTool/obj/

@@ -11,6 +11,9 @@ namespace BaseFramework.BaseGameRoot
         /// <summary>GameTimeModule：Clock / Pipeline / Timer 基础设施。</summary>
         public const int Early = 100;
 
+        /// <summary>ConfigTableModule：配置表 bytes 预加载与解析。</summary>
+        public const int ConfigTable = 120;
+
         /// <summary>GameFlowModule：宏观流程 FSM（Boot / 主菜单 / 战斗阶段名）。</summary>
         public const int GameFlow = 150;
 

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace BaseFramework.BaseGameRoot
@@ -5,8 +6,14 @@ namespace BaseFramework.BaseGameRoot
     /// <summary>
     /// 游戏全局唯一入口 MonoBehaviour：装配 IOC、注册模块、驱动 Update / FixedUpdate / LateUpdate；
     /// Editor 下另转发 Scene Gizmo（<see cref="IGizmoDrawModule"/>）。
-    /// Bootstrap Scene 中只保留一个实例。业务装配在热更加载后调用 <see cref="TryStart"/>（路径 B）。
-    /// <see cref="StartPipeline"/> 会先 <see cref="EnsureAssetSystemReady"/>，再 Configure / InitAll（配置表等 Module 在其后）。
+    /// <para>
+    /// Bootstrap Scene 中只保留一个实例。业务装配通过 <see cref="TryStart"/> 传入
+    /// <see cref="IGameBootstrap"/>（AOT 最小装配或热更 Bootstrap，热更为可选能力）。
+    /// </para>
+    /// <para>
+    /// <see cref="StartPipeline"/> 会先 <see cref="EnsureAssetSystemReady"/> 集成 BaseAssetSys，
+    /// 再 Configure / InitAll。Asset 子系统可独立使用；GameRoot 作为集成入口保证 Module Init 前 Catalog 就绪。
+    /// </para>
     /// </summary>
     [DefaultExecutionOrder(-10000)]
     public class GameRoot : MonoBehaviour
@@ -32,7 +39,7 @@ namespace BaseFramework.BaseGameRoot
         /// <summary>是否已完成 Configure + InitAll，三相位 Update 仅在此后为 true。</summary>
         private bool _started;
 
-        /// <summary>Awake 时 Registry 尚无 Bootstrap，等待热更层 <see cref="TryStart"/>。</summary>
+        /// <summary>Awake 时 Registry 尚无 Bootstrap，等待 <see cref="TryStart"/> 或 <see cref="GameLaunchRunner"/>。</summary>
         private bool _waitingBootstrap;
 
         public bool IsStarted => _started;
@@ -81,12 +88,22 @@ namespace BaseFramework.BaseGameRoot
         private void Start()
         {
             if (_waitingBootstrap && !_started)
-            {
-                Debug.LogError(
-                    $"{nameof(GameRoot)}: Bootstrap not started. Call {nameof(TryStart)}({nameof(IGameBootstrap)}) after hotfix / logic assembly is loaded.",
-                    this);
-                enabled = false;
-            }
+                StartCoroutine(WaitBootstrapOrFail());
+        }
+
+        IEnumerator WaitBootstrapOrFail()
+        {
+            yield return null;
+
+            if (!_waitingBootstrap || _started)
+                yield break;
+
+            Debug.LogError(
+                $"{nameof(GameRoot)}: Bootstrap not started. Call {nameof(TryStart)}({nameof(IGameBootstrap)}), " +
+                $"or attach {nameof(GameLaunchRunner)} (AotBootstrap / HotfixReflection), " +
+                $"or {nameof(HotfixLaunchCoordinator)}.{nameof(HotfixLaunchCoordinator.TryLaunchGame)} when using HybridCLR.",
+                this);
+            enabled = false;
         }
 
         private void Update()
@@ -188,7 +205,8 @@ namespace BaseFramework.BaseGameRoot
 
         /// <summary>
         /// 预热 <see cref="BundleResLoader"/>：读 catalog.bytes，初始化 BundleManager / AssetRouter。
-        /// 必须在 Module InitAll 之前完成，以便后续配置表 Module 可直接 Load。
+        /// GameRoot 集成资源系统的固定步骤；必须在 Module InitAll 之前完成，以便配置表等 Module 可直接 Load。
+        /// BaseAssetSys 亦可脱离 GameRoot 单独调用 <see cref="BundleResLoader"/> API。
         /// </summary>
         bool EnsureAssetSystemReady()
         {

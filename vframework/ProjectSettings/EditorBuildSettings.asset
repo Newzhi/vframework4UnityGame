@@ -14,9 +14,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Test/ResTest/ResTest.unity
     guid: bcce67c7271ac8c41a0da03c984f4940
-  - enabled: 0
+  - enabled: 1
     path: Assets/vFramework/Init.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Test/ConfigTest/ConfigTest.unity
+    guid: d7dd79894f61c0a49aa4f20ab221cd22
   - enabled: 1
     path: Assets/Test/AB_Test_Target/TestABScene.unity
     guid: 076650ee55ac72b4285346cf155290ff

@@ -31,15 +31,16 @@ BaseFramework/                 HotUpdateScripts/、HotUpdateLayer/ 等
 
 | 子目录 | 说明 |
 |--------|------|
-| `BaseGameRoot/` | `GameRoot`、IOC、`ModuleManager`、`IGameBootstrap` 接口、GameTime / GameFlow 框架 Module、GameLaunch |
+| `BaseGameRoot/` | `GameRoot`、IOC、`ModuleManager`、`IGameBootstrap` 接口、**可选** GameTime / GameFlow 内核、GameLaunch |
 | `BaseAssetSys/` | AB 打包与 `BundleResLoader`、Catalogue、CDN 运行时 |
 | `BaseEventSys/` | 事件总线 |
 | `BaseCommandSys/` | 调试命令 |
 | `BaseFSM/`、`BaseNetwork/`、`BaseSerialization/`、`Log/` | 规划或已有基础设施 |
 
-**AOT 层只提供接口与管道**，例如：
+**AOT 层只提供接口与可选 Module 内核**：
 
-- `IGameBootstrap` — 热更层实现并传入 `GameRoot.TryStart`
+- `IGameBootstrap` — 热更层或 `AotMinimalBootstrap` 实现并传入 `GameRoot.TryStart`
+- `GameTimeModule` / `GameFlowModule` — Bootstrap 按需 `AddModule`；无 GameTime 时 GameRoot 回退 Unity `deltaTime`
 - `IGameModule` / `IServiceRegistry` — 热更层注册具体 Module
 
 ---
@@ -51,7 +52,7 @@ BaseFramework/                 HotUpdateScripts/、HotUpdateLayer/ 等
 | `GameBootstrap`（`Configure` 注册 Module 列表） | `Assets/HotUpdateScripts/` 或 `HotUpdateLayer/` |
 | `HotUpdateGameEntry` / `AppEntry`（`TryStart(new GameBootstrap())`） | 同上 |
 | 玩法 Module、Service、Proxy、Controller | 同上 |
-| 配表 `*Meta` / `*Table` / `GameConfigTables` | `Assets/HotUpdateScripts/MetaConfigs/`（见 ConfigTableLayer 契约） |
+| 配表 `*Meta` / `*Table` / `GameConfigTables` | `Assets/HotUpdateScripts/MetaConfigs/`（见 [配表工具生成契约.md](../BaseLayer/ConfigTableLayer/配表工具生成契约.md)） |
 
 ### 3.1 关于 `HotUpdateBootStrap/`
 
@@ -62,13 +63,15 @@ BaseFramework/                 HotUpdateScripts/、HotUpdateLayer/ 等
 
 ---
 
-## 4. HybridCLR 与启动
+## 4. HybridCLR 与启动（可选）
 
-1. **AOT（本目录）**：`GameRoot`、`HybridCLR` 加载器、`GameLaunchRunner`（Editor）  
-2. **Load 热更 DLL** 后，调用 **热更程序集** 内入口（推荐 **直接静态调用**，HybridCLR 桥接；过渡期可用 `HotfixLaunchCoordinator` 反射）  
-3. **热更入口** 内：`GameRoot.TryStart(new GameBootstrap())`
+**热更为附加能力**，非所有项目必须启用。无 HybridCLR 时使用 `AotMinimalBootstrap` + `GameLaunchMode.AotBootstrap` 即可稳定运行 AOT 骨架。
 
-详见 [BaseGameRoot/README.md](BaseGameRoot/README.md) §4.3。
+| 侧 | 职责 |
+|----|------|
+| **AOT（本目录）** | `GameRoot`（集成 Asset 预热）、`GameTimeModule` / `GameFlowModule` **内核**、`GameLaunchRunner` |
+| **AOT 无热更** | `TryStart(AotMinimalBootstrap)`，无反射 |
+| **启用热更** | `HotfixLaunchCoordinator`（反射入口 **仅解析一次并缓存**）→ 热更 `OnHotfixLoaded` → `TryStart` |
 
 ---
 

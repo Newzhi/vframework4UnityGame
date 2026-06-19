@@ -1,0 +1,17 @@
+{
+    "name": "HotUpdateScripts",
+    "rootNamespace": "",
+    "references": [
+        "GUID:403b22f36a1f04a4987c9b547c0591a4",
+        "GUID:2daa72f1b5064694a90a3c64f38a7350"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

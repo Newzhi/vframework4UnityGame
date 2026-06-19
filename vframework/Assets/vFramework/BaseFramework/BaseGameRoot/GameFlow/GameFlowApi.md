@@ -33,7 +33,7 @@ GameFlow 表示并驱动**整局游戏的宏观运行阶段**（Boot、主菜单
 ### 1.3 刻意不做的
 
 - **不**继承 `MonoBehaviour`；由 `ModuleManager.Update` 驱动。
-- **不**在框架层写 Patch / 具体玩法等业务 Procedure；MVP 仅含 `Boot` / `MainMenu` 占位，热更层 `Register` 扩展。
+- **不**在框架层内置业务 Procedure；`IGameFlowState` 由 Bootstrap / 热更层 `Register`（示例见 `HotUpdateBootStrap/FlowStates/`）。
 - **不**用 GameFlow 表达局内每一回合/关卡细节；局内用嵌套 FSM 或 ECS + Module `_active`。
 - **不**在 Update 热路径 `services.Get`；状态在 `Enter` 缓存依赖。
 
@@ -48,39 +48,32 @@ Module._active（域内） →  仅控制该 Module 是否 Tick，不定义全�
 
 ## 2. 快速接入
 
-### 2.1 Bootstrap（MVP）
+### 2.1 Bootstrap 注册（可选 Module）
+
+`GameFlowModule` 为**可选**；不需要宏观流程的项目可不 `AddModule`。
 
 ```csharp
 public void Configure(IServiceRegistry services, IModuleRegistry modules)
 {
-    modules.AddModule(new GameTimeModule());
-    modules.AddModule(GameFlowModule.CreateMvp(extra: reg =>
-    {
-        // reg.Register(new ProcedureBattle());  // 热更层新增状态
-    }));
+    modules.AddModule(new GameTimeModule()); // 可选；无则 GameRoot 用 Unity deltaTime
+
+    modules.AddModule(new GameFlowModule(
+        registerStates: reg =>
+        {
+            reg.Register(new BootFlowState());      // Bootstrap / 热更层实现
+            reg.Register(new MainMenuFlowState());
+            reg.Register(new ProcedureBattle());    // 业务 Procedure
+        },
+        initialStateId: GameFlowIds.Boot));
+
     modules.AddModule(new DebugCommandModule(reg =>
         GameFlowModule.RegisterDebugCommands(reg)));
 }
 ```
 
-`CreateMvp` 会注册 `Boot`、`MainMenu`，并在 `InitAll` 后自动 `ChangeState(Boot)`。
-
-### 2.2 自定义注册与首状态
-
-```csharp
-modules.AddModule(new GameFlowModule(
-    registerStates: reg =>
-    {
-        reg.Register(new BootFlowState());
-        reg.Register(new MainMenuFlowState());
-        reg.Register(new ProcedureLoading());
-    },
-    initialStateId: GameFlowIds.Boot));
-```
-
 `initialStateId` 为 `null` 时不自动切换；由业务在 `InitAll` 之后手动 `services.Get<IGameFlowService>().ChangeState(...)`。
 
-### 2.3 Module 内缓存
+### 2.2 Module 内缓存
 
 ```csharp
 private IGameFlowService _flow;
@@ -196,7 +189,7 @@ public sealed class ProcedureBattle : IGameFlowState
 }
 ```
 
-3. **注册** — `GameFlowModule.CreateMvp(extra: reg => reg.Register(new ProcedureBattle()))`
+3. **注册** — 在 `GameFlowModule` 构造函数 `registerStates` 中 `reg.Register(new ProcedureBattle())`
 
 切换时传参：
 
@@ -248,9 +241,8 @@ GameEventBus.RegisterEvent<GameFlowChangedEvent>(e =>
 | 成员 | 说明 |
 |------|------|
 | `Priority` | `ModulePriority.GameFlow`（150） |
-| `CreateMvp(extra)` | 注册 Boot + MainMenu，首态 Boot |
 | `RegisterDebugCommands(registry)` | 注册 flow.state / flow.goto |
-| 构造函数 `(registerStates, initialStateId)` | 完全自定义 |
+| 构造函数 `(registerStates, initialStateId)` | Bootstrap 注册 Procedure 与首态 |
 
 ---
 

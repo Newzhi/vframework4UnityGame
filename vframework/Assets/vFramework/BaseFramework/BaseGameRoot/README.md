@@ -24,22 +24,37 @@
 
 ---
 
-## 2. 架构（路径 B：热更后启动）
+## 2. 架构
+
+### 2.1 无热更（AOT 最小运行）
 
 ```text
-Bootstrap Scene：仅挂 GameRoot（DontDestroyOnLoad）
-GameRoot.Awake
-    → 单例 + DontDestroyOnLoad
-    → 若 Registry 已有 Bootstrap → StartPipeline
-    → 否则 _waitingBootstrap = true（等 TryStart）
-热更 / 逻辑程序集加载完成（或 Editor 下 GameLaunchRunner.Awake）
-    → HotfixLaunchCoordinator.TryLaunchGame()
-    → 反射 HotUpdateGameEntry.OnHotfixLoaded → TryStart(GameBootstrap)
+Bootstrap Scene：GameRoot + GameLaunchRunner（launchMode = AotBootstrap）
+GameLaunchRunner.Awake (-9999)
+    → GameRoot.TryStart(AotMinimalBootstrap)   // 无反射
+GameRoot.StartPipeline
+    → EnsureAssetSystemReady（集成 BaseAssetSys）
+    → Configure（可选 GameTimeModule，无 GameFlow）
+    → InitAll
+```
+
+### 2.2 热更路径（可选，HybridCLR）
+
+```text
+Bootstrap Scene：GameRoot + GameLaunchRunner（launchMode = HotfixReflection）
+GameRoot.Awake → waitingBootstrap
+GameLaunchRunner.Awake
+    → HotfixLaunchCoordinator.TryLaunchGame()  // 反射仅解析一次并缓存
+    → HotUpdateGameEntry.OnHotfixLoaded → TryStart(GameBootstrap)
     → Register + Configure + InitAll
+```
+
+热更**非必须**；无 HybridCLR 项目请用 §2.1 或自行 `TryStart(IGameBootstrap)`。
+
+```text
 GameRoot.Update / FixedUpdate / LateUpdate
     → IGameUpdatePipeline.RunFrame（若已注册 GameTimeModule）
     → ModuleManager（游戏时间 delta；无 Pipeline 时回退 Unity deltaTime）
-    → UpdateFacade → Calendar → Timer
 ```
 
 ```mermaid
@@ -77,9 +92,16 @@ sequenceDiagram
 
 ```text
 BaseGameRoot/
+├── Bootstrap/
+│   └── AotMinimalBootstrap.cs       ← 无热更时的最小 IGameBootstrap
 ├── GameLaunch/
-│   ├── HotfixLaunchCoordinator.cs   ← AOT：反射调热更入口
-│   └── GameLaunchRunner.cs          ← Editor/Bootstrap 场景 Awake 自动 Launch
+│   ├── GameLaunchMode.cs
+│   ├── HotfixLaunchCoordinator.cs   ← 可选：反射调热更入口（MethodInfo 缓存）
+│   └── GameLaunchRunner.cs          ← AotBootstrap / HotfixReflection
+├── HotUpdateBootStrap/              ← 过渡：目标迁入 HotUpdateScripts
+│   ├── FlowStates/                  ← Boot / MainMenu 等 Procedure 占位
+│   ├── GameBootstrap.cs
+│   └── HotUpdateGameEntry.cs
 ├── GameRoot/
 │   ├── GameRoot.cs
 │   ├── Interface/
@@ -102,7 +124,7 @@ BaseGameRoot/
 │   ├── Interface/
 │   ├── Impt/
 │   ├── Events/
-│   └── States/          MVP 示例状态（Boot / MainMenu）
+│   └── Interface/                   ← 框架内核；无内置 Procedure 实现
 └── GameTime/
     ├── GameTimeApi.md   业务 API 参考（Clock / 双时刻 / Timer / Facade）
     ├── Interface/
@@ -113,16 +135,16 @@ BaseGameRoot/
 
 ---
 
-## 4. 业务接入（路径 B）
+## 4. 业务接入
 
 ### 4.1 步骤清单
 
-| 步骤 | 做什么 |
-|------|--------|
-| 1 | 实现 `IGameBootstrap`（普通 C# 类） |
-| 2 | 在 `Configure` 里 `Register` / `AddModule` |
-| 3 | Bootstrap Scene **只挂 GameRoot**（无 Bootstrap 字段） |
-| 4 | HybridCLR 加载完成后 **`HotfixLaunchCoordinator.TryLaunchGame()`**（Editor 可用 `GameLaunchRunner`） |
+| 步骤 | 无热更 | 启用 HybridCLR（可选） |
+|------|--------|------------------------|
+| 1 | 实现 `IGameBootstrap` 或使用 `AotMinimalBootstrap` | 热更程序集实现 `GameBootstrap` |
+| 2 | `Configure` 里按需 `Register` / `AddModule` | 同左 |
+| 3 | Scene 挂 **GameRoot** | 同左 |
+| 4 | `GameLaunchRunner` **AotBootstrap**，或代码 `TryStart` | `HotfixReflection` 或 Launcher 调 `HotfixLaunchCoordinator.TryLaunchGame()` |
 
 ### 4.2 IGameBootstrap
 
@@ -131,51 +153,35 @@ public sealed class GameBootstrap : IGameBootstrap
 {
     public void Configure(IServiceRegistry services, IModuleRegistry modules)
     {
-        var input = new InputModule();
-        var gameplay = new GameplayService();
+        modules.AddModule(new GameTimeModule()); // 可选
 
-        services.Register<IInputService>(input);
-        services.Register<IGameplayService>(gameplay);
+        modules.AddModule(new GameFlowModule(
+            registerStates: reg =>
+            {
+                reg.Register(new BootFlowState());
+                reg.Register(new MainMenuFlowState());
+            },
+            initialStateId: GameFlowIds.Boot)); // 可选；不需要宏观流程则省略
 
-        modules.AddModule(new GameTimeModule(new GameTimeOptions
-        {
-            CalendarSettings = new GameCalendarSettings { SecondsPerDay = 120f },
-            InitialTimeScale = 1f
-        }));
-        modules.AddModule(GameFlowModule.CreateMvp());
-        modules.AddModule(input);
-        modules.AddModule(new GameLogicModule());
-        modules.AddModule(gameplay);
+        modules.AddModule(new MyGameLogicModule());
     }
 }
 ```
 
-### 4.3 热更入口（HybridCLR / 路径 B）
+### 4.3 热更入口（可选）
 
-**AOT（框架）** 只通过反射调用热更入口，不硬引用 `GameBootstrap`：
+**热更为附加能力**，非所有项目需要。启用时 AOT 仅通过反射调用热更入口（`MethodInfo` 缓存，避免重复反射）：
 
 ```csharp
-// Launcher 或 GameLaunchRunner（Awake）在 HybridCLR Load 完成后：
 HotfixLaunchCoordinator.TryLaunchGame();
-// → 反射 HotUpdateGameEntry.OnHotfixLoaded()
-```
-
-**热更程序集** 实现装配并 TryStart：
-
-```csharp
-public static class HotUpdateGameEntry
-{
-    public static bool OnHotfixLoaded()
-    {
-        return GameRoot.TryStart(new GameBootstrap());
-    }
-}
+// → HotUpdateGameEntry.OnHotfixLoaded() → GameRoot.TryStart(new GameBootstrap())
 ```
 
 | 场景 | 用法 |
 |------|------|
-| Editor / Init 联调 | Bootstrap 场景挂 `GameLaunchRunner` 或 `HotUpdateGameEntryRunner`（Awake 自动 Launch） |
-| 正式 HybridCLR | Launcher 场景：`LoadMetadata` + `LoadAssembly` → `HotfixLaunchCoordinator.TryLaunchGame()` → 再进 Init |
+| 单机 / 无 HybridCLR | `GameLaunchRunner` → **AotBootstrap**，或 `TryStart(new AotMinimalBootstrap())` |
+| Editor 模拟热更 | `GameLaunchRunner` → **HotfixReflection**（需手动切换 launchMode） |
+| 正式 HybridCLR | Launcher：`LoadAssembly` → `HotfixLaunchCoordinator.TryLaunchGame()` |
 
 `GameRoot.Start` 会 **延后一帧** 检查是否已 TryStart，避免与 Launch Runner 的 Awake 竞态。
 
@@ -311,8 +317,8 @@ modules.AddModule(new GameTimeModule(new GameTimeOptions
 **详细 API、设计思想、新增状态步骤** → [GameFlow/GameFlowApi.md](GameFlow/GameFlowApi.md)
 
 ```csharp
-modules.AddModule(GameFlowModule.CreateMvp(extra: reg =>
-    reg.Register(new ProcedureBattle())));  // 热更层状态
+modules.AddModule(new GameFlowModule(
+    registerStates: reg => reg.Register(new ProcedureBattle())));
 
 modules.AddModule(new DebugCommandModule(reg =>
     GameFlowModule.RegisterDebugCommands(reg)));
@@ -327,6 +333,6 @@ modules.AddModule(new DebugCommandModule(reg =>
 | Phase 1 ✅ | `IGameModule` + `ServiceContainer` + Update |
 | Phase 2 ✅ | Fixed / Late 相位 |
 | Phase 2.5 ✅ | GameTime 双时刻 + Pipeline |
-| Phase 2.6 ✅ | GameFlow 宏观流程 MVP（Boot / MainMenu） |
+| Phase 2.6 ✅ | GameFlow 宏观流程内核（Procedure 由 Bootstrap Register） |
 | Phase 3 | `EcsWorldModule` |
-| 启动 | **路径 B** `TryStart`（Boot 态可衔接 Patch / LoadAssembly） |
+| 启动 | **AotBootstrap**（无热更）或 **HotfixReflection**（可选 HybridCLR） |

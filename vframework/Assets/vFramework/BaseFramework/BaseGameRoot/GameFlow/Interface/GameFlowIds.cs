@@ -1,15 +1,14 @@
 namespace BaseFramework.BaseGameRoot
 {
     /// <summary>
-    /// 宏观流程状态 Id 常量。框架 MVP 内置 Boot / MainMenu；
-    /// 热更层新增状态时在此类或业务 <c>FlowIds</c> 中定义，避免魔法字符串。
+    /// 宏观流程状态 Id 常量。框架不内置 Procedure 实现；Bootstrap / 热更层 Register 时使用这些 Id 或业务自有常量。
     /// </summary>
     public static class GameFlowIds
     {
-        /// <summary>启动 / 初始化（Patch、热更、首屏加载等）。MVP 首态。</summary>
+        /// <summary>启动 / 初始化（TryStart 之后的首屏编排）。</summary>
         public const string Boot = "Boot";
 
-        /// <summary>主菜单 / 大厅。MVP 中 Boot 完成后默认切入。</summary>
+        /// <summary>主菜单 / 大厅。</summary>
         public const string MainMenu = "MainMenu";
 
         // --- 扩展示例：取消注释并实现对应 IGameFlowState，再在 Bootstrap Register ---
