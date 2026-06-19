@@ -56,10 +56,16 @@ vframework/Assets/Test/
 vframework/Assets/Test/**
 vframework/Assets/Test/**/*.meta
 
-### ExcelTool 生成产物（export.bat / dotnet run）
-# Unity 接收目录
+### AssetBundle 目录（仅保留 ConfigTables 占位；AB 测试资源不进版本库）
+vframework/Assets/AssetBundle/**
+!vframework/Assets/AssetBundle/ConfigTables/
 vframework/Assets/AssetBundle/ConfigTables/*
 !vframework/Assets/AssetBundle/ConfigTables/.gitkeep
+!vframework/Assets/AssetBundle.meta
+!vframework/Assets/AssetBundle/ConfigTables.meta
+
+### ExcelTool 生成产物（export.bat / dotnet run）
+# Unity 接收目录 ConfigTables — 忽略规则见上方 AssetBundle 节
 
 vframework/Assets/HotUpdateScripts/MetaConfigs/GameConfigTables.cs
 vframework/Assets/HotUpdateScripts/MetaConfigs/GameConfigTables.cs.meta
