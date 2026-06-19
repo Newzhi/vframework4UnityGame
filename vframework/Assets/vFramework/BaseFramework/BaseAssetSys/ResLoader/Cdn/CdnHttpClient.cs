@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -60,5 +62,45 @@ public static class CdnHttpClient
             bytes = request.downloadHandler.data;
             return bytes != null && bytes.Length > 0;
         }
+    }
+
+    /// <summary>异步 GET 二进制；失败返回 null。</summary>
+    public static async UniTask<byte[]> TryGetBytesAsync(
+        string url,
+        int timeoutSeconds = 60,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(url))
+            return null;
+
+        using UnityWebRequest request = UnityWebRequest.Get(url);
+        request.timeout = timeoutSeconds;
+
+        try
+        {
+            await request.SendWebRequest().WithCancellation(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning("[CdnHttpClient] GET bytes async failed: " + url + " | " + ex.Message);
+            return null;
+        }
+
+#if UNITY_2020_1_OR_NEWER
+        if (request.result != UnityWebRequest.Result.Success)
+#else
+        if (request.isNetworkError || request.isHttpError)
+#endif
+        {
+            Debug.LogWarning("[CdnHttpClient] GET bytes async failed: " + url + " | " + request.error);
+            return null;
+        }
+
+        byte[] data = request.downloadHandler.data;
+        return data != null && data.Length > 0 ? data : null;
     }
 }

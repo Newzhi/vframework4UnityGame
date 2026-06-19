@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -50,7 +51,17 @@ public sealed class HttpRemoteBundleProvider : IRemoteBundleProvider
             return true;
 
         string url = cdnBaseUrl + "/" + bundleName;
-        if (!CdnHttpClient.TryGetBytes(url, out byte[] data))
+        byte[] data;
+        try
+        {
+            data = await CdnHttpClient.TryGetBytesAsync(url, cancellationToken: CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+
+        if (data == null || data.Length == 0)
             return false;
 
         string dir = Path.GetDirectoryName(localPath);
@@ -58,7 +69,9 @@ public sealed class HttpRemoteBundleProvider : IRemoteBundleProvider
 
         try
         {
-            File.WriteAllBytes(localPath, data);
+            await UniTask.RunOnThreadPool(
+                () => File.WriteAllBytes(localPath, data),
+                cancellationToken: CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -66,7 +79,9 @@ public sealed class HttpRemoteBundleProvider : IRemoteBundleProvider
             return false;
         }
 
-        bool hashOk = IsLocalBundleValid(bundleName, localPath);
+        bool hashOk = await UniTask.RunOnThreadPool(
+            () => IsLocalBundleValid(bundleName, localPath),
+            cancellationToken: CancellationToken.None);
         AssetRefTraceLogger.TraceCdnDownload(bundleName, data.Length, hashOk);
         if (!hashOk)
         {
