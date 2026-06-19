@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Test/SceneLayerDemo/Scenes/SceneDemo_Hub.unity
+    guid: e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3
+  - enabled: 1
+    path: Assets/Test/SceneLayerDemo/Scenes/SceneDemo_Overlay.unity
+    guid: f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4
+  - enabled: 1
     path: Assets/Test/comprehensiveTest/Scenes/StartGame.unity
     guid: d83d38ad27fceb945a3dcbc59dc40663
   - enabled: 1

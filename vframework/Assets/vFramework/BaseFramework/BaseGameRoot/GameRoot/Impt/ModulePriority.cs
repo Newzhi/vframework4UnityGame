@@ -14,6 +14,9 @@ namespace BaseFramework.BaseGameRoot
         /// <summary>ConfigTableModule：配置表 bytes 预加载与解析。</summary>
         public const int ConfigTable = 120;
 
+        /// <summary>SceneModule：场景加载/卸载与切换清理链。</summary>
+        public const int Scene = 140;
+
         /// <summary>GameFlowModule：宏观流程 FSM（Boot / 主菜单 / 战斗阶段名）。</summary>
         public const int GameFlow = 150;
 

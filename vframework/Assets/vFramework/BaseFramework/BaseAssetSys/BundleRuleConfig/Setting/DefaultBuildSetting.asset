@@ -22,6 +22,12 @@ MonoBehaviour:
   packingRule: 0
   targetDirectory: Assets/AssetBundle
   customItems:
+  - assetPath: Assets/AssetBundle/Scenes/SceneDemo_Game.unity
+    bundleName: scene_demo_game.bundle
+    buildMode: 1
+    resourcePriority: 2
+    folderPackingRule: 0
+    note: SceneLayer P-075 demo (Custom mode); Default rule also packs Scenes/ folder
   - assetPath: Assets/AssetBundle/Atlas
     bundleName: bundle_1
     buildMode: 1

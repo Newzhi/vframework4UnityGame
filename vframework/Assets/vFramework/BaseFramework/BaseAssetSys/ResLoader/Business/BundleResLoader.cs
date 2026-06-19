@@ -223,6 +223,25 @@ public class BundleResLoader
         }
     }
 
+    /// <summary>分帧预热 bundle（Loading 进度用）。</summary>
+    public async UniTask PreLoadBundlesAsync(
+        IReadOnlyList<string> bundleNames,
+        IProgress<float> progress = null,
+        System.Threading.CancellationToken cancellationToken = default)
+    {
+        if (!EnsureInitialized() || bundleNames == null)
+            return;
+
+        int count = bundleNames.Count;
+        for (int i = 0; i < count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            PreLoadBundles(new[] { bundleNames[i] });
+            progress?.Report((i + 1f) / count);
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+        }
+    }
+
     /// <summary>同步加载。loadPath 为相对打包根目录的简路径，无扩展名。
     /// 例：Default 规则下 targetDirectory=Assets/AssetBundle → Load&lt;Sprite&gt;("Atlas/Role/Hog_Attack_000")
     /// </summary>

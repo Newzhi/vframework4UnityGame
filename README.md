@@ -47,7 +47,7 @@ BaseFramework      发动机：GameRoot、事件、资源管线、调试命令 �
 | **ArchiveLayer** | 存档槽位 CRUD | `AddModule(new ArchiveModule(...))`，`Get<IArchiveService>()` |
 | **AudioLayer** | 音频管理 | `IAudioManager` |
 | **UILayer** | 窗口基类 `UIWindow` 等 | 继承窗口、走 UI 栈（见模块内代码） |
-| **SceneLayer** | 场景调度 | `SceneScheduler` |
+| **SceneLayer** | 场景调度（Single/Additive、AB 场景、清理链） | `AddModule(new SceneModule(catalog))`，`Get<ISceneService>()`；Demo：`Assets/Test/SceneLayerDemo/` |
 
 此外还有 **ConfigTableLayer**、**I18NLayer**、**GameUtils** 等辅助目录；**HotUpdateLayer** 留给业务自己填 MVC / Proxy。
 
