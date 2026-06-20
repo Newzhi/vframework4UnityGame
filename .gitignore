@@ -51,10 +51,9 @@ Thumbs.db
 vframework/Assets/AssetBundleFramework/
 vframework/Assets/AssetBundleFramework/**
 vframework/Assets/AssetBundleFramework/**/*.meta
-### 测试代码Test目录
-vframework/Assets/Test/
+### 测试代码 Test 目录（不进版本库）
 vframework/Assets/Test/**
-vframework/Assets/Test/**/*.meta
+vframework/Assets/Test.meta
 
 ### AssetBundle 目录（仅保留 ConfigTables 占位；AB 测试资源不进版本库）
 vframework/Assets/AssetBundle/**
