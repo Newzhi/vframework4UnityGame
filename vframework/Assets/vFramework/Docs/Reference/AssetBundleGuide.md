@@ -1,5 +1,8 @@
 # AssetBundle 使用指南
 
+> 路径：`Assets/vFramework/Docs/Reference/`  
+> **vFramework 运行时加载**请用 [BusinessApiUsageGuide.md](../../BaseFramework/BaseAssetSys/Docs/BusinessApiUsageGuide.md)；本文讲解 Unity AB **通用概念**（打标签 → 打包 → LoadFromFile）。
+
 本文档从 **设置标签 → 打包（BuildPipeline）→ 运行时加载 → 卸载** 讲解 Unity AssetBundle（AB）的通用流程，不依赖特定项目结构。
 
 ---

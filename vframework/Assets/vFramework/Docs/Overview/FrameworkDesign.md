@@ -47,7 +47,7 @@ flowchart TB
 
 | 层级 | 程序集（规划） | 职责 |
 |------|----------------|------|
-| **BaseFramework** | `BaseFramework`（**整目录 AOT，见 [BaseFramework/README.md](../BaseFramework/README.md)**） | 与具体玩法无关的基础设施：事件、FSM 内核、网络编解码、序列化、日志、GameRoot 入口 |
+| **BaseFramework** | `BaseFramework`（**整目录 AOT，见 [BaseFramework/README.md](../../BaseFramework/README.md)**） | 与具体玩法无关的基础设施：事件、FSM 内核、网络编解码、序列化、日志、GameRoot 入口 |
 | **BaseLayer** | `BaseLayer` | 可复用的全局 Manager：资源、场景、池、UI、音频、网络会话等 |
 | **HotUpdateLayer** | `HotUpdate` | 业务逻辑：流程、Proxy、Model、Controller、View（按项目扩展） |
 
@@ -57,7 +57,10 @@ flowchart TB
 
 ```text
 Assets/vFramework/
-├── Docs/                          # 项目与框架文档
+├── Docs/                          # 项目与框架文档（见 Docs/README.md）
+│   ├── Overview/                  # 定位、分层架构
+│   ├── Guides/                    # 业务接入指南
+│   └── Reference/                 # 通用参考（Unity AB 等）
 ├── BaseFramework/                 # 基础架构层（★ 全部 AOT，见 BaseFramework/README.md）
 │   ├── BaseGameRoot/              # 全局入口 Mono + IOC + 模块 Update（含 GameFlow）
 │   ├── BaseEventSys/              # 事件总线（Interface / Impt）
@@ -87,7 +90,7 @@ Assets/vFramework/
 > **说明**  
 > - **BaseGameRoot** 与 **BaseAssetSys** 为**同级、独立**子系统：前者只管 App 生命周期、IOC、模块 Update；后者只管打包、清单、Bundle 加载与 Ref。二者代码、文档、排期、测试门禁**互不混入**。  
 > - 若需在游戏启动后使用资源 API，由热更层 `IGameBootstrap` **可选**注册资源相关 Module/Service，属于集成点而非耦合。  
-> - `BaseAssetSys` 排期见 [BaseAssetSys/Docs/MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md)；`BaseLayer/AssetLayer` 保留学习文档与测试夹具。
+> - `BaseAssetSys` 排期见 [BaseAssetSys/Docs/MainRoadmap.md](../../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md)；`BaseLayer/AssetLayer` 保留学习文档与测试夹具。
 
 ---
 
@@ -108,8 +111,8 @@ LateUpdate → ModuleManager.LateUpdate（ILateUpdateModule）
 OnDestroy → DisposeAll（逆序）+ Clear 容器
 ```
 
-- 实现与范例：[BaseGameRoot/README.md](../BaseFramework/BaseGameRoot/README.md)  
-- **GameFlow**（宏观流程）：[GameFlow/GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) — `GameFlowModule` + `IGameFlowService`，对标 Procedure。  
+- 实现与范例：[BaseGameRoot/README.md](../../BaseFramework/BaseGameRoot/README.md)  
+- **GameFlow**（宏观流程）：[GameFlow/GameFlowApi.md](../../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) — `GameFlowModule` + `IGameFlowService`，对标 Procedure。  
 - **不包含** `Load` / `Release` / Bundle / 清单；资源能力在 **BaseAssetSys**，见 §5.1。  
 - 各全局 Module 实现 `IGameModule`，在 `IGameBootstrap` 注册，**禁止** lazy `Instance` getter 隐式 `new`。
 
@@ -126,7 +129,7 @@ OnDestroy → DisposeAll（逆序）+ Clear 容器
 | **GameFlow** | `BaseGameRoot/GameFlow/` | **已实现 MVP** | **游戏专用**宏观流程：Boot、主菜单、进局内等；单当前态；`GameFlowModule` 进 Update |
 | **BaseFSM** | `BaseFramework/BaseFSM/` | 规划中 | **通用** FSM 内核（AI、UI 子状态、嵌套小状态机）；多实例；**不替代** GameFlow |
 
-- GameFlow 详细 API：[GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md)  
+- GameFlow 详细 API：[GameFlowApi.md](../../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md)  
 - BaseFSM 将来仅提供 `Enter` / `Update` / `Exit` 机制，**不含**具体玩法状态名。
 
 ### 4.4 BaseNetwork
@@ -147,7 +150,7 @@ OnDestroy → DisposeAll（逆序）+ Clear 容器
 
 ### 5.1 BaseAssetSys / AssetLayer（资源域，与 BaseGameRoot 独立）
 
-**文档与排期**仅维护在 `BaseAssetSys/Docs/`（[MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md)、[DocumentIndex.md](../BaseFramework/BaseAssetSys/Docs/DocumentIndex.md)），**不写入** BaseGameRoot README。
+**文档与排期**仅维护在 `BaseAssetSys/Docs/`（[MainRoadmap.md](../../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md)、[DocumentIndex.md](../../BaseFramework/BaseAssetSys/Docs/DocumentIndex.md)），**不写入** BaseGameRoot README。
 
 同一资源管线下的三个 Manager，**目录聚合、运行时独立**：
 
@@ -260,7 +263,7 @@ View 点击操作
 
 ## 8. 程序集与热更边界
 
-> **AOT 固定层约定**：`Assets/vFramework/BaseFramework/` 下 **全部代码** 随主包 AOT 编译，不进入 HybridCLR 热更 DLL。详见 **[BaseFramework/README.md](../BaseFramework/README.md)**。
+> **AOT 固定层约定**：`Assets/vFramework/BaseFramework/` 下 **全部代码** 随主包 AOT 编译，不进入 HybridCLR 热更 DLL。详见 **[BaseFramework/README.md](../../BaseFramework/README.md)**。
 
 ### 8.1 目录与程序集
 
@@ -323,9 +326,10 @@ View 点击操作
 
 | 文档 | 范围 |
 |------|------|
-| [BaseFramework/README.md](../BaseFramework/README.md) | **AOT 固定层**目录约定 |
+| [BaseFramework/README.md](../../BaseFramework/README.md) | **AOT 固定层**目录约定 |
 | [ProjectGoals.md](./ProjectGoals.md) | 框架定位与目标 |
-| [BaseGameRoot/README.md](../BaseFramework/BaseGameRoot/README.md) | 全局入口 + IOC（**非**资源加载） |
-| [GameFlow/GameFlowApi.md](../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) | 宏观流程 API 与设计 |
-| [BaseEventSys/README.md](../BaseFramework/BaseEventSys/README.md) | 事件总线 |
-| [BaseAssetSys/Docs/MainRoadmap.md](../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md) | AB 打包/加载排期（**独立**于 GameRoot） |
+| [BaseGameRoot/README.md](../../BaseFramework/BaseGameRoot/README.md) | 全局入口 + IOC（**非**资源加载） |
+| [GameFlow/GameFlowApi.md](../../BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) | 宏观流程 API 与设计 |
+| [BaseEventSys/README.md](../../BaseFramework/BaseEventSys/README.md) | 事件总线 |
+| [BaseAssetSys/Docs/MainRoadmap.md](../../BaseFramework/BaseAssetSys/Docs/MainRoadmap.md) | AB 打包/加载排期（**独立**于 GameRoot） |
+| [Guides/StandaloneAndResourceHotfixGuide.md](../Guides/StandaloneAndResourceHotfixGuide.md) | 单机 / 只热更资源接入与 Mono 迁移 |

@@ -29,7 +29,7 @@ BaseEventSys（GameEventBus + IGameEvent）
 | UI / 音频 / 日志旁路刷新 | 网络包解析进 Model（走 Proxy） |
 | 调试监听（如综合测试里的射击、死亡日志） | 需要严格调用顺序的核心玩法链 |
 
-宏观架构见 [FrameworkDesign.md](../../Docs/FrameworkDesign.md) §4.2；异步与主线程约定见同文档 §4.5（与事件无关，勿混在本 README 里当「事件用法」）。
+宏观架构见 [FrameworkDesign.md](../../Docs/Overview/FrameworkDesign.md) §4.2；异步与主线程约定见同文档 §4.5（与事件无关，勿混在本 README 里当「事件用法」）。
 
 ---
 
@@ -171,7 +171,7 @@ GameEventBus.SentEvent(new WaveStartedEvent(waveIndex));
 
 | 文档 | 内容 |
 |------|------|
-| [FrameworkDesign.md](../../Docs/FrameworkDesign.md) | 三层架构、BaseEventSys 在 §4.2 |
-| [ProjectGoals.md](../../Docs/ProjectGoals.md) | 框架定位与事件适用场景 |
+| [FrameworkDesign.md](../../Docs/Overview/FrameworkDesign.md) | 三层架构、BaseEventSys 在 §4.2 |
+| [ProjectGoals.md](../../Docs/Overview/ProjectGoals.md) | 框架定位与事件适用场景 |
 | [BaseGameRoot/README.md](../BaseGameRoot/README.md) | 入口与 Module 调度 |
 | [GameFlowApi.md](../BaseGameRoot/GameFlow/GameFlowApi.md) | 宏观流程与 `GameFlowChangedEvent` |

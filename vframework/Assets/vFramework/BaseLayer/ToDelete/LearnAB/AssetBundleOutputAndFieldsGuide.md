@@ -348,7 +348,8 @@ Unity 自带的 Manifest 管的是**包与包**的关系。
 | 文档 | 侧重 |
 |------|------|
 | 本文 | 打包**产物长什么样、字段什么意思** |
-| `Assets/vFramework/Docs/AssetBundleGuide.md` | 从打标签到加载卸载的**完整操作流程** |
+| `Assets/vFramework/Docs/Reference/AssetBundleGuide.md` | 从打标签到加载卸载的**完整操作流程** |
+| `Assets/vFramework/Docs/README.md` | vFramework 文档总索引 |
 | `Assets/vFramework/BaseLayer/AssetLayer/ApproachComparisonAndLearningGuide.md` | 多套资源框架的**学习路线与架构对比** |
 
 建议阅读顺序：**本文（认清文件）→ AssetBundleGuide（动手做一遍）→ 方案对比（选型与扩展）**。

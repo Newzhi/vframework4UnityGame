@@ -95,6 +95,7 @@ BaseGameRoot/
 ├── Bootstrap/
 │   └── AotMinimalBootstrap.cs       ← 无热更时的最小 IGameBootstrap
 ├── GameLaunch/
+│   ├── README.md                    ← 启动协调：设计意图 + AOT/热更用法
 │   ├── GameLaunchMode.cs
 │   ├── HotfixLaunchCoordinator.cs   ← 可选：反射调热更入口（MethodInfo 缓存）
 │   └── GameLaunchRunner.cs          ← AotBootstrap / HotfixReflection
@@ -136,6 +137,8 @@ BaseGameRoot/
 ---
 
 ## 4. 业务接入
+
+> **纯单机 / 只热更资源**（无 HybridCLR）的完整步骤、目录建议、Mono 迁移 → [Docs/Guides/StandaloneAndResourceHotfixGuide.md](../../Docs/Guides/StandaloneAndResourceHotfixGuide.md)
 
 ### 4.1 步骤清单
 
@@ -184,6 +187,8 @@ HotfixLaunchCoordinator.TryLaunchGame();
 | 正式 HybridCLR | Launcher：`LoadAssembly` → `HotfixLaunchCoordinator.TryLaunchGame()` |
 
 `GameRoot.Start` 会 **延后一帧** 检查是否已 TryStart，避免与 Launch Runner 的 Awake 竞态。
+
+**GameLaunch 设计意图、时序图、`autoLaunchOnAwake` 自定义 Bootstrap、热更入口约定与踩坑** → [GameLaunch/README.md](GameLaunch/README.md)
 
 - `TryStart` 成功：Register → `Configure` → `InitAll`
 - `GameRoot` 尚未 Awake：仅 Register，Awake 时自动 `StartPipeline`

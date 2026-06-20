@@ -3,7 +3,7 @@
 > 路径：`Assets/vFramework/BaseFramework/`  
 > **本目录下全部代码属于 AOT 固定框架层**：随安装包编译进主程序集，**不**通过 HybridCLR 热更替换。
 
-上层文档：[FrameworkDesign.md](../Docs/FrameworkDesign.md) §8、[ProjectGoals.md](../Docs/ProjectGoals.md)
+上层文档：[FrameworkDesign.md](../Docs/Overview/FrameworkDesign.md) §8、[ProjectGoals.md](../Docs/Overview/ProjectGoals.md)
 
 ---
 
@@ -91,6 +91,7 @@ BaseFramework/                 HotUpdateScripts/、HotUpdateLayer/ 等
 
 | 文档 | 内容 |
 |------|------|
-| [FrameworkDesign.md](../Docs/FrameworkDesign.md) | 三层架构总览 |
+| [FrameworkDesign.md](../Docs/Overview/FrameworkDesign.md) | 三层架构总览 |
+| [StandaloneAndResourceHotfixGuide.md](../Docs/Guides/StandaloneAndResourceHotfixGuide.md) | 单机 / 只热更资源接入 |
 | [BaseGameRoot/README.md](BaseGameRoot/README.md) | GameRoot、TryStart、GameLaunch |
 | [ConfigTableLayer/配表工具生成契约.md](../BaseLayer/ConfigTableLayer/配表工具生成契约.md) | 配表代码/数据目录 |

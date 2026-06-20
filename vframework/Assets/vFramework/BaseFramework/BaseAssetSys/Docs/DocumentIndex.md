@@ -73,7 +73,7 @@ Cursor 自动化：见项目 `.cursor/rules/documentation-governance.mdc` 与 `.
 | `Assets/Test/AB_Test/` | [集成测试归档.md](../../../../Test/AB_Test/集成测试归档.md) | 双 Runner 门禁 |
 | `Assets/Test/comprehensiveTest/` | [综合测试归档.md](../../../../Test/comprehensiveTest/综合测试归档.md) | 池 / EventBus 手测 |
 
-> **范围说明**：本索引仅覆盖 **BaseAssetSys（资源打包/加载）**。全局入口 **BaseGameRoot** 为独立子系统，文档见 [BaseGameRoot/README.md](../../BaseGameRoot/README.md) 与 [FrameworkDesign.md](../../../Docs/FrameworkDesign.md) §4.1，**不在此维护排期**。
+> **范围说明**：本索引仅覆盖 **BaseAssetSys（资源打包/加载）**。全局入口 **BaseGameRoot** 为独立子系统，文档见 [BaseGameRoot/README.md](../../BaseGameRoot/README.md) 与 [FrameworkDesign.md](../../../Docs/Overview/FrameworkDesign.md) §4.1，**不在此维护排期**。
 
 ---
 
@@ -83,7 +83,9 @@ Cursor 自动化：见项目 `.cursor/rules/documentation-governance.mdc` 与 `.
 |------|------|
 | [ResourceSystemDesignGuide.md](../../../Resources/ResourceSystemDesignGuide.md) | Unity 资源系统通用对照 |
 | [ApproachComparisonAndLearningGuide.md](../../../../BaseLayer/ToDelete/ApproachComparisonAndLearningGuide.md) | 学习教材（非 ABSystem 排期） |
-| [ProjectGoals.md](../../../Docs/ProjectGoals.md) | 游戏产品目标（非 ABSystem 排期） |
+| [ProjectGoals.md](../../../Docs/Overview/ProjectGoals.md) | 游戏产品目标（非 ABSystem 排期） |
+| [StandaloneAndResourceHotfixGuide.md](../../../Docs/Guides/StandaloneAndResourceHotfixGuide.md) | 单机 / 只热更资源业务接入 |
+| [Docs/README.md](../../../Docs/README.md) | vFramework 文档总索引 |
 
 ---
 

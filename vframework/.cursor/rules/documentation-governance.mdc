@@ -20,6 +20,8 @@ alwaysApply: true
 | 做什么、何时做、完成没 | `MainRoadmap.md` |
 | 模块 checklist、禁止区对照 | `DesignGoalsAndImplementation.md`（仅实现区） |
 | 业务怎么调 API | `BusinessApiUsageGuide.md` |
+| 单机 / 只热更资源接入、Mono 迁移 | `Assets/vFramework/Docs/Guides/StandaloneAndResourceHotfixGuide.md` |
+| 框架定位与分层 | `Assets/vFramework/Docs/Overview/` |
 | 引用计数逐步模拟 | `RefCountAppendix.md` |
 | 加载侧/ CDN / 构建 **设计方案** | 已有 Plan 文档，见 DocumentIndex |
 | 模块职责与代码入口 | 子目录 `README.md` |

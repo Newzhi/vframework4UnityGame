@@ -32,6 +32,8 @@ description: >-
 | CDN / 异步设计 | `Docs/BusinessApiAndCdnPlanning.md` |
 | Bundle 拓扑/构建优化设计 | `Docs/BundleBuildOptimizationAndTopologyPlan.md` |
 | 业务 API 范例 | `Docs/BusinessApiUsageGuide.md` |
+| 单机 / 资源热更接入 | `Assets/vFramework/Docs/Guides/StandaloneAndResourceHotfixGuide.md` |
+| 框架总览 | `Assets/vFramework/Docs/Overview/`、`Docs/README.md` |
 | Ref 逐步追踪 | `Docs/RefCountAppendix.md` |
 | 模块说明 | 对应目录 `README.md` |
 

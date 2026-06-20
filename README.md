@@ -163,8 +163,10 @@ vFramework/
 
 | 文档 | 内容 |
 |------|------|
-| [FrameworkDesign.md](vframework/Assets/vFramework/Docs/FrameworkDesign.md) | 分层、数据流、约定 |
-| [ProjectGoals.md](vframework/Assets/vFramework/Docs/ProjectGoals.md) | 定位与范围 |
+| [Docs/README.md](vframework/Assets/vFramework/Docs/README.md) | **文档总索引**（Overview / Guides / Reference） |
+| [StandaloneAndResourceHotfixGuide.md](vframework/Assets/vFramework/Docs/Guides/StandaloneAndResourceHotfixGuide.md) | **单机 / 只热更资源**接入与 Mono 迁移 |
+| [FrameworkDesign.md](vframework/Assets/vFramework/Docs/Overview/FrameworkDesign.md) | 分层、数据流、约定 |
+| [ProjectGoals.md](vframework/Assets/vFramework/Docs/Overview/ProjectGoals.md) | 定位与范围 |
 | [BaseGameRoot/README.md](vframework/Assets/vFramework/BaseFramework/BaseGameRoot/README.md) | 入口与 Module |
 | [GameFlowApi.md](vframework/Assets/vFramework/BaseFramework/BaseGameRoot/GameFlow/GameFlowApi.md) | 宏观流程 |
 | [BaseEventSys/README.md](vframework/Assets/vFramework/BaseFramework/BaseEventSys/README.md) | 事件总线 |

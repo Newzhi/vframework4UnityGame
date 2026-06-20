@@ -2,17 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GameSetting : MonoBehaviour
+/// <summary>
+/// 全局游戏设置类
+/// 比如帧率上限，是否启用垂直同步，后处理，渲染质量等等
+/// </summary>
+public static class GameSetting
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    
 }

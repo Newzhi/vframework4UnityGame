@@ -265,4 +265,5 @@ A：GameFlow 是**游戏专用**单当前态调度；BaseFSM 将来供 AI / UI �
 |------|------|
 | [BaseGameRoot/README.md](../README.md) | GameRoot / IOC / Module 总览 |
 | [GameTime/GameTimeApi.md](../GameTime/GameTimeApi.md) | 时钟 / Timer / Facade |
-| [FrameworkDesign.md](../../../Docs/FrameworkDesign.md) | 三层架构与 GameFlow 定位 |
+| [FrameworkDesign.md](../../../Docs/Overview/FrameworkDesign.md) | 三层架构与 GameFlow 定位 |
+| [StandaloneAndResourceHotfixGuide.md](../../../Docs/Guides/StandaloneAndResourceHotfixGuide.md) | 单机接入与 Mono 迁移 |
